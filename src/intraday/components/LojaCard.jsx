@@ -13,22 +13,22 @@ function fmtPct(num, den) {
 
 function slaColor(pct) {
   if (pct === null) return ''
-  if (pct >= 85) return '--green'
-  if (pct >= 70) return '--orange'
+  if (pct >= 95)  return '--green'
+  if (pct >= 92)  return '--orange'
   return '--red'
 }
 
 function rupturaColor(pct) {
   if (pct === null) return ''
-  if (pct <= 5)  return '--green'
-  if (pct <= 15) return '--orange'
+  if (pct < 2)  return '--green'
+  if (pct < 5)  return '--orange'
   return '--red'
 }
 
 function fotoColor(pct) {
   if (pct === null) return ''
-  if (pct >= 70) return '--green'
-  if (pct >= 30) return '--orange'
+  if (pct >= 90)  return '--green'
+  if (pct >= 80)  return '--orange'
   return '--red'
 }
 
