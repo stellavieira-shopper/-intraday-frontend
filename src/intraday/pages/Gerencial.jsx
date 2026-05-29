@@ -30,9 +30,10 @@ export default function Gerencial({ onLojaClick, user, onLogout }) {
   const [dataInicio, setDataInicio] = useState(hoje())
   const [dataFim, setDataFim]       = useState(hoje())
   const [lojas, setLojas]           = useState([])
-  const [loading, setLoading]       = useState(false)
-  const [erro, setErro]             = useState(null)
-  const [ultimaAtt, setUltimaAtt]   = useState(null)
+  const [loading, setLoading]         = useState(false)
+  const [refreshing, setRefreshing]   = useState(false)
+  const [erro, setErro]               = useState(null)
+  const [ultimaAtt, setUltimaAtt]     = useState(null)
   const [autoRefresh, setAutoRefresh] = useState(true)
 
   function handleDateChange({ dataInicio: ini, dataFim: fim }) {
@@ -48,7 +49,6 @@ export default function Gerencial({ onLojaClick, user, onLogout }) {
       const { data: resp } = await axios.get(`${API}/api/intraday/gerencial`, {
         params: { data_inicio: dataInicio, data_fim: dataFim }
       })
-      // Ordena por pior SLA primeiro
       const sorted = (resp.lojas || []).sort((a, b) => slaLoja(a) - slaLoja(b))
       setLojas(sorted)
       setUltimaAtt(new Date().toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo' }))
@@ -58,6 +58,19 @@ export default function Gerencial({ onLojaClick, user, onLogout }) {
       setLoading(false)
     }
   }, [dataInicio, dataFim])
+
+  async function handleAtualizar() {
+    setRefreshing(true)
+    setErro(null)
+    try {
+      await axios.post(`${API}/api/intraday/refresh`)
+      await buscar()
+    } catch (e) {
+      setErro(e.response?.data?.erro || e.message || 'Erro ao atualizar tabela.')
+    } finally {
+      setRefreshing(false)
+    }
+  }
 
   useEffect(() => { buscar() }, [buscar])
 
@@ -93,8 +106,8 @@ export default function Gerencial({ onLojaClick, user, onLogout }) {
             <input type="checkbox" checked={autoRefresh} onChange={e => setAutoRefresh(e.target.checked)} />
             Auto (1min)
           </label>
-          <button className="btn-refresh" onClick={buscar} disabled={loading}>
-            {loading ? '⏳' : '↺'} Atualizar
+          <button className="btn-refresh" onClick={handleAtualizar} disabled={loading || refreshing}>
+            {refreshing ? '⏳ Atualizando...' : loading ? '⏳' : '↺ Atualizar'}
           </button>
           {user && (
             <div className="topbar-user">
