@@ -34,7 +34,7 @@ export default function Gerencial({ onLojaClick, onPerformanceClick, user, onLog
   const [refreshing, setRefreshing]   = useState(false)
   const [erro, setErro]               = useState(null)
   const [ultimaAtt, setUltimaAtt]     = useState(null)
-  const [autoRefresh, setAutoRefresh] = useState(true)
+  const [autoRefresh, setAutoRefresh] = useState(false)
 
   function handleDateChange({ dataInicio: ini, dataFim: fim }) {
     setDataInicio(ini)
