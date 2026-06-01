@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import axios from 'axios'
 import Gerencial from './pages/Gerencial.jsx'
 import Loja from './pages/Loja.jsx'
+import PerformanceDarkstore from './pages/PerformanceDarkstore.jsx'
 import LoginPage from './LoginPage.jsx'
 
 function getStoredUser() {
@@ -61,6 +62,10 @@ export default function IntradayApp() {
     setNav({ pagina: 'gerencial' })
   }
 
+  function irParaPerformance() {
+    setNav({ pagina: 'performance' })
+  }
+
   if (nav.pagina === 'loja') {
     return (
       <Loja
@@ -74,5 +79,15 @@ export default function IntradayApp() {
     )
   }
 
-  return <Gerencial onLojaClick={irParaLoja} user={user} onLogout={handleLogout} />
+  if (nav.pagina === 'performance') {
+    return (
+      <PerformanceDarkstore
+        onVoltar={irParaGerencial}
+        user={user}
+        onLogout={handleLogout}
+      />
+    )
+  }
+
+  return <Gerencial onLojaClick={irParaLoja} onPerformanceClick={irParaPerformance} user={user} onLogout={handleLogout} />
 }

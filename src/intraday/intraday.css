@@ -906,6 +906,343 @@ body {
 .login-google-btn { margin-top: 8px; }
 
 /* ============================================================
+   BOTÕES NAVEGAÇÃO
+   ============================================================ */
+
+.btn-voltar {
+  padding: 7px 16px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all .15s;
+}
+.btn-voltar:hover { border-color: var(--text-muted); color: var(--text); }
+
+.btn-performance {
+  padding: 7px 16px;
+  background: var(--shopper-red);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  transition: opacity .15s;
+}
+.btn-performance:hover { opacity: 0.88; }
+
+/* ============================================================
+   PERFORMANCE DARKSTORE
+   ============================================================ */
+
+.perf-week-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 0 8px;
+}
+.perf-week-bar__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.perf-week-bar__loading {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+.perf-week-select {
+  padding: 7px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  background: #fff;
+  cursor: pointer;
+  outline: none;
+}
+.perf-week-select:focus { border-color: var(--shopper-red); }
+
+/* Resumo geral */
+.perf-summary-bar {
+  display: flex;
+  gap: 0;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+.perf-summary-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 12px;
+  border-right: 1px solid var(--border-light);
+}
+.perf-summary-item:last-child { border-right: none; }
+.perf-summary-item--destaque { background: #fafffe; }
+.perf-summary-item__num {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1;
+}
+.perf-summary-item__den {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+.perf-summary-item--destaque .perf-summary-item__num { color: var(--green); }
+.perf-summary-item__lbl {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* Legenda */
+.perf-legend {
+  font-size: 12px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.perf-legend__title { font-weight: 700; color: var(--text-dim); }
+.perf-legend__sep   { color: var(--border); }
+.perf-legend__item  {}
+
+/* Grid de lojas */
+.perf-stores-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 16px;
+}
+
+/* Card de loja */
+.perf-store-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: box-shadow .15s;
+}
+.perf-store-card:hover { box-shadow: var(--shadow-hover); }
+.perf-store-card--gate {
+  border-color: #fca5a5;
+  background: #fff8f8;
+}
+
+.perf-store-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.perf-store-card__name {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.2;
+}
+.perf-store-card__gates {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+/* Pills de gate */
+.perf-gate {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.perf-gate--ok {
+  background: #f0fdf4;
+  color: var(--green);
+  border: 1px solid #bbf7d0;
+}
+.perf-gate--bloqueado {
+  background: #fef2f2;
+  color: var(--red);
+  border: 1px solid #fecaca;
+}
+
+/* KPI bars */
+.perf-store-card__kpis {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.perf-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.perf-kpi__label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+}
+.perf-kpi__value {
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1;
+}
+.perf-kpi__value--saudavel { color: var(--green); }
+.perf-kpi__value--atencao  { color: var(--yellow); }
+.perf-kpi__value--critico  { color: var(--red); }
+.perf-kpi__value--gray     { color: var(--text-muted); }
+
+.perf-kpi__bar {
+  height: 4px;
+  background: var(--border-light);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.perf-kpi__bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width .3s;
+}
+.perf-kpi__bar-fill--saudavel { background: var(--green); }
+.perf-kpi__bar-fill--atencao  { background: var(--yellow); }
+.perf-kpi__bar-fill--critico  { background: var(--red); }
+.perf-kpi__bar-fill--gray     { background: var(--text-dim); }
+
+/* Resumo de bônus */
+.perf-store-card__bonus {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+}
+.perf-bonus-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+}
+.perf-bonus-stat__num {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text);
+}
+.perf-bonus-stat__den {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+.perf-bonus-stat__lbl {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-left: 4px;
+}
+.perf-bonus-total {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--green);
+}
+
+/* Botão expandir */
+.perf-expand-btn {
+  width: 100%;
+  padding: 8px 0;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all .15s;
+}
+.perf-expand-btn:hover { background: var(--bg); color: var(--text); border-color: var(--text-dim); }
+
+/* Tabela de colaboradores */
+.perf-colabs-wrap {
+  overflow-x: auto;
+  border-top: 1px solid var(--border-light);
+  padding-top: 12px;
+}
+.perf-colabs-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.perf-colabs-table th {
+  text-align: left;
+  padding: 6px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-muted);
+  border-bottom: 1.5px solid var(--border);
+  white-space: nowrap;
+}
+.perf-colabs-table td {
+  padding: 8px 8px;
+  border-bottom: 1px solid var(--border-light);
+  vertical-align: middle;
+}
+.perf-colabs-table tbody tr:last-child td { border-bottom: none; }
+.perf-colabs-table tbody tr:hover { background: var(--bg); }
+.perf-row--zero td { color: var(--text-muted); }
+
+.perf-td--nome  { font-weight: 600; color: var(--text); max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.perf-td--turno { font-size: 11px; color: var(--text-muted); }
+.perf-td--valor { text-align: right; }
+
+/* Função badge */
+.perf-funcao {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: var(--radius-xs);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.perf-funcao--supervisor { background: #ede9fe; color: var(--purple); }
+.perf-funcao--team_lider { background: #dbeafe; color: var(--blue); }
+.perf-funcao--operador   { background: #f0fdf4; color: var(--green); }
+
+/* Motivo zero */
+.perf-motivo {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: var(--radius-xs);
+  font-size: 10px;
+  font-weight: 700;
+}
+.perf-motivo--assiduidade { background: #fef9c3; color: #854d0e; }
+.perf-motivo--gate        { background: #fef2f2; color: var(--red); }
+.perf-motivo--taxa        { background: #f1f5f9; color: var(--text-muted); }
+
+.perf-escopo { font-size: 10px; color: var(--text-dim); font-weight: 400; }
+
+/* ============================================================
    SCROLLBAR
    ============================================================ */
 
