@@ -157,7 +157,7 @@ export default function Gerencial({ onLojaClick, user, onLogout }) {
         </div>
 
         {/* Loading */}
-        {loading && lojas.length === 0 && (
+        {loading && (
           <div className="loading-state">
             <div className="spinner" />
             <span>Carregando dados...</span>
@@ -167,6 +167,9 @@ export default function Gerencial({ onLojaClick, user, onLogout }) {
         {!loading && lojas.length === 0 && !erro && (
           <div className="empty-state empty-state--full">
             Nenhuma loja encontrada para {fmtPeriodo(dataInicio, dataFim)}.
+            <div style={{fontSize:'0.85rem', marginTop:'8px', opacity:0.6}}>
+              A tabela retém dados do dia atual e do dia anterior.
+            </div>
           </div>
         )}
 
