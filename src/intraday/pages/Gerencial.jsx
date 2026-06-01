@@ -64,6 +64,7 @@ export default function Gerencial({ onLojaClick, onPerformanceClick, user, onLog
     setErro(null)
     try {
       await axios.post(`${API}/api/intraday/refresh`)
+      // só busca após o refresh completo — dados congelados durante a atualização
       await buscar()
     } catch (e) {
       setErro(e.response?.data?.erro || e.message || 'Erro ao atualizar tabela.')
@@ -76,9 +77,12 @@ export default function Gerencial({ onLojaClick, onPerformanceClick, user, onLog
 
   useEffect(() => {
     if (!autoRefresh) return
-    const id = setInterval(buscar, 60_000)
+    const id = setInterval(() => {
+      // não busca se um refresh manual estiver em andamento
+      if (!refreshing) buscar()
+    }, 60_000)
     return () => clearInterval(id)
-  }, [autoRefresh, buscar])
+  }, [autoRefresh, buscar, refreshing])
 
   const saudes    = lojas.map(calcSaude)
   const criticos  = saudes.filter(s => s.variant === 'critico').length
