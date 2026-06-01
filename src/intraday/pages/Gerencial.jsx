@@ -168,7 +168,7 @@ export default function Gerencial({ onLojaClick, user, onLogout }) {
           <div className="empty-state empty-state--full">
             Nenhuma loja encontrada para {fmtPeriodo(dataInicio, dataFim)}.
             <div style={{fontSize:'0.85rem', marginTop:'8px', opacity:0.6}}>
-              A tabela retém dados do dia atual e do dia anterior.
+              Nenhum pedido finalizado encontrado para este período.
             </div>
           </div>
         )}
