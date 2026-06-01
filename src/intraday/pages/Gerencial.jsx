@@ -50,10 +50,12 @@ export default function Gerencial({ onLojaClick, onPerformanceClick, user, onLog
         params: { data_inicio: dataInicio, data_fim: dataFim }
       })
       const sorted = (resp.lojas || []).sort((a, b) => slaLoja(a) - slaLoja(b))
+      // só atualiza a tela quando os dados novos chegaram completos
       setLojas(sorted)
       setUltimaAtt(new Date().toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo' }))
     } catch (e) {
       setErro(e.response?.data?.erro || e.message || 'Erro ao carregar dados.')
+      // em caso de erro não limpa os dados anteriores
     } finally {
       setLoading(false)
     }
@@ -114,7 +116,7 @@ export default function Gerencial({ onLojaClick, onPerformanceClick, user, onLog
             Auto (1min)
           </label>
           <button className="btn-refresh" onClick={handleAtualizar} disabled={loading || refreshing}>
-            {refreshing ? '⏳ Atualizando...' : loading ? '⏳' : '↺ Atualizar'}
+            {refreshing ? '⏳ Atualizando...' : (loading && lojas.length > 0) ? '⏳ Sincronizando...' : '↺ Atualizar'}
           </button>
           {user && (
             <div className="topbar-user">
@@ -163,8 +165,8 @@ export default function Gerencial({ onLojaClick, onPerformanceClick, user, onLog
           </div>
         </div>
 
-        {/* Loading */}
-        {loading && (
+        {/* Loading — só mostra spinner na primeira carga (sem dados ainda) */}
+        {loading && lojas.length === 0 && (
           <div className="loading-state">
             <div className="spinner" />
             <span>Carregando dados...</span>
