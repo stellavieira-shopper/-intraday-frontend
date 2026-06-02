@@ -166,7 +166,7 @@ export default function Loja({ loja, dataInicio: dataInicioInit, dataFim: dataFi
             {/* KPIs grandes */}
             <div className="loja-kpi-grid">
               <KpiLoja
-                label="SLA Turbo/Express (5 min)"
+                label="SLA 5 min (Turbo + Fast)"
                 value={pctSla !== null ? pctSla.toFixed(1) : '—'}
                 sup={pctSla !== null ? ' %' : ''}
                 sub={comSla > 0 ? `${foraSla} de ${comSla} fora do prazo` : 'sem pedidos com SLA'}
@@ -213,7 +213,7 @@ export default function Loja({ loja, dataInicio: dataInicioInit, dataFim: dataFi
 
             {/* Por tipo de pedido */}
             {dados.tipos && dados.tipos.length > 0 && (
-              <Accordion title="Por tipo de pedido" subtitle={`${fmtPeriodo(dataInicio, dataFim)} · SLA de 5 min aplica-se apenas a Turbo/Express`}>
+              <Accordion title="Por tipo de pedido" subtitle={`${fmtPeriodo(dataInicio, dataFim)} · SLA de 5 min aplica-se a Turbo/Express e Fast Delivery`}>
                 <div style={{ overflowX: 'auto', marginTop: 12 }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                     <thead>
@@ -228,7 +228,8 @@ export default function Loja({ loja, dataInicio: dataInicioInit, dataFim: dataFi
                         const pSla  = t.com_sla > 0 ? ((t.dentro_sla / t.com_sla) * 100).toFixed(1) : null
                         const pRup  = t.total   > 0 ? ((t.com_ruptura / t.total) * 100).toFixed(1)  : '0.0'
                         const pFoto = t.finalizados > 0 ? ((t.com_foto / t.finalizados) * 100).toFixed(1) : null
-                        const isTurbo = t.tipo === 'Turbo / Express'
+                        const isTurbo  = t.tipo === 'Turbo / Express'
+                        const temSla   = t.com_sla > 0   // Fast Delivery também tem SLA de 5 min
                         const slaColor = pSla === null ? '#94a3b8' : Number(pSla) >= 85 ? 'var(--green)' : Number(pSla) >= 70 ? 'var(--yellow)' : 'var(--red)'
                         const ruptColor = Number(pRup) <= 5 ? 'var(--green)' : Number(pRup) <= 15 ? 'var(--yellow)' : 'var(--red)'
                         const fotoColor = pFoto === null ? '#94a3b8' : Number(pFoto) >= 70 ? 'var(--green)' : Number(pFoto) >= 30 ? 'var(--yellow)' : 'var(--red)'
@@ -245,7 +246,7 @@ export default function Loja({ loja, dataInicio: dataInicioInit, dataFim: dataFi
                             </td>
                             <td style={{ padding: '10px 12px', fontWeight: 700 }}>{Number(t.total).toLocaleString('pt-BR')}</td>
                             <td style={{ padding: '10px 12px', fontWeight: 700, color: slaColor }}>
-                              {isTurbo
+                              {temSla
                                 ? (pSla !== null ? `${pSla}%` : '—')
                                 : <span style={{ color: '#94a3b8', fontSize: 12 }}>N/A</span>}
                             </td>
@@ -265,7 +266,7 @@ export default function Loja({ loja, dataInicio: dataInicioInit, dataFim: dataFi
                         <td style={{ padding: '8px 12px', fontWeight: 700 }}>{totalPedidos.toLocaleString('pt-BR')}</td>
                         <td style={{ padding: '8px 12px', fontWeight: 700, color: slaColor }}>
                           {pctSla !== null ? `${pctSla.toFixed(1)}%` : '—'}
-                          <span style={{ fontSize: 10, color: 'var(--text-muted)', marginLeft: 4 }}>({comSla} turbo)</span>
+                          <span style={{ fontSize: 10, color: 'var(--text-muted)', marginLeft: 4 }}>({comSla} com SLA)</span>
                         </td>
                         <td style={{ padding: '8px 12px', fontWeight: 700, color: rupturaColor }}>{pctRuptura !== null ? `${pctRuptura.toFixed(1)}%` : '—'}</td>
                         <td style={{ padding: '8px 12px', fontWeight: 700, color: fotoColor }}>{pctFoto !== null ? `${pctFoto.toFixed(1)}%` : '—'}</td>
