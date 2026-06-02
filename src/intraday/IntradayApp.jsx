@@ -3,6 +3,7 @@ import axios from 'axios'
 import Gerencial from './pages/Gerencial.jsx'
 import Loja from './pages/Loja.jsx'
 import PerformanceDarkstore from './pages/PerformanceDarkstore.jsx'
+import FeedbacksPage from './pages/FeedbacksPage.jsx'
 import LoginPage from './LoginPage.jsx'
 
 function getStoredUser() {
@@ -66,6 +67,10 @@ export default function IntradayApp() {
     setNav({ pagina: 'performance' })
   }
 
+  function irParaFeedbacks() {
+    setNav({ pagina: 'feedbacks' })
+  }
+
   if (nav.pagina === 'loja') {
     return (
       <Loja
@@ -75,6 +80,15 @@ export default function IntradayApp() {
         onVoltar={irParaGerencial}
         user={user}
         onLogout={handleLogout}
+      />
+    )
+  }
+
+  if (nav.pagina === 'feedbacks') {
+    return (
+      <FeedbacksPage
+        onVoltar={irParaGerencial}
+        user={user}
       />
     )
   }
@@ -89,5 +103,5 @@ export default function IntradayApp() {
     )
   }
 
-  return <Gerencial onLojaClick={irParaLoja} onPerformanceClick={irParaPerformance} user={user} onLogout={handleLogout} />
+  return <Gerencial onLojaClick={irParaLoja} onPerformanceClick={irParaPerformance} onFeedbacksClick={irParaFeedbacks} user={user} onLogout={handleLogout} />
 }

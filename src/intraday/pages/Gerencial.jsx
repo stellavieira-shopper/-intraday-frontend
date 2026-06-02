@@ -26,7 +26,7 @@ function slaLoja(l) {
   return comSla > 0 ? dentroSla / comSla : 1
 }
 
-export default function Gerencial({ onLojaClick, onPerformanceClick, user, onLogout }) {
+export default function Gerencial({ onLojaClick, onPerformanceClick, onFeedbacksClick, user, onLogout }) {
   const [dataInicio, setDataInicio] = useState(hoje())
   const [dataFim, setDataFim]       = useState(hoje())
   const [lojas, setLojas]           = useState([])
@@ -110,6 +110,9 @@ export default function Gerencial({ onLojaClick, onPerformanceClick, user, onLog
         <div className="intraday-topbar__right">
           <button className="btn-performance" onClick={onPerformanceClick} title="Performance Semanal">
             📊 Performance
+          </button>
+          <button className="btn-performance" onClick={onFeedbacksClick} title="Feedbacks de bonificação">
+            💬 Feedbacks
           </button>
           <label className="auto-refresh-toggle">
             <input type="checkbox" checked={autoRefresh} onChange={e => setAutoRefresh(e.target.checked)} />

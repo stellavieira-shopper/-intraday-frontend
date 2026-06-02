@@ -3,6 +3,15 @@ import axios from 'axios'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
+function semanaLabel(year, week) {
+  const jan4 = new Date(Date.UTC(year, 0, 4))
+  const dow  = (jan4.getUTCDay() + 6) % 7
+  const mon  = new Date(jan4); mon.setUTCDate(jan4.getUTCDate() - dow + (week - 1) * 7)
+  const sun  = new Date(mon);  sun.setUTCDate(mon.getUTCDate() + 6)
+  const dd   = d => d.toISOString().split('T')[0].split('-').reverse().slice(0, 2).join('/')
+  return `Semana ${week} · ${year} · ${dd(mon)} a ${dd(sun)}`
+}
+
 const NOMES = {
   'alto de pinheiros': 'Alto de Pinheiros',
   'barra funda':       'Barra Funda',
@@ -71,6 +80,7 @@ function ColabsTable({ colaboradores }) {
     if (fa !== fb) return fa - fb
     return a.nome.localeCompare(b.nome)
   })
+
   return (
     <div className="perf-colabs-wrap">
       <table className="perf-colabs-table">
@@ -80,7 +90,7 @@ function ColabsTable({ colaboradores }) {
             <th>Função</th>
             <th>Turno</th>
             <th>Taxa ind.</th>
-            <th>Rupturas</th>
+            <th>Rupturas (loja)</th>
             <th>Abast.</th>
             <th>Valor</th>
           </tr>
@@ -88,7 +98,6 @@ function ColabsTable({ colaboradores }) {
         <tbody>
           {sorted.map((c, i) => {
             const motivo = motivoZero(c)
-            const escopoRuptura = c.funcao === 'SUPERVISOR' ? 'loja' : c.funcao === 'TEAM_LIDER' ? 'turno' : 'pessoal'
             return (
               <tr key={i} className={c.valor_final > 0 ? '' : 'perf-row--zero'}>
                 <td className="perf-td--nome">{c.nome}</td>
@@ -99,9 +108,9 @@ function ColabsTable({ colaboradores }) {
                 </td>
                 <td className="perf-td--turno">{c.turno || '—'}</td>
                 <td>{fmtPct(c.taxa_individual)}</td>
-                <td>
+                <td style={{ whiteSpace: 'nowrap' }}>
                   {c.rupturas > 0
-                    ? <span title={`Escopo: ${escopoRuptura}`}>{c.rupturas} <span className="perf-escopo">({escopoRuptura})</span> −{fmtR(c.desconto_ruptura)}</span>
+                    ? <span>{c.rupturas} itens · −{fmtR(c.desconto_ruptura)}</span>
                     : '0'
                   }
                 </td>
@@ -240,7 +249,7 @@ export default function PerformanceDarkstore({ onVoltar, user, onLogout }) {
       </div>
 
       <div className="intraday-content">
-        {/* Seletor de semana */}
+        {/* Seletor de semana + filtro de turno */}
         <div className="perf-week-bar">
           <span className="perf-week-bar__label">Semana de referência</span>
           {loadingSem ? (
@@ -253,7 +262,7 @@ export default function PerformanceDarkstore({ onVoltar, user, onLogout }) {
             >
               {semanas.map(s => (
                 <option key={`${s.year_ref}-${s.week_ref}`} value={`${s.year_ref}-${s.week_ref}`}>
-                  Semana {s.week_ref} · {s.year_ref}
+                  {semanaLabel(s.year_ref, s.week_ref)}
                 </option>
               ))}
             </select>

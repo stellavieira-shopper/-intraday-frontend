@@ -166,7 +166,7 @@ export default function Loja({ loja, dataInicio: dataInicioInit, dataFim: dataFi
             {/* KPIs grandes */}
             <div className="loja-kpi-grid">
               <KpiLoja
-                label="% SLA 5 min"
+                label="SLA Turbo/Express (5 min)"
                 value={pctSla !== null ? pctSla.toFixed(1) : '—'}
                 sup={pctSla !== null ? ' %' : ''}
                 sub={comSla > 0 ? `${foraSla} de ${comSla} fora do prazo` : 'sem pedidos com SLA'}
@@ -211,27 +211,74 @@ export default function Loja({ loja, dataInicio: dataInicioInit, dataFim: dataFi
               />
             </div>
 
-            {/* Tempos médios */}
-            <Accordion title="Tempos médios da operação" subtitle={`${fmtPeriodo(dataInicio, dataFim)} · todos os turnos`}>
-              <div className="tempos-grid" style={{ marginTop: 16 }}>
-                <div className="tempo-item">
-                  <div className="tempo-item__label">Tempo p/ iniciar picking</div>
-                  <div className="tempo-item__value">{kpis.avg_tempo_iniciar_min ?? '—'}<span>min</span></div>
+            {/* Por tipo de pedido */}
+            {dados.tipos && dados.tipos.length > 0 && (
+              <Accordion title="Por tipo de pedido" subtitle={`${fmtPeriodo(dataInicio, dataFim)} · SLA de 5 min aplica-se apenas a Turbo/Express`}>
+                <div style={{ overflowX: 'auto', marginTop: 12 }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                    <thead>
+                      <tr style={{ borderBottom: '2px solid var(--border)' }}>
+                        {['Tipo', 'Total', 'SLA 5 min', 'Ruptura', 'Foto', 'T. Iniciar', 'T. Picking', 'T. Packing', 'T. Ciclo'].map(h => (
+                          <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {dados.tipos.map((t, i) => {
+                        const pSla  = t.com_sla > 0 ? ((t.dentro_sla / t.com_sla) * 100).toFixed(1) : null
+                        const pRup  = t.total   > 0 ? ((t.com_ruptura / t.total) * 100).toFixed(1)  : '0.0'
+                        const pFoto = t.finalizados > 0 ? ((t.com_foto / t.finalizados) * 100).toFixed(1) : null
+                        const isTurbo = t.tipo === 'Turbo / Express'
+                        const slaColor = pSla === null ? '#94a3b8' : Number(pSla) >= 85 ? 'var(--green)' : Number(pSla) >= 70 ? 'var(--yellow)' : 'var(--red)'
+                        const ruptColor = Number(pRup) <= 5 ? 'var(--green)' : Number(pRup) <= 15 ? 'var(--yellow)' : 'var(--red)'
+                        const fotoColor = pFoto === null ? '#94a3b8' : Number(pFoto) >= 70 ? 'var(--green)' : Number(pFoto) >= 30 ? 'var(--yellow)' : 'var(--red)'
+                        return (
+                          <tr key={i} style={{ borderBottom: '1px solid var(--border-light)', background: i % 2 === 0 ? 'transparent' : '#fafbfc' }}>
+                            <td style={{ padding: '10px 12px', fontWeight: 600 }}>
+                              <span style={{
+                                background: isTurbo ? '#dbeafe' : t.tipo === 'Fast Delivery' ? '#ede9fe' : t.tipo === 'Sem classificação' ? '#f1f5f9' : '#f0fdf4',
+                                color: isTurbo ? '#1d4ed8' : t.tipo === 'Fast Delivery' ? '#6d28d9' : t.tipo === 'Sem classificação' ? '#64748b' : '#15803d',
+                                borderRadius: 4, padding: '3px 10px', fontSize: 12, fontWeight: 700
+                              }}>
+                                {t.tipo}
+                              </span>
+                            </td>
+                            <td style={{ padding: '10px 12px', fontWeight: 700 }}>{Number(t.total).toLocaleString('pt-BR')}</td>
+                            <td style={{ padding: '10px 12px', fontWeight: 700, color: slaColor }}>
+                              {isTurbo
+                                ? (pSla !== null ? `${pSla}%` : '—')
+                                : <span style={{ color: '#94a3b8', fontSize: 12 }}>N/A</span>}
+                            </td>
+                            <td style={{ padding: '10px 12px', fontWeight: 600, color: ruptColor }}>{pRup}%</td>
+                            <td style={{ padding: '10px 12px', fontWeight: 600, color: fotoColor }}>{pFoto !== null ? `${pFoto}%` : '—'}</td>
+                            <td style={{ padding: '10px 12px', color: 'var(--text-muted)' }}>{t.avg_iniciar_min ?? '—'} min</td>
+                            <td style={{ padding: '10px 12px', color: 'var(--text-muted)' }}>{t.avg_picking_min ?? '—'} min</td>
+                            <td style={{ padding: '10px 12px', color: 'var(--text-muted)' }}>{t.avg_packing_min ?? '—'} min</td>
+                            <td style={{ padding: '10px 12px', color: 'var(--text-muted)', fontWeight: 600 }}>{t.avg_cycle_min ?? '—'} min</td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                    <tfoot>
+                      <tr style={{ borderTop: '2px solid var(--border)', background: '#f8f9fc' }}>
+                        <td style={{ padding: '8px 12px', fontWeight: 700, fontSize: 12, color: 'var(--text-muted)' }}>TOTAL / GERAL</td>
+                        <td style={{ padding: '8px 12px', fontWeight: 700 }}>{totalPedidos.toLocaleString('pt-BR')}</td>
+                        <td style={{ padding: '8px 12px', fontWeight: 700, color: slaColor }}>
+                          {pctSla !== null ? `${pctSla.toFixed(1)}%` : '—'}
+                          <span style={{ fontSize: 10, color: 'var(--text-muted)', marginLeft: 4 }}>({comSla} turbo)</span>
+                        </td>
+                        <td style={{ padding: '8px 12px', fontWeight: 700, color: rupturaColor }}>{pctRuptura !== null ? `${pctRuptura.toFixed(1)}%` : '—'}</td>
+                        <td style={{ padding: '8px 12px', fontWeight: 700, color: fotoColor }}>{pctFoto !== null ? `${pctFoto.toFixed(1)}%` : '—'}</td>
+                        <td style={{ padding: '8px 12px', color: 'var(--text-muted)' }}>{kpis.avg_tempo_iniciar_min ?? '—'} min</td>
+                        <td style={{ padding: '8px 12px', color: 'var(--text-muted)' }}>{kpis.avg_picking_min ?? '—'} min</td>
+                        <td style={{ padding: '8px 12px', color: 'var(--text-muted)' }}>{kpis.avg_packing_min ?? '—'} min</td>
+                        <td style={{ padding: '8px 12px', color: 'var(--text-muted)', fontWeight: 600 }}>{kpis.avg_cycle_min ?? '—'} min</td>
+                      </tr>
+                    </tfoot>
+                  </table>
                 </div>
-                <div className="tempo-item">
-                  <div className="tempo-item__label">Tempo médio de picking</div>
-                  <div className="tempo-item__value">{kpis.avg_picking_min ?? '—'}<span>min</span></div>
-                </div>
-                <div className="tempo-item">
-                  <div className="tempo-item__label">Tempo médio de packing</div>
-                  <div className="tempo-item__value">{kpis.avg_packing_min ?? '—'}<span>min</span></div>
-                </div>
-                <div className="tempo-item">
-                  <div className="tempo-item__label">Tempo médio do ciclo</div>
-                  <div className="tempo-item__value">{kpis.avg_cycle_min ?? '—'}<span>min</span></div>
-                </div>
-              </div>
-            </Accordion>
+              </Accordion>
+            )}
 
             {/* Performance por turno */}
             <Accordion title="Performance por turno" subtitle="Toque em um turno para abrir a visão do team leader">
