@@ -4,7 +4,18 @@
  *  - Renomeia aliases conhecidos
  */
 const ALIASES = {
-  PAMPLONA: 'Jardins',
+  PAMPLONA:       'Jardins',
+  HIGIENOPOLIS:   'Higienópolis',
+  'SAO CAETANO':  'São Caetano',
+  'VILA OLIMPIA': 'Vila Olímpia',
+  'VILA MARIANA': 'Vila Mariana',
+  'BARRA FUNDA':  'Barra Funda',
+  'ALTO DE PINHEIROS': 'Alto de Pinheiros',
+  MORUMBI:        'Morumbi',
+  PINHEIROS:      'Pinheiros',
+  BROOKLIN:       'Brooklin',
+  CAMPINAS:       'Campinas',
+  MOEMA:          'Moema',
 }
 
 export function nomeLoja(raw) {

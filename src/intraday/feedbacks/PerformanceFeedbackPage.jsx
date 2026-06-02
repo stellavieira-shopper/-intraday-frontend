@@ -8,7 +8,12 @@ const fmtX = v => `${Number(v || 0).toFixed(1)}×`
 
 const CARGO = { SUPERVISOR: 'Supervisor', TEAM_LIDER: 'Team Leader', OPERADOR: 'Operador' }
 const TURNO = { MANHA: 'Manhã', TARDE: 'Tarde', NOITE: 'Noite' }
-const STORE_ALIAS = { pamplona: 'Jardins' }
+const STORE_ALIAS = {
+  pamplona:          'Jardins',
+  higienopolis:      'Higienópolis',
+  'sao caetano':     'São Caetano',
+  'vila olimpia':    'Vila Olímpia',
+}
 const STORE = code => {
   const low = (code || '').toLowerCase()
   if (STORE_ALIAS[low]) return STORE_ALIAS[low]

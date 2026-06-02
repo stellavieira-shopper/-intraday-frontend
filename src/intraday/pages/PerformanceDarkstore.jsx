@@ -16,6 +16,9 @@ const NOMES = {
   'alto de pinheiros': 'Alto de Pinheiros',
   'barra funda':       'Barra Funda',
   'pamplona':          'Jardins',
+  'higienopolis':      'Higienópolis',
+  'sao caetano':       'São Caetano',
+  'vila olimpia':      'Vila Olímpia',
 }
 
 function nomeStore(code) {
