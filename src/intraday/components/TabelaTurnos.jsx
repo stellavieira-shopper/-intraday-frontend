@@ -32,7 +32,10 @@ export default function TabelaTurnos({ turnos }) {
             <th>Ruptura</th>
             <th>Erros</th>
             <th>Foto</th>
-            <th>T. Iniciar</th>
+            <th>T. Iniciar (geral)</th>
+            <th>T. Iniciar Turbo</th>
+            <th>T. Iniciar Fast</th>
+            <th>T. Iniciar Outros</th>
           </tr>
         </thead>
         <tbody>
@@ -71,7 +74,16 @@ export default function TabelaTurnos({ turnos }) {
                 <td style={{ color: pctFoto !== null && pctFoto < 30 ? 'var(--red)' : 'var(--green)', fontWeight: 700 }}>
                   {pctFoto !== null ? `${pctFoto.toFixed(1)}%` : '—'}
                 </td>
-                <td>{t.avg_tempo_iniciar_min != null ? `${t.avg_tempo_iniciar_min} min` : '—'}</td>
+                <td style={{ fontWeight: 600 }}>{t.avg_tempo_iniciar_min != null ? `${t.avg_tempo_iniciar_min} min` : '—'}</td>
+                <td style={{ color: t.avg_iniciar_turbo_min != null ? (t.avg_iniciar_turbo_min <= 1 ? 'var(--green)' : t.avg_iniciar_turbo_min <= 3 ? 'var(--yellow)' : 'var(--red)') : 'var(--text-dim)' }}>
+                  {t.total_turbo > 0 ? (t.avg_iniciar_turbo_min != null ? `${t.avg_iniciar_turbo_min} min` : '—') : <span style={{ color: 'var(--text-dim)', fontSize: 11 }}>N/A</span>}
+                </td>
+                <td style={{ color: t.avg_iniciar_fast_min != null ? (t.avg_iniciar_fast_min <= 1 ? 'var(--green)' : t.avg_iniciar_fast_min <= 3 ? 'var(--yellow)' : 'var(--red)') : 'var(--text-dim)' }}>
+                  {t.total_fast > 0 ? (t.avg_iniciar_fast_min != null ? `${t.avg_iniciar_fast_min} min` : '—') : <span style={{ color: 'var(--text-dim)', fontSize: 11 }}>N/A</span>}
+                </td>
+                <td style={{ color: 'var(--text-muted)' }}>
+                  {t.avg_iniciar_outros_min != null ? `${t.avg_iniciar_outros_min} min` : '—'}
+                </td>
               </tr>
             )
           })}
