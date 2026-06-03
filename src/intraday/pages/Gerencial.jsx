@@ -34,6 +34,20 @@ export default function Gerencial({ onLojaClick, onPerformanceClick, onFeedbacks
   const [refreshing, setRefreshing]     = useState(false)
   const [bqRefreshing, setBqRefreshing] = useState(false)
   const [fromCache, setFromCache]       = useState(false)
+
+  // Polling independente do status de refresh — avisa todos os usuários
+  useEffect(() => {
+    let active = true
+    const poll = async () => {
+      try {
+        const { data } = await axios.get(`${API}/api/intraday/status`)
+        if (active) setBqRefreshing(!!data.refreshing)
+      } catch (_) {}
+    }
+    poll()
+    const id = setInterval(poll, 5000)
+    return () => { active = false; clearInterval(id) }
+  }, [])
   const [erro, setErro]                 = useState(null)
   const [ultimaAtt, setUltimaAtt]       = useState(null)
   const [autoRefresh, setAutoRefresh]   = useState(false)
@@ -124,12 +138,8 @@ export default function Gerencial({ onLojaClick, onPerformanceClick, onFeedbacks
             <input type="checkbox" checked={autoRefresh} onChange={e => setAutoRefresh(e.target.checked)} />
             Auto (1min)
           </label>
-          {bqRefreshing && (
-            <span style={{ fontSize: 11, color: '#f39c12', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
-              ⟳ Atualizando dados...
-            </span>
-          )}
-          <button className="btn-refresh" onClick={handleAtualizar} disabled={loading || refreshing}>
+          <button className="btn-refresh" onClick={handleAtualizar} disabled={loading || refreshing || bqRefreshing}
+            title={bqRefreshing ? 'Aguarde — atualização em andamento' : 'Atualizar dados'}>
             {refreshing ? '⏳ Atualizando...' : (loading && lojas.length > 0) ? '⏳' : '↺ Atualizar'}
           </button>
           {user && (
@@ -141,6 +151,18 @@ export default function Gerencial({ onLojaClick, onPerformanceClick, onFeedbacks
           )}
         </div>
       </div>
+
+      {/* Banner de atualização — visível para todos os usuários */}
+      {bqRefreshing && (
+        <div style={{
+          background: '#fff3cd', borderBottom: '2px solid #f39c12',
+          padding: '10px 32px', display: 'flex', alignItems: 'center', gap: 10,
+          fontSize: 13, fontWeight: 600, color: '#856404'
+        }}>
+          <span style={{ fontSize: 18, animation: 'spin 1s linear infinite' }}>⟳</span>
+          Atualizando dados em tempo real — os dados exibidos estão congelados até a atualização ser concluída.
+        </div>
+      )}
 
       {/* Barra de data */}
       <div className="intraday-datebar">
