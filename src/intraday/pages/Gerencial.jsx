@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import axios from 'axios'
 import LojaCard from '../components/LojaCard.jsx'
 import DateFilter from '../components/DateFilter.jsx'
@@ -80,14 +80,17 @@ export default function Gerencial({ onLojaClick, onPerformanceClick, onFeedbacks
 
   useEffect(() => { buscar() }, [buscar])
 
+  // Usa ref para o buscar mais recente — evita closure stale no setInterval
+  const buscarRef = useRef(buscar)
+  useEffect(() => { buscarRef.current = buscar }, [buscar])
+
   useEffect(() => {
     if (!autoRefresh) return
     const id = setInterval(() => {
-      // não busca se um refresh manual estiver em andamento
-      if (!refreshing) buscar()
+      if (!refreshing) buscarRef.current()
     }, 60_000)
     return () => clearInterval(id)
-  }, [autoRefresh, buscar, refreshing])
+  }, [autoRefresh, refreshing])
 
   const saudes    = lojas.map(calcSaude)
   const criticos  = saudes.filter(s => s.variant === 'critico').length
