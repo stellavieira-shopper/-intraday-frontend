@@ -230,14 +230,17 @@ function CalcPanel({ snap, card }) {
   const ruptQtd   = Number(snap.rupturas_count            || 0)
   const ruptDesc  = Number(snap.desconto_ruptura          || 0)
   const ruptUnit  = UNIT_RUPT(snap.funcao_bucket)
-  const preGate   = Math.max(bruto - ruptDesc, 0)
+  const preGate   = Math.max(bruto - ruptDesc - descErros, 0)
   const bolsoPed  = Number(snap.bolso_pedidos             || 0)
   const bolsoAbs  = Number(snap.bolso_abastecimento       || 0)
   const valPed    = Number(snap.valor_bonus_pedidos_pre_gate || 0)
   const valAbs    = Number(snap.valor_bonus_abastecimento_pre_gate || 0)
   const nota      = Number(snap.nota_abastecimento_final         || 0)
   const tier      = Number(snap.pct_pagamento_tier_abastecimento || 0)
-  const final     = Number(snap.valor_final_bonus || 0)
+  const final      = Number(snap.valor_final_bonus || 0)
+  const errosNorm  = Number(snap.erros_normais || 0)
+  const errosGrav  = Number(snap.erros_graves  || 0)
+  const descErros  = Number(snap.desconto_erros || 0)
   const cargo     = snap.funcao_bucket
   const gateAtivo = snap.gate_loja_80_flag || snap.gate_foto_flag || snap.assiduidade_any_flag
 
@@ -274,7 +277,8 @@ function CalcPanel({ snap, card }) {
       <CalcRow label="Fator final da loja" rule="0,7 × mult.sep + 0,3 × mult.completos" value={`${fator.toFixed(2)}×`} />
       <CalcRow label="Valor bruto de pedidos" rule="Faixa × fator" value={fmtR(bruto)} />
       <CalcRow label="Desconto por rupturas" rule={`${ruptQtd} ruptura(s) da loja × R$${ruptUnit}/item`} value={`− ${fmtR(ruptDesc)}`} negative />
-      <CalcRow label="Resultado após desconto" value={fmtR(preGate)} total />
+      <CalcRow label="Desconto por erros de clientes" rule={`${errosNorm} erro(s) normal × R$10,23 + ${errosGrav} grave × R$15,34`} value={`− ${fmtR(descErros)}`} negative={descErros > 0} />
+      <CalcRow label="Resultado após descontos" value={fmtR(preGate)} total />
       <CalcRow label="Limite do componente (teto pedidos)" rule="Parcela máxima para pedidos" value={fmtR(bolsoPed)} />
       <CalcRow label="Ganho com pedidos" rule="min(resultado, limite)" value={fmtR(valPed)} total />
     </div>
@@ -295,13 +299,18 @@ function CalcPanel({ snap, card }) {
 
   if (card === 'descontos') return (
     <div>
-      <FormulaBox title="Desconto por rupturas"
-        formula="Desconto = rupturas da loja (itens únicos) × valor unitário por cargo"
-        applied={`${ruptQtd} ruptura(s) × R$${ruptUnit}/item = ${fmtR(ruptDesc)}`} />
-      <CalcRow label="Rupturas contabilizadas" rule="Itens únicos (pedido × produto) com ruptura resolvida — toda a loja" value={`${ruptQtd} item(ns)`} highlight negative={ruptQtd > 0} />
-      <CalcRow label="Valor unitário" rule="OP: R$2,00 · Team Leader: R$3,00 · Supervisor: R$4,00" value={`R$${ruptUnit},00/item`} />
-      <CalcRow label="Escopo" rule="Todos da loja têm o mesmo desconto — rupturas são contadas no nível da loja" value="Loja toda" />
-      <CalcRow label="Total em descontos" value={fmtR(ruptDesc)} total negative={ruptDesc > 0} />
+      <FormulaBox title="Descontos aplicados"
+        formula="Total = desconto rupturas + desconto erros de clientes"
+        applied={`${fmtR(ruptDesc)} (rupturas) + ${fmtR(descErros)} (erros) = ${fmtR(ruptDesc + descErros)}`} />
+      <div style={{ fontWeight: 700, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', margin: '10px 0 4px' }}>Rupturas (escopo da loja)</div>
+      <CalcRow label="Rupturas da loja" rule="Itens únicos (pedido × produto) — todos da loja têm mesmo desconto" value={`${ruptQtd} item(ns)`} highlight negative={ruptQtd > 0} />
+      <CalcRow label="Valor unitário" rule="OP: R$2,00 · TL: R$3,00 · SUP: R$4,00" value={`R$${ruptUnit},00/item`} />
+      <CalcRow label="Desconto rupturas" value={fmtR(ruptDesc)} negative={ruptDesc > 0} />
+      <div style={{ fontWeight: 700, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', margin: '10px 0 4px' }}>Erros de clientes (escopo individual)</div>
+      <CalcRow label="Erros normais desta pessoa" rule="1 desconto por pedido com erro — R$10,23/pedido" value={`${errosNorm} pedido(s)`} highlight negative={errosNorm > 0} />
+      <CalcRow label="Erros graves desta pessoa" rule="1 desconto por pedido com erro grave — R$15,34/pedido" value={`${errosGrav} pedido(s)`} highlight negative={errosGrav > 0} />
+      <CalcRow label="Desconto erros" value={fmtR(descErros)} negative={descErros > 0} />
+      <CalcRow label="Total em descontos" value={fmtR(ruptDesc + descErros)} total negative={(ruptDesc + descErros) > 0} />
     </div>
   )
 
@@ -586,9 +595,9 @@ export default function PerformanceFeedbackPage({ feedbackIndex, weekBundles, on
               <SummaryCard title="Ganho abastecimento" value={snap.valor_bonus_abastecimento_pre_gate} prefix="+R$" color="var(--green)"
                 subtitle={`Nota ${fmtPctRaw(snap.nota_abastecimento_final)} → ${fmtPctRaw(snap.pct_pagamento_tier_abastecimento * 100)} do teto`}
                 active={activeCard === 'abastecimento'} onClick={() => setActiveCard(v => v === 'abastecimento' ? null : 'abastecimento')} />
-              <SummaryCard title="Desconto rupturas" value={snap.desconto_ruptura} prefix="−R$" color="var(--red)"
-                subtitle={`${snap.rupturas_count} ruptura(s) × R$${UNIT_RUPT(snap.funcao_bucket)}/item`}
-                note="Contagem da loja — afeta todos"
+              <SummaryCard title="Descontos totais" value={(Number(snap.desconto_ruptura||0)+Number(snap.desconto_erros||0))} prefix="−R$" color="var(--red)"
+                subtitle={`Rupturas R$${fmtR(snap.desconto_ruptura||0)} + Erros R$${fmtR(snap.desconto_erros||0)}`}
+                note={`${snap.rupturas_count||0} rupt. (loja) · ${(snap.erros_normais||0)+(snap.erros_graves||0)} erros (pessoal)`}
                 active={activeCard === 'descontos'} onClick={() => setActiveCard(v => v === 'descontos' ? null : 'descontos')} />
               <SummaryCard title="Total pago" value={snap.valor_final_bonus}
                 subtitle={snap.gate_loja_80_flag || snap.gate_foto_flag || snap.assiduidade_any_flag ? 'Zerado por gate' : `${fmtR(snap.valor_bonus_pedidos_pre_gate)} + ${fmtR(snap.valor_bonus_abastecimento_pre_gate)}`}
