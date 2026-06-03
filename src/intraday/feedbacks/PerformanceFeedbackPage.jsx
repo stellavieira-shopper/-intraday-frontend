@@ -402,6 +402,68 @@ function TurbosTable({ pedidos }) {
   )
 }
 
+// ── Tabela de erros de clientes da pessoa ────────────────────────────────────
+function ErrosTable({ erros, totalDescontos }) {
+  const list = erros || []
+  const penalizados = list.filter(e => e.considerar === 'Considerar').length
+  return (
+    <Card>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+        <div>
+          <SectionTitle style={{ margin: 0 }}>Erros registrados</SectionTitle>
+          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
+            {penalizados} com impacto no cálculo desta pessoa.
+          </div>
+        </div>
+        {totalDescontos > 0 && (
+          <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--red)' }}>
+            − {Number(totalDescontos).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </span>
+        )}
+      </div>
+      {list.length === 0 && (
+        <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>Nenhum erro registrado nesta semana.</div>
+      )}
+      {list.length > 0 && (
+        <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: 300, borderRadius: 6, border: '1px solid var(--border)' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
+            <thead>
+              <tr>
+                {['Data','Pedido','Produto','Considerar','Grave','Responsabilidade','Erro','Link'].map(h => (
+                  <th key={h} style={{ padding: '6px 10px', textAlign: 'left', color: 'var(--text-muted)', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', position: 'sticky', top: 0, background: '#fff', zIndex: 1, borderBottom: '2px solid var(--border)', whiteSpace: 'nowrap' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {list.map((e, i) => {
+                const isGrave = ['SIM','GRAVE'].includes((e.grave||'').toUpperCase().trim())
+                return (
+                  <tr key={i} style={{ borderBottom: '1px solid var(--border-light)', background: i % 2 === 0 ? 'transparent' : '#fafbfc' }}>
+                    <td style={{ padding: '6px 10px', whiteSpace: 'nowrap', color: 'var(--text-muted)' }}>{e.data_entrega || '—'}</td>
+                    <td style={{ padding: '6px 10px', fontFamily: 'monospace', fontSize: 10, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{e.cod_pedido}</td>
+                    <td style={{ padding: '6px 10px', color: 'var(--text)' }}>{e.produto || '—'}</td>
+                    <td style={{ padding: '6px 10px' }}>
+                      <span style={{ background: '#fde8e8', color: '#c0392b', borderRadius: 3, padding: '1px 6px', fontSize: 10, fontWeight: 700 }}>{e.considerar}</span>
+                    </td>
+                    <td style={{ padding: '6px 10px', fontWeight: 700, color: isGrave ? 'var(--red)' : 'var(--text-muted)' }}>{e.grave || '—'}</td>
+                    <td style={{ padding: '6px 10px', color: 'var(--text)' }}>{e.responsabilidade || '—'}</td>
+                    <td style={{ padding: '6px 10px', color: 'var(--text)', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={e.erro}>{e.erro || '—'}</td>
+                    <td style={{ padding: '6px 10px' }}>
+                      {e.link_drive
+                        ? <a href={e.link_drive} target="_blank" rel="noreferrer" style={{ color: 'var(--blue)', fontSize: 11 }}>Ver evidência</a>
+                        : <span style={{ color: 'var(--text-dim)' }}>—</span>}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Card>
+  )
+}
+
 // ── Tabela de rupturas da loja ────────────────────────────────────────────────
 function RupturasTable({ rupturas }) {
   const list = rupturas || []
@@ -619,6 +681,10 @@ export default function PerformanceFeedbackPage({ feedbackIndex, weekBundles, on
 
             {/* Pedidos turbo/express */}
             <TurbosTable pedidos={snap.pedidos_turbo || []} />
+
+            {/* Erros de clientes desta pessoa */}
+            <ErrosTable erros={(bundle.erros_por_pessoa || {})[`${snap.store_code}|${snap.nome}`] || []}
+                        totalDescontos={Number(snap.desconto_erros || 0)} />
 
             {/* Rupturas da loja */}
             <RupturasTable rupturas={(bundle.rupturas_por_loja || {})[snap.store_code] || []} />
