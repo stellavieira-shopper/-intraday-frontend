@@ -42,7 +42,8 @@ export default function FeedbacksPage({ onVoltar }) {
   }, [])
 
   const handleWeekLoad = useCallback(async (weekId) => {
-    if (weekBundles[weekId]) return
+    // Re-busca se o bundle existente não tiver erros_por_pessoa (versão antiga em cache)
+    if (weekBundles[weekId] && weekBundles[weekId].erros_por_pessoa !== undefined) return
     setBundleError(null)
     try {
       const { year_ref, week_ref } = parseWeekId(weekId)

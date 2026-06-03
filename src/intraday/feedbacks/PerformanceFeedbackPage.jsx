@@ -251,8 +251,8 @@ function CalcPanel({ snap, card }) {
   const absComp    = cargo === 'SUPERVISOR' ? '100% da loja' : cargo === 'TEAM_LIDER' ? '60% turno + 40% loja' : '70% individual + 30% turno'
   const tierLabel  = tier >= 1.0 ? 'Top — 100%' : tier >= 0.95 ? 'Alta — 95%' : tier >= 0.80 ? 'Média — 80%' : tier >= 0.60 ? 'Baixa — 60%' : tier >= 0.40 ? 'Mínima — 40%' : 'Zero — 0%'
   const tetoBase   = cargo === 'SUPERVISOR' ? 440 : cargo === 'TEAM_LIDER' ? 330 : 220
-  const propPed    = cargo === 'SUPERVISOR' ? '50% pedidos' : snap.turno_bucket === 'NOITE' ? '30% pedidos' : snap.turno_bucket === 'MANHA' ? '70% pedidos' : '100% pedidos'
-  const propAbs    = cargo === 'SUPERVISOR' ? '50% abastecimento' : snap.turno_bucket === 'NOITE' ? '70% abastecimento' : snap.turno_bucket === 'MANHA' ? '30% abastecimento' : '0% abastecimento'
+  const propPed    = cargo === 'SUPERVISOR' ? '50% pedidos' : snap.turno_bucket === 'NOITE' ? '30% pedidos' : '100% pedidos'
+  const propAbs    = cargo === 'SUPERVISOR' ? '50% abastecimento' : snap.turno_bucket === 'NOITE' ? '70% abastecimento' : '0% abastecimento'
 
   if (card === 'teto') return (
     <div>
