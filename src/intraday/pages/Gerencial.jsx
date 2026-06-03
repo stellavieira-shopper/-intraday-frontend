@@ -29,12 +29,14 @@ function slaLoja(l) {
 export default function Gerencial({ onLojaClick, onPerformanceClick, onFeedbacksClick, user, onLogout }) {
   const [dataInicio, setDataInicio] = useState(hoje())
   const [dataFim, setDataFim]       = useState(hoje())
-  const [lojas, setLojas]           = useState([])
-  const [loading, setLoading]         = useState(false)
-  const [refreshing, setRefreshing]   = useState(false)
-  const [erro, setErro]               = useState(null)
-  const [ultimaAtt, setUltimaAtt]     = useState(null)
-  const [autoRefresh, setAutoRefresh] = useState(false)
+  const [lojas, setLojas]               = useState([])
+  const [loading, setLoading]           = useState(false)
+  const [refreshing, setRefreshing]     = useState(false)
+  const [bqRefreshing, setBqRefreshing] = useState(false)
+  const [fromCache, setFromCache]       = useState(false)
+  const [erro, setErro]                 = useState(null)
+  const [ultimaAtt, setUltimaAtt]       = useState(null)
+  const [autoRefresh, setAutoRefresh]   = useState(false)
 
   function handleDateChange({ dataInicio: ini, dataFim: fim }) {
     setDataInicio(ini)
@@ -50,8 +52,9 @@ export default function Gerencial({ onLojaClick, onPerformanceClick, onFeedbacks
         params: { data_inicio: dataInicio, data_fim: dataFim }
       })
       const sorted = (resp.lojas || []).sort((a, b) => slaLoja(a) - slaLoja(b))
-      // só atualiza a tela quando os dados novos chegaram completos
       setLojas(sorted)
+      setFromCache(!!resp.fromCache)
+      setBqRefreshing(!!resp.refreshing)
       setUltimaAtt(new Date().toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo' }))
     } catch (e) {
       setErro(e.response?.data?.erro || e.message || 'Erro ao carregar dados.')
@@ -118,8 +121,13 @@ export default function Gerencial({ onLojaClick, onPerformanceClick, onFeedbacks
             <input type="checkbox" checked={autoRefresh} onChange={e => setAutoRefresh(e.target.checked)} />
             Auto (1min)
           </label>
+          {bqRefreshing && (
+            <span style={{ fontSize: 11, color: '#f39c12', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+              ⟳ Atualizando dados...
+            </span>
+          )}
           <button className="btn-refresh" onClick={handleAtualizar} disabled={loading || refreshing}>
-            {refreshing ? '⏳ Atualizando...' : (loading && lojas.length > 0) ? '⏳ Sincronizando...' : '↺ Atualizar'}
+            {refreshing ? '⏳ Atualizando...' : (loading && lojas.length > 0) ? '⏳' : '↺ Atualizar'}
           </button>
           {user && (
             <div className="topbar-user">
