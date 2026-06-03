@@ -46,8 +46,15 @@ export default function DateFilter({ dataInicio, dataFim, onChange }) {
 
   function atalho(getRange) {
     const { ini, fim } = getRange()
-    if (modo === 'dia') aplicar(ini, fim === ini ? ini : ini) // dia: usa apenas inicio
-    else aplicar(ini, fim)
+    if (ini !== fim) {
+      // range (7 dias, 30 dias) → força modo período
+      setModo('periodo')
+      aplicar(ini, fim)
+    } else {
+      // dia único (Hoje, Ontem)
+      setModo('dia')
+      aplicar(ini, ini)
+    }
   }
 
   // Label resumida exibida quando está fechado
