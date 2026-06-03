@@ -159,7 +159,9 @@ function GatesSection({ snap }) {
 function SummaryCard({ title, value, prefix = 'R$', color, subtitle, note, active, onClick }) {
   const borderColor = active ? 'var(--shopper-red)' : 'var(--border)'
   return (
-    <button type="button" onClick={onClick} style={{
+    <div role="button" tabIndex={0} onClick={onClick}
+      onKeyDown={e => e.key === 'Enter' && onClick && onClick()}
+      style={{
       background: active ? '#1a1f2e' : '#fff',
       border: `2px solid ${borderColor}`,
       borderRadius: 'var(--radius)', padding: '16px', cursor: 'pointer',
@@ -179,7 +181,7 @@ function SummaryCard({ title, value, prefix = 'R$', color, subtitle, note, activ
       <div style={{ fontSize: 11, color: active ? 'var(--shopper-red)' : 'var(--text-muted)', marginTop: 10, fontWeight: 600 }}>
         {active ? '▲ Fechar' : '▼ Ver cálculo'}
       </div>
-    </button>
+    </div>
   )
 }
 
@@ -230,6 +232,9 @@ function CalcPanel({ snap, card }) {
   const ruptQtd   = Number(snap.rupturas_count            || 0)
   const ruptDesc  = Number(snap.desconto_ruptura          || 0)
   const ruptUnit  = UNIT_RUPT(snap.funcao_bucket)
+  const errosNorm  = Number(snap.erros_normais || 0)
+  const errosGrav  = Number(snap.erros_graves  || 0)
+  const descErros  = Number(snap.desconto_erros || 0)
   const preGate   = Math.max(bruto - ruptDesc - descErros, 0)
   const bolsoPed  = Number(snap.bolso_pedidos             || 0)
   const bolsoAbs  = Number(snap.bolso_abastecimento       || 0)
@@ -238,9 +243,6 @@ function CalcPanel({ snap, card }) {
   const nota      = Number(snap.nota_abastecimento_final         || 0)
   const tier      = Number(snap.pct_pagamento_tier_abastecimento || 0)
   const final      = Number(snap.valor_final_bonus || 0)
-  const errosNorm  = Number(snap.erros_normais || 0)
-  const errosGrav  = Number(snap.erros_graves  || 0)
-  const descErros  = Number(snap.desconto_erros || 0)
   const cargo     = snap.funcao_bucket
   const gateAtivo = snap.gate_loja_80_flag || snap.gate_foto_flag || snap.assiduidade_any_flag
 
@@ -509,6 +511,44 @@ function RupturasTable({ rupturas }) {
   )
 }
 
+// ── Seletor de pessoa com busca por texto ─────────────────────────────────────
+function PessoaSelect({ people, value, onChange, selectStyle }) {
+  const [busca, setBusca] = useState('')
+
+  const filtrados = busca.trim()
+    ? people.filter(p => p.nome.toLowerCase().includes(busca.toLowerCase()))
+    : people
+
+  // Garante que o value do select seja sempre um dos filtrados
+  const valueAtual = filtrados.find(p => p._pid === value)
+    ? value
+    : ''
+
+  return (
+    <div style={{ display: 'flex', gap: 6, flex: 1 }}>
+      <input
+        type="text"
+        placeholder="Buscar por nome..."
+        value={busca}
+        onChange={e => setBusca(e.target.value)}
+        style={{ ...selectStyle, minWidth: 160, flex: '0 0 auto' }}
+      />
+      <select
+        style={{ ...selectStyle, flex: 1 }}
+        value={valueAtual}
+        onChange={e => { onChange(e.target.value); setBusca('') }}
+      >
+        {!valueAtual && <option value="">— selecione —</option>}
+        {filtrados.map(p => (
+          <option key={p._pid} value={p._pid}>
+            {p.nome} · {CARGO[p.funcao_bucket] || p.funcao_bucket}
+          </option>
+        ))}
+      </select>
+    </div>
+  )
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function PerformanceFeedbackPage({ feedbackIndex, weekBundles, onWeekLoad, onBack }) {
   const weeks = useMemo(() => (feedbackIndex || []).map(e => {
@@ -556,6 +596,8 @@ export default function PerformanceFeedbackPage({ feedbackIndex, weekBundles, on
       {/* Topbar */}
       <div className="intraday-topbar">
         <div className="intraday-topbar__brand">
+          <button type="button" className="btn-voltar" onClick={onBack} style={{ marginRight: 8 }}>← Voltar</button>
+          <div className="brand-divider" />
           <img src="/shopper-icon.avif" alt="Shopper" className="topbar-icon" />
           <div className="brand-divider" />
           <div>
@@ -563,9 +605,7 @@ export default function PerformanceFeedbackPage({ feedbackIndex, weekBundles, on
             <div className="brand-title">Feedback de Bonificação</div>
           </div>
         </div>
-        <div className="intraday-topbar__right">
-          <button type="button" className="btn-voltar" onClick={onBack}>← Voltar</button>
-        </div>
+        <div className="intraday-topbar__right" />
       </div>
 
       {/* Barra de filtros */}
@@ -592,11 +632,9 @@ export default function PerformanceFeedbackPage({ feedbackIndex, weekBundles, on
             <option value="NOITE">Noite</option>
           </select>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>Pessoa</span>
-          <select style={selectStyle} value={selPerson} onChange={e => setSelPerson(e.target.value)}>
-            {people.map(p => <option key={p._pid} value={p._pid}>{p.nome} · {CARGO[p.funcao_bucket] || p.funcao_bucket}</option>)}
-          </select>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
+          <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Pessoa</span>
+          <PessoaSelect people={people} value={selPerson} onChange={setSelPerson} selectStyle={selectStyle} />
         </div>
         {snap && (
           <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--text-muted)' }}>
