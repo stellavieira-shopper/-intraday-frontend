@@ -159,7 +159,7 @@ function GatesSection({ snap }) {
 function SummaryCard({ title, value, prefix = 'R$', color, subtitle, note, active, onClick }) {
   const borderColor = active ? 'var(--shopper-red)' : 'var(--border)'
   return (
-    <button onClick={onClick} style={{
+    <button type="button" onClick={onClick} style={{
       background: active ? '#1a1f2e' : '#fff',
       border: `2px solid ${borderColor}`,
       borderRadius: 'var(--radius)', padding: '16px', cursor: 'pointer',
@@ -564,7 +564,7 @@ export default function PerformanceFeedbackPage({ feedbackIndex, weekBundles, on
           </div>
         </div>
         <div className="intraday-topbar__right">
-          <button className="btn-voltar" onClick={onBack}>← Voltar</button>
+          <button type="button" className="btn-voltar" onClick={onBack}>← Voltar</button>
         </div>
       </div>
 
@@ -673,7 +673,7 @@ export default function PerformanceFeedbackPage({ feedbackIndex, weekBundles, on
                   <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>
                     {{ teto: 'Composição do teto semanal', pedidos: 'Cálculo — pedidos', abastecimento: 'Cálculo — abastecimento', descontos: 'Cálculo — rupturas e descontos', final: 'Total efetivamente pago' }[activeCard]}
                   </div>
-                  <button onClick={() => setActiveCard(null)} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 6, padding: '4px 12px', cursor: 'pointer', fontSize: 12, color: 'var(--text-muted)' }}>Fechar</button>
+                  <button type="button" onClick={() => setActiveCard(null)} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 6, padding: '4px 12px', cursor: 'pointer', fontSize: 12, color: 'var(--text-muted)' }}>Fechar</button>
                 </div>
                 <CalcPanel snap={snap} card={activeCard} />
               </Card>
