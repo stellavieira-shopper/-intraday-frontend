@@ -524,7 +524,7 @@ export default function PerformanceFeedbackPage({ feedbackIndex, weekBundles, on
 
   useEffect(() => { if (weeks.length && !selWeek) setSelWeek(weeks[0].id) }, [weeks])
   useEffect(() => { if (selWeek) onWeekLoad(selWeek) }, [selWeek])
-  useEffect(() => { setActiveCard(null) }, [selPerson, selWeek])
+  useEffect(() => { setActiveCard(null) }, [selWeek])
 
   const bundle    = selWeek ? weekBundles[selWeek] : null
   const snapshots = bundle?.snapshots || []
@@ -658,7 +658,7 @@ export default function PerformanceFeedbackPage({ feedbackIndex, weekBundles, on
                 subtitle={`Nota ${fmtPctRaw(snap.nota_abastecimento_final)} → ${fmtPctRaw(snap.pct_pagamento_tier_abastecimento * 100)} do teto`}
                 active={activeCard === 'abastecimento'} onClick={() => setActiveCard(v => v === 'abastecimento' ? null : 'abastecimento')} />
               <SummaryCard title="Descontos totais" value={(Number(snap.desconto_ruptura||0)+Number(snap.desconto_erros||0))} prefix="−R$" color="var(--red)"
-                subtitle={`Rupturas R$${fmtR(snap.desconto_ruptura||0)} + Erros R$${fmtR(snap.desconto_erros||0)}`}
+                subtitle={`Rupturas ${fmtR(snap.desconto_ruptura||0)} + Erros ${fmtR(snap.desconto_erros||0)}`}
                 note={`${snap.rupturas_count||0} rupt. (loja) · ${(snap.erros_normais||0)+(snap.erros_graves||0)} erros (pessoal)`}
                 active={activeCard === 'descontos'} onClick={() => setActiveCard(v => v === 'descontos' ? null : 'descontos')} />
               <SummaryCard title="Total pago" value={snap.valor_final_bonus}
