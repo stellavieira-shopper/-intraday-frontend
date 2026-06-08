@@ -118,9 +118,6 @@ export default function LojaCard({ loja, dataInicio, dataFim, onClick }) {
         <span>{loja.loja || loja.nome_loja || ''}</span>
         <span className="store-foot-cta">Abrir loja <ChevronRight /></span>
       </div>
-
-      {/* V2: colored SLA strip at the bottom of the card */}
-      <div className={`store-card-strip ${slaStatus(pctSla)}`} />
     </div>
   )
 }
