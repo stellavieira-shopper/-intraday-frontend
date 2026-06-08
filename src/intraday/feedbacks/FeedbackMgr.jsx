@@ -42,11 +42,21 @@ const slaToneFMgr = (v) => {
 function aggregateStoresFMgr(snapshots) {
   const byStore = {};
   (snapshots || []).forEach((snap) => {
-    const storeId = snap.identity.store_id;
+    // Support both V1 nested format (snap.identity.*) and V2 flat format (snap.store_code, snap.nome, etc.)
+    const id = snap.identity || {};
+    const storeId   = id.store_id   || snap.store_code  || snap.nome_loja || 'unknown';
+    const storeName = id.store_name  || snap.nome_loja   || storeId;
+    const personId  = id.person_id   || snap.store_code  || snap.nome || storeId;
+    const personName= id.name        || snap.nome        || '—';
+    const role      = id.role        || snap.role        || null;
+    const roleLabel = id.role_label  || ROLE_SHORT[role] || role || '';
+    const shiftId   = id.shift_id    || snap.shift_id    || null;
+    const shiftLabel= id.shift_label || (shiftId ? SHIFT_LABEL[shiftId] : '');
+
     if (!byStore[storeId]) {
       byStore[storeId] = {
         storeId,
-        storeName: snap.identity.store_name || storeId,
+        storeName,
         people: [],
         totalPago: 0,
         elegiveis: 0,
@@ -60,9 +70,12 @@ function aggregateStoresFMgr(snapshots) {
       };
     }
     const st = byStore[storeId];
-    const valor = (snap.summary && snap.summary.bonus_final) || 0;
-    const desc  = (snap.summary && snap.summary.discounts_total) || 0;
-    const max   = (snap.summary && snap.summary.max_possible_total) || 0;
+
+    // Support both V1 (snap.summary.*) and V2 flat (snap.valor_final_bonus, etc.)
+    const summary = snap.summary || {};
+    const valor = summary.bonus_final    ?? snap.valor_final_bonus    ?? 0;
+    const desc  = summary.discounts_total ?? snap.total_descontos     ?? 0;
+    const max   = summary.max_possible_total ?? snap.teto_bonus       ?? 0;
 
     const gatesStore = (snap.prerequisites && snap.prerequisites.store) || [];
     const gatesIndividual = (snap.prerequisites && snap.prerequisites.individual) || [];
@@ -75,24 +88,24 @@ function aggregateStoresFMgr(snapshots) {
     }
 
     st.people.push({
-      personId: snap.identity.person_id,
-      name: snap.identity.name,
-      role: snap.identity.role,
-      roleLabel: snap.identity.role_label || ROLE_SHORT[snap.identity.role] || snap.identity.role,
-      shiftId: snap.identity.shift_id || null,
-      shiftLabel: snap.identity.shift_label || (snap.identity.shift_id ? SHIFT_LABEL[snap.identity.shift_id] : ''),
+      personId,
+      name: personName,
+      role,
+      roleLabel,
+      shiftId,
+      shiftLabel,
       valorPago: valor,
       descontos: desc,
       maxPossivel: max,
-      ordersPaid: (snap.summary && snap.summary.orders_paid) || 0,
-      supplyPaid: (snap.summary && snap.summary.supply_paid) || 0,
+      ordersPaid: summary.orders_paid || 0,
+      supplyPaid: summary.supply_paid || 0,
       mainRate: snap.orders ? snap.orders.main_rate_numeric : null,
       gatesStore,
       gatesIndividual,
       gatesComponent,
     });
-    st.totalPago     += valor;
-    st.elegiveis     += 1;
+    st.totalPago      += valor;
+    st.elegiveis      += 1;
     st.totalDescontos += desc;
     st.maxPossivel    += max;
     if (valor > 0) st.receberam += 1;
