@@ -139,6 +139,27 @@ export default function Gerencial({ onLojaClick, onVoltar, user, onLogout }) {
   const saudaveis = saudes.filter(s => s.variant === 'saudavel').length
   const firstName = user?.name?.split(' ')[0] || ''
 
+  // Aggregate KPIs across all stores (V1 style)
+  const totals = lojas.reduce((acc, l) => {
+    acc.total      += Number(l.total_pedidos)       || 0
+    acc.comSla     += Number(l.pedidos_com_sla)     || 0
+    acc.dentroSla  += Number(l.pedidos_dentro_sla)  || 0
+    acc.foraSla    += Number(l.pedidos_fora_sla)    || 0
+    acc.comRuptura += Number(l.pedidos_com_ruptura) || 0
+    acc.finalizados+= Number(l.pedidos_finalizados) || 0
+    acc.comFoto    += Number(l.pedidos_com_foto)    || 0
+    return acc
+  }, { total: 0, comSla: 0, dentroSla: 0, foraSla: 0, comRuptura: 0, finalizados: 0, comFoto: 0 })
+
+  const aggSlaPct     = totals.comSla     > 0 ? (totals.dentroSla / totals.comSla) * 100     : null
+  const aggRupturaPct = totals.total      > 0 ? (totals.comRuptura / totals.total) * 100     : null
+  const aggFotoPct    = totals.finalizados> 0 ? (totals.comFoto / totals.finalizados) * 100  : null
+  const semFotoTotal  = totals.finalizados - totals.comFoto
+
+  function slaStatus(p)     { if (p===null) return 'neutral'; return p>=95?'ok':p>=85?'warn':'bad' }
+  function ruptStatus(p)    { if (p===null) return 'neutral'; return p<2?'ok':p<5?'warn':'bad' }
+  function fotoStatus(p)    { if (p===null) return 'neutral'; return p>=90?'ok':p>=75?'warn':'bad' }
+
   return (
     <div className="intraday-layout">
       {/* V1-style topbar */}
@@ -259,14 +280,98 @@ export default function Gerencial({ onLojaClick, onVoltar, user, onLogout }) {
 
         {lojas.length > 0 && (
           <>
-            {/* Visão Gerencial header */}
-            <div className="gerencial-section-header">
-              <div className="gerencial-section-eyebrow">Visão Gerencial</div>
-              <div className="gerencial-section-title">{lojas.length} loja{lojas.length !== 1 ? 's' : ''} em operação</div>
-              <p className="gerencial-section-sub">Toque em uma loja para abrir a visão de supervisor</p>
+            {/* V1 page header */}
+            <div className="page-header">
+              <div className="page-title-wrap">
+                <span className="page-eyebrow">Visão Gerencial</span>
+                <h1 className="page-title">{lojas.length} loja{lojas.length !== 1 ? 's' : ''} em operação</h1>
+                <p className="page-subtitle">Toque em uma loja para abrir a visão de supervisor</p>
+              </div>
             </div>
 
-            <section className="lojas-grid">
+            {/* V1 aggregate KPI strip — 5 cards */}
+            <div className="kpi-grid kpi-grid-5">
+              <div className="kpi-card">
+                <div className="kpi-card-head">
+                  <span className="kpi-label">% SLA 5 min</span>
+                  <span className={`kpi-status-dot ${slaStatus(aggSlaPct)}`} />
+                </div>
+                <div className="kpi-value-row">
+                  <span className={`kpi-value ${slaStatus(aggSlaPct)}`}>{aggSlaPct !== null ? aggSlaPct.toFixed(1) : '—'}</span>
+                  {aggSlaPct !== null && <span className="kpi-unit">%</span>}
+                </div>
+                <div className="kpi-foot">
+                  <span className="kpi-raw"><strong>{totals.foraSla.toLocaleString('pt-BR')}</strong> de {totals.comSla.toLocaleString('pt-BR')} fora do prazo</span>
+                </div>
+                <div className="kpi-track"><div className={`kpi-track-fill ${slaStatus(aggSlaPct)}`} style={{ width: `${Math.min(aggSlaPct ?? 0, 100)}%` }} /></div>
+              </div>
+
+              <div className="kpi-card">
+                <div className="kpi-card-head">
+                  <span className="kpi-label">% com ruptura</span>
+                  <span className={`kpi-status-dot ${ruptStatus(aggRupturaPct)}`} />
+                </div>
+                <div className="kpi-value-row">
+                  <span className={`kpi-value ${ruptStatus(aggRupturaPct)}`}>{aggRupturaPct !== null ? aggRupturaPct.toFixed(1) : '—'}</span>
+                  {aggRupturaPct !== null && <span className="kpi-unit">%</span>}
+                </div>
+                <div className="kpi-foot">
+                  <span className="kpi-raw"><strong>{totals.comRuptura.toLocaleString('pt-BR')}</strong> pedidos com ruptura</span>
+                </div>
+                <div className="kpi-track"><div className={`kpi-track-fill ${ruptStatus(aggRupturaPct)}`} style={{ width: `${Math.min(aggRupturaPct ?? 0, 10) * 10}%` }} /></div>
+              </div>
+
+              <div className="kpi-card">
+                <div className="kpi-card-head">
+                  <span className="kpi-label">% com erro</span>
+                  <span className="kpi-status-dot ok" />
+                </div>
+                <div className="kpi-value-row">
+                  <span className="kpi-value ok">0.0</span>
+                  <span className="kpi-unit">%</span>
+                </div>
+                <div className="kpi-foot">
+                  <span className="kpi-raw"><strong>0</strong> pedidos com erro</span>
+                </div>
+                <div className="kpi-track"><div className="kpi-track-fill ok" style={{ width: '0%' }} /></div>
+              </div>
+
+              <div className="kpi-card">
+                <div className="kpi-card-head">
+                  <span className="kpi-label">% com foto</span>
+                  <span className={`kpi-status-dot ${fotoStatus(aggFotoPct)}`} />
+                </div>
+                <div className="kpi-value-row">
+                  <span className={`kpi-value ${fotoStatus(aggFotoPct)}`}>{aggFotoPct !== null ? aggFotoPct.toFixed(1) : '—'}</span>
+                  {aggFotoPct !== null && <span className="kpi-unit">%</span>}
+                </div>
+                <div className="kpi-foot">
+                  <span className="kpi-raw"><strong>{semFotoTotal.toLocaleString('pt-BR')}</strong> de {totals.finalizados.toLocaleString('pt-BR')} sem foto</span>
+                </div>
+                <div className="kpi-track"><div className={`kpi-track-fill ${fotoStatus(aggFotoPct)}`} style={{ width: `${Math.min(aggFotoPct ?? 0, 100)}%` }} /></div>
+              </div>
+
+              <div className="kpi-card">
+                <div className="kpi-card-head">
+                  <span className="kpi-label">Total de pedidos</span>
+                  <span className="kpi-status-dot neutral" />
+                </div>
+                <div className="kpi-value-row">
+                  <span className="kpi-value">{totals.total.toLocaleString('pt-BR')}</span>
+                </div>
+                <div className="kpi-foot">
+                  <span className="kpi-raw">{lojas.length} lojas · todos os turnos</span>
+                </div>
+                <div className="kpi-track"><div className="kpi-track-fill" style={{ width: `${Math.min(totals.total / 2500 * 100, 100)}%` }} /></div>
+              </div>
+            </div>
+
+            {/* V1 store grid */}
+            <div style={{ marginBottom: 12 }}>
+              <h2 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: 'var(--fg-1)' }}>Lojas</h2>
+              <p style={{ fontSize: 12, color: 'var(--fg-3)', margin: '2px 0 0' }}>Ordenadas por SLA · pior primeiro</p>
+            </div>
+            <div className="store-grid">
               {lojas.map((loja, i) => (
                 <LojaCard
                   key={i}
@@ -276,7 +381,7 @@ export default function Gerencial({ onLojaClick, onVoltar, user, onLogout }) {
                   onClick={(nome) => onLojaClick(nome, dataInicio, dataFim)}
                 />
               ))}
-            </section>
+            </div>
           </>
         )}
       </div>
