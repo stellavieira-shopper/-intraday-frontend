@@ -20,10 +20,55 @@ function fmtPeriodo(ini, fim) {
   return ini === fim ? fmt(ini) : `${fmt(ini)} → ${fmt(fim)}`
 }
 
+// Returns a human-friendly period label for the page header
+function periodoLabel(ini, fim) {
+  const tod = hoje()
+  // Compute yesterday
+  const ystDate = new Date(tod + 'T12:00:00Z')
+  ystDate.setUTCDate(ystDate.getUTCDate() - 1)
+  const ystr = ystDate.toISOString().slice(0, 10)
+  // 7 days: from 6 days ago to today
+  const d7 = new Date(tod + 'T12:00:00Z'); d7.setUTCDate(d7.getUTCDate() - 6)
+  const d7str = d7.toISOString().slice(0, 10)
+  // 30 days: from 29 days ago to today
+  const d30 = new Date(tod + 'T12:00:00Z'); d30.setUTCDate(d30.getUTCDate() - 29)
+  const d30str = d30.toISOString().slice(0, 10)
+
+  if (ini === tod && fim === tod) return 'Hoje'
+  if (ini === ystr && fim === ystr) return 'Ontem'
+  if (ini === d7str && fim === tod) return 'Últimos 7 dias'
+  if (ini === d30str && fim === tod) return 'Últimos 30 dias'
+  const fmt = iso => { const [, m, d] = iso.split('-'); return `${d}/${m}` }
+  return ini === fim ? fmt(ini) : `${fmt(ini)} → ${fmt(fim)}`
+}
+
 function slaLoja(l) {
   const comSla = Number(l.pedidos_com_sla) || 0
   const dentroSla = Number(l.pedidos_dentro_sla) || 0
   return comSla > 0 ? dentroSla / comSla : 1
+}
+
+function rupturaLoja(l) {
+  const total = Number(l.total_pedidos) || 0
+  const ruptura = Number(l.pedidos_com_ruptura) || 0
+  return total > 0 ? ruptura / total : 0
+}
+
+function fotoLoja(l) {
+  const fin = Number(l.pedidos_finalizados) || 0
+  const foto = Number(l.pedidos_com_foto) || 0
+  return fin > 0 ? foto / fin : 1
+}
+
+function sortLojas(list, by) {
+  const arr = [...list]
+  switch (by) {
+    case 'sla':     return arr.sort((a, b) => slaLoja(a)     - slaLoja(b))      // pior SLA primeiro
+    case 'ruptura': return arr.sort((a, b) => rupturaLoja(b) - rupturaLoja(a))  // mais ruptura primeiro
+    case 'foto':    return arr.sort((a, b) => fotoLoja(a)    - fotoLoja(b))     // pior foto primeiro
+    case 'pedidos': return arr.sort((a, b) => (Number(b.total_pedidos) || 0) - (Number(a.total_pedidos) || 0))
+    default:        return arr
+  }
 }
 
 // Home icon
@@ -58,6 +103,13 @@ function LogOutIcon() {
   )
 }
 
+const SORT_OPTIONS = [
+  { key: 'sla',     label: 'Pior SLA' },
+  { key: 'ruptura', label: 'Mais ruptura' },
+  { key: 'foto',    label: 'Menos foto' },
+  { key: 'pedidos', label: 'Mais pedidos' },
+]
+
 export default function Gerencial({ onLojaClick, onVoltar, user, onLogout }) {
   const [dataInicio, setDataInicio] = useState(hoje())
   const [dataFim, setDataFim]       = useState(hoje())
@@ -67,7 +119,10 @@ export default function Gerencial({ onLojaClick, onVoltar, user, onLogout }) {
   const [bqRefreshing, setBqRefreshing] = useState(false)
   const [fromCache, setFromCache]   = useState(false)
   const [erro, setErro]             = useState(null)
-  const [autoRefresh, setAutoRefresh] = useState(false)
+  // Auto-refresh: on by default when viewing today's data
+  const [autoRefresh, setAutoRefresh] = useState(true)
+  const [lastUpdated, setLastUpdated] = useState(null)
+  const [sortBy, setSortBy]           = useState('sla')
 
   // Poll BQ refresh status
   useEffect(() => {
@@ -96,10 +151,10 @@ export default function Gerencial({ onLojaClick, onVoltar, user, onLogout }) {
       const { data: resp } = await axios.get(`${API}/api/intraday/gerencial`, {
         params: { data_inicio: dataInicio, data_fim: dataFim }
       })
-      const sorted = (resp.lojas || []).sort((a, b) => slaLoja(a) - slaLoja(b))
-      setLojas(sorted)
+      setLojas(resp.lojas || [])
       setFromCache(!!resp.fromCache)
       setBqRefreshing(!!resp.refreshing)
+      setLastUpdated(new Date())
     } catch (e) {
       setErro(e.response?.data?.erro || e.message || 'Erro ao carregar dados.')
     } finally {
@@ -133,6 +188,14 @@ export default function Gerencial({ onLojaClick, onVoltar, user, onLogout }) {
     return () => clearInterval(id)
   }, [autoRefresh, refreshing])
 
+  // Format last-updated time
+  const fmtHora = (d) => d
+    ? d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    : '—'
+  const fmtData = (d) => d
+    ? d.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })
+    : ''
+
   const saudes    = lojas.map(calcSaude)
   const criticos  = saudes.filter(s => s.variant === 'critico').length
   const atencao   = saudes.filter(s => s.variant === 'atencao').length
@@ -156,9 +219,11 @@ export default function Gerencial({ onLojaClick, onVoltar, user, onLogout }) {
   const aggFotoPct    = totals.finalizados> 0 ? (totals.comFoto / totals.finalizados) * 100  : null
   const semFotoTotal  = totals.finalizados - totals.comFoto
 
-  function slaStatus(p)     { if (p===null) return 'neutral'; return p>=95?'ok':p>=85?'warn':'bad' }
-  function ruptStatus(p)    { if (p===null) return 'neutral'; return p<2?'ok':p<5?'warn':'bad' }
-  function fotoStatus(p)    { if (p===null) return 'neutral'; return p>=90?'ok':p>=75?'warn':'bad' }
+  function slaStatus(p)  { if (p===null) return 'neutral'; return p>=95?'ok':p>=85?'warn':'bad' }
+  function ruptStatus(p) { if (p===null) return 'neutral'; return p<2?'ok':p<5?'warn':'bad' }
+  function fotoStatus(p) { if (p===null) return 'neutral'; return p>=90?'ok':p>=75?'warn':'bad' }
+
+  const lojasOrdenadas = sortLojas(lojas, sortBy)
 
   return (
     <div className="intraday-layout">
@@ -184,12 +249,7 @@ export default function Gerencial({ onLojaClick, onVoltar, user, onLogout }) {
           onClick={handleAtualizar}
           disabled={loading || refreshing || bqRefreshing}
           title={bqRefreshing ? 'Aguarde — atualização em andamento' : 'Atualizar dados'}
-          style={{
-            padding: '7px 14px', borderRadius: 999, fontSize: 13, fontWeight: 700,
-            background: 'var(--shopper-navy)', color: '#fff', border: 'none', cursor: 'pointer',
-            opacity: (loading || refreshing || bqRefreshing) ? 0.5 : 1, transition: 'opacity .15s',
-            fontFamily: 'inherit',
-          }}
+          className="btn-atualizar"
         >
           {refreshing ? '⏳ Atualizando...' : (loading && lojas.length > 0) ? '⏳' : '↺ Atualizar'}
         </button>
@@ -219,13 +279,14 @@ export default function Gerencial({ onLojaClick, onVoltar, user, onLogout }) {
         </div>
       )}
 
-      {/* DateFilter bar — replaces the full datebar */}
-      <div style={{
-        background: '#fff', borderBottom: '1px solid var(--border-1)',
-        padding: '10px 32px', display: 'flex', alignItems: 'center',
-        justifyContent: 'space-between', gap: 16, flexWrap: 'wrap',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      {/* DateFilter bar com "Última atualização" à esquerda e auto-refresh chip + filtros à direita */}
+      <div className="intraday-datebar">
+        <div className="intraday-datebar__left">
+          <div className="last-update-label">Última atualização</div>
+          <div className="last-update-time">{fmtHora(lastUpdated)}</div>
+          <div className="last-update-date">{fmtData(lastUpdated)}</div>
+        </div>
+        <div className="intraday-datebar__right">
           {autoRefresh ? (
             <span className="auto-refresh-chip">
               <CheckIcon /> Atualização automática de minuto em minuto ligada
@@ -235,33 +296,12 @@ export default function Gerencial({ onLojaClick, onVoltar, user, onLogout }) {
               Atualização automática desligada
             </span>
           )}
+          <DateFilter dataInicio={dataInicio} dataFim={dataFim} onChange={handleDateChange} />
         </div>
-        <DateFilter dataInicio={dataInicio} dataFim={dataFim} onChange={handleDateChange} />
       </div>
 
       <div className="intraday-content">
         {erro && <div className="error-banner">⚠ {erro}</div>}
-
-        {/* Status mini-cards */}
-        <div className="status-bar">
-          <div className="status-bar__item status-bar__item--critico">
-            <span className="status-bar__num">{criticos}</span>
-            <span className="status-bar__lbl">Crítico</span>
-          </div>
-          <div className="status-bar__item status-bar__item--atencao">
-            <span className="status-bar__num">{atencao}</span>
-            <span className="status-bar__lbl">Atenção</span>
-          </div>
-          <div className="status-bar__item status-bar__item--saudavel">
-            <span className="status-bar__num">{saudaveis}</span>
-            <span className="status-bar__lbl">Saudável</span>
-          </div>
-          <div className="status-bar__divider" />
-          <div className="status-bar__item">
-            <span className="status-bar__num">{lojas.length}</span>
-            <span className="status-bar__lbl">Lojas Ativas</span>
-          </div>
-        </div>
 
         {loading && lojas.length === 0 && (
           <div className="loading-state">
@@ -280,12 +320,36 @@ export default function Gerencial({ onLojaClick, onVoltar, user, onLogout }) {
 
         {lojas.length > 0 && (
           <>
-            {/* V1 page header */}
+            {/* V1 page header — ACIMA dos mini-cards */}
             <div className="page-header">
               <div className="page-title-wrap">
                 <span className="page-eyebrow">Visão Gerencial</span>
-                <h1 className="page-title">{lojas.length} loja{lojas.length !== 1 ? 's' : ''} em operação</h1>
+                <h1 className="page-title">
+                  {lojas.length} loja{lojas.length !== 1 ? 's' : ''} em operação
+                  <span className="page-title-period"> · {periodoLabel(dataInicio, dataFim)}</span>
+                </h1>
                 <p className="page-subtitle">Toque em uma loja para abrir a visão de supervisor</p>
+              </div>
+            </div>
+
+            {/* Status mini-cards — ABAIXO do header */}
+            <div className="status-bar">
+              <div className="status-bar__item status-bar__item--critico">
+                <span className="status-bar__num">{criticos}</span>
+                <span className="status-bar__lbl">Crítico</span>
+              </div>
+              <div className="status-bar__item status-bar__item--atencao">
+                <span className="status-bar__num">{atencao}</span>
+                <span className="status-bar__lbl">Atenção</span>
+              </div>
+              <div className="status-bar__item status-bar__item--saudavel">
+                <span className="status-bar__num">{saudaveis}</span>
+                <span className="status-bar__lbl">Saudável</span>
+              </div>
+              <div className="status-bar__divider" />
+              <div className="status-bar__item">
+                <span className="status-bar__num">{lojas.length}</span>
+                <span className="status-bar__lbl">Lojas Ativas</span>
               </div>
             </div>
 
@@ -366,13 +430,27 @@ export default function Gerencial({ onLojaClick, onVoltar, user, onLogout }) {
               </div>
             </div>
 
-            {/* V1 store grid */}
-            <div style={{ marginBottom: 12 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: 'var(--fg-1)' }}>Lojas</h2>
-              <p style={{ fontSize: 12, color: 'var(--fg-3)', margin: '2px 0 0' }}>Ordenadas por SLA · pior primeiro</p>
+            {/* Seção de lojas com filtro de ordenação */}
+            <div className="lojas-section-header">
+              <div className="lojas-section-title-wrap">
+                <h2 className="lojas-section-title">Lojas</h2>
+                <p className="lojas-section-sub">Ordenadas por · {SORT_OPTIONS.find(o => o.key === sortBy)?.label}</p>
+              </div>
+              <div className="sort-tabs">
+                {SORT_OPTIONS.map(opt => (
+                  <button
+                    key={opt.key}
+                    className={`sort-tab${sortBy === opt.key ? ' sort-tab--active' : ''}`}
+                    onClick={() => setSortBy(opt.key)}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
             </div>
+
             <div className="store-grid">
-              {lojas.map((loja, i) => (
+              {lojasOrdenadas.map((loja, i) => (
                 <LojaCard
                   key={i}
                   loja={loja}

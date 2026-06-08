@@ -123,7 +123,8 @@ body {
 }
 .page-title-wrap { display: flex; flex-direction: column; gap: 6px; }
 .page-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--fg-3); }
-.page-title { font-size: 28px; font-weight: 900; color: #1A1A3A; margin: 0; letter-spacing: -.01em; line-height: 1.1; }
+.page-title { font-size: 30px; font-weight: 900; color: #1A1A3A; margin: 0; letter-spacing: -.01em; line-height: 1.1; }
+.page-title-period { font-size: 20px; font-weight: 600; color: var(--fg-3); letter-spacing: 0; }
 .page-subtitle { font-size: 14px; color: var(--fg-2); margin: 0; }
 
 /* ============================================================
@@ -613,7 +614,7 @@ body {
   justify-content: space-between;
   gap: 12px;
 }
-.store-name { font-size: 14px; font-weight: 800; color: var(--fg-1); line-height: 1.2; text-transform: uppercase; }
+.store-name { font-size: 16px; font-weight: 900; color: var(--fg-1); line-height: 1.2; text-transform: uppercase; }
 .store-pill {
   font-size: 10px; font-weight: 800;
   letter-spacing: 0.08em; text-transform: uppercase;
@@ -636,7 +637,7 @@ body {
 .store-metric-value {
   font-family: var(--font-numeric);
   font-variant-numeric: tabular-nums;
-  font-size: 20px; font-weight: 700;
+  font-size: 22px; font-weight: 700;
   color: var(--fg-1); line-height: 1;
 }
 .store-metric-value.ok      { color: #08956B; }
@@ -652,8 +653,46 @@ body {
 }
 .store-foot-cta {
   display: inline-flex; align-items: center; gap: 4px;
-  color: var(--shopper-navy); font-weight: 800;
+  color: var(--blue-light); font-weight: 800;
 }
+
+/* SLA status strip at the bottom of the store card (V2 keep) */
+.store-card-strip {
+  height: 4px; border-radius: 0 0 14px 14px;
+  margin: -16px -18px 0; /* bleed to card edges */
+  flex-shrink: 0;
+}
+.store-card-strip.ok   { background: var(--color-success); }
+.store-card-strip.warn { background: var(--color-warning); }
+.store-card-strip.bad  { background: var(--color-danger); }
+.store-card-strip.neutral { background: var(--border-2); }
+
+/* Atualizar button in topbar */
+.btn-atualizar {
+  padding: 7px 14px; border-radius: 999px; font-size: 13px; font-weight: 700;
+  background: var(--shopper-navy); color: #fff; border: none; cursor: pointer;
+  transition: opacity .15s; font-family: inherit;
+}
+.btn-atualizar:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-atualizar:hover:not(:disabled) { opacity: 0.88; }
+
+/* ============================================================
+   LOJAS SECTION HEADER + SORT TABS
+   ============================================================ */
+.lojas-section-header {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap; margin-bottom: 4px;
+}
+.lojas-section-title { font-size: 20px; font-weight: 900; margin: 0; color: var(--fg-1); }
+.lojas-section-sub   { font-size: 12px; color: var(--fg-3); margin: 3px 0 0; }
+.sort-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+.sort-tab {
+  padding: 5px 12px; border-radius: 999px; font-size: 12px; font-weight: 700;
+  border: 1px solid var(--border-1); background: #fff; color: var(--fg-2);
+  cursor: pointer; transition: all 140ms ease; font-family: inherit;
+}
+.sort-tab:hover { border-color: var(--shopper-navy); color: var(--shopper-navy); }
+.sort-tab--active { background: var(--shopper-navy); border-color: var(--shopper-navy); color: #fff; }
 
 /* ============================================================
    BADGES
