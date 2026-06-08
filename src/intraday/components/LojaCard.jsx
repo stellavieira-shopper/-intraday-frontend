@@ -68,7 +68,7 @@ export default function LojaCard({ loja, dataInicio, dataFim, onClick }) {
   const pillLabel = status === 'ok' ? 'Saudável' : status === 'warn' ? 'Atenção' : 'Crítico'
 
   return (
-    <div className="store-card" onClick={() => onClick(loja.loja || loja.nome_loja, dataInicio, dataFim)}>
+    <div className={`store-card store-card--${status}`} onClick={() => onClick(loja.loja || loja.nome_loja, dataInicio, dataFim)}>
       <div className="store-card-head">
         <div>
           <div className="store-name">{nome}</div>
@@ -118,9 +118,6 @@ export default function LojaCard({ loja, dataInicio, dataFim, onClick }) {
         <span>{loja.loja || loja.nome_loja || ''}</span>
         <span className="store-foot-cta">Abrir loja <ChevronRight /></span>
       </div>
-
-      {/* V2: colored SLA strip at the bottom of the card */}
-      <div className={`store-card-strip ${slaStatus(pctSla)}`} />
     </div>
   )
 }

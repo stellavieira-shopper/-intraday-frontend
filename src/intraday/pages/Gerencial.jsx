@@ -332,27 +332,6 @@ export default function Gerencial({ onLojaClick, onVoltar, user, onLogout }) {
               </div>
             </div>
 
-            {/* Status mini-cards — ABAIXO do header */}
-            <div className="status-bar">
-              <div className="status-bar__item status-bar__item--critico">
-                <span className="status-bar__num">{criticos}</span>
-                <span className="status-bar__lbl">Crítico</span>
-              </div>
-              <div className="status-bar__item status-bar__item--atencao">
-                <span className="status-bar__num">{atencao}</span>
-                <span className="status-bar__lbl">Atenção</span>
-              </div>
-              <div className="status-bar__item status-bar__item--saudavel">
-                <span className="status-bar__num">{saudaveis}</span>
-                <span className="status-bar__lbl">Saudável</span>
-              </div>
-              <div className="status-bar__divider" />
-              <div className="status-bar__item">
-                <span className="status-bar__num">{lojas.length}</span>
-                <span className="status-bar__lbl">Lojas Ativas</span>
-              </div>
-            </div>
-
             {/* V1 aggregate KPI strip — 5 cards */}
             <div className="kpi-grid kpi-grid-5">
               <div className="kpi-card">
@@ -427,6 +406,27 @@ export default function Gerencial({ onLojaClick, onVoltar, user, onLogout }) {
                   <span className="kpi-raw">{lojas.length} lojas · todos os turnos</span>
                 </div>
                 <div className="kpi-track"><div className="kpi-track-fill" style={{ width: `${Math.min(totals.total / 2500 * 100, 100)}%` }} /></div>
+              </div>
+            </div>
+
+            {/* Status mini-cards — ABAIXO do KPI strip */}
+            <div className="status-bar">
+              <div className="status-bar__item status-bar__item--critico">
+                <span className="status-bar__num">{criticos}</span>
+                <span className="status-bar__lbl">Crítico</span>
+              </div>
+              <div className="status-bar__item status-bar__item--atencao">
+                <span className="status-bar__num">{atencao}</span>
+                <span className="status-bar__lbl">Atenção</span>
+              </div>
+              <div className="status-bar__item status-bar__item--saudavel">
+                <span className="status-bar__num">{saudaveis}</span>
+                <span className="status-bar__lbl">Saudável</span>
+              </div>
+              <div className="status-bar__divider" />
+              <div className="status-bar__item">
+                <span className="status-bar__num">{lojas.length}</span>
+                <span className="status-bar__lbl">Lojas Ativas</span>
               </div>
             </div>
 

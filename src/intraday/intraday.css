@@ -124,7 +124,7 @@ body {
 .page-title-wrap { display: flex; flex-direction: column; gap: 6px; }
 .page-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--fg-3); }
 .page-title { font-size: 30px; font-weight: 900; color: #1A1A3A; margin: 0; letter-spacing: -.01em; line-height: 1.1; }
-.page-title-period { font-size: 20px; font-weight: 600; color: var(--fg-3); letter-spacing: 0; }
+.page-title-period { font-size: 30px; font-weight: 900; color: #1A1A3A; letter-spacing: -.01em; }
 .page-subtitle { font-size: 14px; color: var(--fg-2); margin: 0; }
 
 /* ============================================================
@@ -614,7 +614,7 @@ body {
   justify-content: space-between;
   gap: 12px;
 }
-.store-name { font-size: 16px; font-weight: 900; color: var(--fg-1); line-height: 1.2; text-transform: uppercase; }
+.store-name { font-size: 20px; font-weight: 900; color: var(--fg-1); line-height: 1.2; text-transform: uppercase; }
 .store-pill {
   font-size: 10px; font-weight: 800;
   letter-spacing: 0.08em; text-transform: uppercase;
@@ -637,7 +637,7 @@ body {
 .store-metric-value {
   font-family: var(--font-numeric);
   font-variant-numeric: tabular-nums;
-  font-size: 22px; font-weight: 700;
+  font-size: 32px; font-weight: 800;
   color: var(--fg-1); line-height: 1;
 }
 .store-metric-value.ok      { color: #08956B; }
@@ -656,16 +656,10 @@ body {
   color: var(--blue-light); font-weight: 800;
 }
 
-/* SLA status strip at the bottom of the store card (V2 keep) */
-.store-card-strip {
-  height: 4px; border-radius: 0 0 14px 14px;
-  margin: -16px -18px 0; /* bleed to card edges */
-  flex-shrink: 0;
-}
-.store-card-strip.ok   { background: var(--color-success); }
-.store-card-strip.warn { background: var(--color-warning); }
-.store-card-strip.bad  { background: var(--color-danger); }
-.store-card-strip.neutral { background: var(--border-2); }
+/* SLA status — left border strip (V2 style: linha lateral, não inferior) */
+.store-card--ok   { border-left: 4px solid var(--color-success); }
+.store-card--warn { border-left: 4px solid var(--color-warning); }
+.store-card--bad  { border-left: 4px solid var(--color-danger); }
 
 /* Atualizar button in topbar */
 .btn-atualizar {
