@@ -19,7 +19,15 @@ const STORE = code => {
   if (STORE_ALIAS[low]) return STORE_ALIAS[low]
   return low.split(' ').map(w => w ? w[0].toUpperCase() + w.slice(1) : '').join(' ')
 }
-const UNIT_RUPT = cargo => cargo === 'SUPERVISOR' ? 4 : cargo === 'TEAM_LIDER' ? 3 : 2
+// Retorna label da regra de desconto de ruptura pela faixa de taxa_completo_loja
+function rupturaFaixaLabel(taxaComPct) {
+  if (taxaComPct >= 99) return 'Sem desconto (≥99%)'
+  if (taxaComPct >= 98) return 'Faixa 98–99%'
+  if (taxaComPct >= 97) return 'Faixa 97–98%'
+  if (taxaComPct >= 96) return 'Faixa 96–97%'
+  if (taxaComPct >= 95) return 'Faixa 95–96%'
+  return 'Sem desconto (< 95% · mult.completo=0)'
+}
 
 function isoWeekDates(weekId) {
   const [y, wPart] = weekId.split('-W')
@@ -231,7 +239,7 @@ function CalcPanel({ snap, card }) {
   const bruto     = Number(snap.valor_obtido_base         || 0)
   const ruptQtd   = Number(snap.rupturas_count            || 0)
   const ruptDesc  = Number(snap.desconto_ruptura          || 0)
-  const ruptUnit  = UNIT_RUPT(snap.funcao_bucket)
+  const ruptFaixa = rupturaFaixaLabel(taxaCom * 100)
   const errosNorm  = Number(snap.erros_normais || 0)
   const errosGrav  = Number(snap.erros_graves  || 0)
   const descErros  = Number(snap.desconto_erros || 0)
@@ -278,7 +286,7 @@ function CalcPanel({ snap, card }) {
       <CalcRow label="Completos da loja" rule="< 95%: 0× · 95–98%: 0,8× · 98–99%: 1,5× · ≥99%: 2,0×" value={`${fmtPctRaw(taxaCom * 100)} → ${fmtX(mCom)}`} highlight />
       <CalcRow label="Fator final da loja" rule="0,7 × mult.sep + 0,3 × mult.completos" value={`${fator.toFixed(2)}×`} />
       <CalcRow label="Valor bruto de pedidos" rule="Faixa × fator" value={fmtR(bruto)} />
-      <CalcRow label="Desconto por rupturas" rule={`${ruptQtd} ruptura(s) da loja × R$${ruptUnit}/item`} value={`− ${fmtR(ruptDesc)}`} negative />
+      <CalcRow label="Desconto por rupturas" rule={`Faixa de completos: ${ruptFaixa}`} value={`− ${fmtR(ruptDesc)}`} negative={ruptDesc > 0} />
       <CalcRow label="Desconto por erros de clientes" rule={`${errosNorm} erro(s) normal × R$10,23 + ${errosGrav} grave × R$15,34`} value={`− ${fmtR(descErros)}`} negative={descErros > 0} />
       <CalcRow label="Resultado após descontos" value={fmtR(preGate)} total />
       <CalcRow label="Limite do componente (teto pedidos)" rule="Parcela máxima para pedidos" value={fmtR(bolsoPed)} />
@@ -305,8 +313,8 @@ function CalcPanel({ snap, card }) {
         formula="Total = desconto rupturas + desconto erros de clientes"
         applied={`${fmtR(ruptDesc)} (rupturas) + ${fmtR(descErros)} (erros) = ${fmtR(ruptDesc + descErros)}`} />
       <div style={{ fontWeight: 700, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', margin: '10px 0 4px' }}>Rupturas (escopo da loja)</div>
-      <CalcRow label="Rupturas da loja" rule="Itens únicos (pedido × produto) — todos da loja têm mesmo desconto" value={`${ruptQtd} item(ns)`} highlight negative={ruptQtd > 0} />
-      <CalcRow label="Valor unitário" rule="OP: R$2,00 · TL: R$3,00 · SUP: R$4,00" value={`R$${ruptUnit},00/item`} />
+      <CalcRow label="Rupturas da loja" rule="Todos da loja têm mesmo desconto (por faixa de completos)" value={`${ruptQtd} item(ns)`} highlight negative={ruptQtd > 0} />
+      <CalcRow label="Faixa de completos da loja" rule="<95%: zero · 95–96%: OP50/TL75/SUP100 · 96–97%: OP40/TL60/SUP80 · 97–98%: OP30/TL45/SUP60 · 98–99%: OP20/TL30/SUP40 · ≥99%: zero" value={ruptFaixa} highlight />
       <CalcRow label="Desconto rupturas" value={fmtR(ruptDesc)} negative={ruptDesc > 0} />
       <div style={{ fontWeight: 700, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', margin: '10px 0 4px' }}>Erros de clientes (escopo individual)</div>
       <CalcRow label="Erros normais desta pessoa" rule="1 desconto por pedido com erro — R$10,23/pedido" value={`${errosNorm} pedido(s)`} highlight negative={errosNorm > 0} />
@@ -483,29 +491,31 @@ function RupturasTable({ rupturas }) {
         <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>Nenhuma ruptura registrada para esta loja nesta semana.</div>
       )}
       {list.length > 0 && (
-        <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: 360, borderRadius: 6, border: '1px solid var(--border)' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
-            <thead>
-              <tr style={{ borderBottom: '2px solid var(--border)' }}>
-                {['#', 'Pedido', 'Produto', '−OP (R$2)', '−TL (R$3)', '−SUP (R$4)'].map(h => (
-                  <th key={h} style={{ padding: '6px 10px', textAlign: 'left', color: 'var(--text-muted)', fontWeight: 700, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', position: 'sticky', top: 0, background: '#fff', zIndex: 1 }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {list.map((r, i) => (
-                <tr key={i} style={{ borderBottom: '1px solid var(--border-light)', background: i % 2 === 0 ? 'transparent' : '#fafbfc' }}>
-                  <td style={{ padding: '7px 10px', color: 'var(--text-dim)', fontSize: 11 }}>{i + 1}</td>
-                  <td style={{ padding: '7px 10px', fontFamily: 'monospace', fontSize: 11, color: 'var(--text-muted)' }}>{r.cod_pedido}</td>
-                  <td style={{ padding: '7px 10px', color: 'var(--text)', fontWeight: 500 }}>{r.cod_produto || '—'}</td>
-                  <td style={{ padding: '7px 10px', color: 'var(--red)', fontWeight: 600 }}>−2,00</td>
-                  <td style={{ padding: '7px 10px', color: 'var(--red)', fontWeight: 600 }}>−3,00</td>
-                  <td style={{ padding: '7px 10px', color: 'var(--red)', fontWeight: 600 }}>−4,00</td>
+        <>
+          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8 }}>
+            O desconto é fixo por faixa do indicador de completo da loja — não por quantidade de item.
+          </div>
+          <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: 360, borderRadius: 6, border: '1px solid var(--border)' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid var(--border)' }}>
+                  {['#', 'Pedido', 'Produto'].map(h => (
+                    <th key={h} style={{ padding: '6px 10px', textAlign: 'left', color: 'var(--text-muted)', fontWeight: 700, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', position: 'sticky', top: 0, background: '#fff', zIndex: 1 }}>{h}</th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {list.map((r, i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid var(--border-light)', background: i % 2 === 0 ? 'transparent' : '#fafbfc' }}>
+                    <td style={{ padding: '7px 10px', color: 'var(--text-dim)', fontSize: 11 }}>{i + 1}</td>
+                    <td style={{ padding: '7px 10px', fontFamily: 'monospace', fontSize: 11, color: 'var(--text-muted)' }}>{r.cod_pedido}</td>
+                    <td style={{ padding: '7px 10px', color: 'var(--text)', fontWeight: 500 }}>{r.cod_produto || '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </Card>
   )

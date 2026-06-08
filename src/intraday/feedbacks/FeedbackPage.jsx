@@ -379,7 +379,7 @@ function SummaryCards({ report, activeCard, onToggle }) {
       label: 'Perdido em descontos',
       value: finance.totalDescontos,
       prefix: '−R$', valueClass: 'lose',
-      note: <><strong>{report.descontos.rupturas.qtd}</strong> ruptura(s) · <strong>{report.descontos.errosNormais.qtd}</strong> erro(s) · <strong>{report.descontos.errosGraves.qtd}</strong> grave(s)</>,
+      note: <><strong>{report.descontos.errosNormais.qtd}</strong> erro(s) normal · <strong>{report.descontos.errosGraves.qtd}</strong> erro(s) grave</>,
       subnote: <>Entram apenas eventos penalizados para <strong>{report.scopePenaltyLabel}</strong></>,
       cta: 'Ver cálculo', dark: false,
     },
