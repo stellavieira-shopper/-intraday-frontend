@@ -26,16 +26,50 @@ function slaLoja(l) {
   return comSla > 0 ? dentroSla / comSla : 1
 }
 
-export default function Gerencial({ onLojaClick, onPerformanceClick, onFeedbacksClick, user, onLogout }) {
+// Home icon
+function HomeIcon() {
+  return (
+    <svg width={16} height={16} viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+      <polyline points="9 22 9 12 15 12 15 22" />
+    </svg>
+  )
+}
+
+// Check icon
+function CheckIcon() {
+  return (
+    <svg width={13} height={13} viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  )
+}
+
+// LogOut icon
+function LogOutIcon() {
+  return (
+    <svg width={14} height={14} viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
+    </svg>
+  )
+}
+
+export default function Gerencial({ onLojaClick, onVoltar, user, onLogout }) {
   const [dataInicio, setDataInicio] = useState(hoje())
   const [dataFim, setDataFim]       = useState(hoje())
-  const [lojas, setLojas]               = useState([])
-  const [loading, setLoading]           = useState(false)
-  const [refreshing, setRefreshing]     = useState(false)
+  const [lojas, setLojas]           = useState([])
+  const [loading, setLoading]       = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
   const [bqRefreshing, setBqRefreshing] = useState(false)
-  const [fromCache, setFromCache]       = useState(false)
+  const [fromCache, setFromCache]   = useState(false)
+  const [erro, setErro]             = useState(null)
+  const [autoRefresh, setAutoRefresh] = useState(false)
 
-  // Polling independente do status de refresh — avisa todos os usuários
+  // Poll BQ refresh status
   useEffect(() => {
     let active = true
     const poll = async () => {
@@ -48,9 +82,6 @@ export default function Gerencial({ onLojaClick, onPerformanceClick, onFeedbacks
     const id = setInterval(poll, 5000)
     return () => { active = false; clearInterval(id) }
   }, [])
-  const [erro, setErro]                 = useState(null)
-  const [ultimaAtt, setUltimaAtt]       = useState(null)
-  const [autoRefresh, setAutoRefresh]   = useState(false)
 
   function handleDateChange({ dataInicio: ini, dataFim: fim }) {
     setDataInicio(ini)
@@ -69,10 +100,8 @@ export default function Gerencial({ onLojaClick, onPerformanceClick, onFeedbacks
       setLojas(sorted)
       setFromCache(!!resp.fromCache)
       setBqRefreshing(!!resp.refreshing)
-      setUltimaAtt(new Date().toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo' }))
     } catch (e) {
       setErro(e.response?.data?.erro || e.message || 'Erro ao carregar dados.')
-      // em caso de erro não limpa os dados anteriores
     } finally {
       setLoading(false)
     }
@@ -83,7 +112,6 @@ export default function Gerencial({ onLojaClick, onPerformanceClick, onFeedbacks
     setErro(null)
     try {
       await axios.post(`${API}/api/intraday/refresh`)
-      // só busca após o refresh completo — dados congelados durante a atualização
       await buscar()
     } catch (e) {
       setErro(e.response?.data?.erro || e.message || 'Erro ao atualizar tabela.')
@@ -94,7 +122,6 @@ export default function Gerencial({ onLojaClick, onPerformanceClick, onFeedbacks
 
   useEffect(() => { buscar() }, [buscar])
 
-  // Usa ref para o buscar mais recente — evita closure stale no setInterval
   const buscarRef = useRef(buscar)
   useEffect(() => { buscarRef.current = buscar }, [buscar])
 
@@ -110,49 +137,56 @@ export default function Gerencial({ onLojaClick, onPerformanceClick, onFeedbacks
   const criticos  = saudes.filter(s => s.variant === 'critico').length
   const atencao   = saudes.filter(s => s.variant === 'atencao').length
   const saudaveis = saudes.filter(s => s.variant === 'saudavel').length
-
-  const now = new Date()
-  const diaSemana = now.toLocaleDateString('pt-BR', { weekday: 'long', timeZone: 'America/Sao_Paulo' })
-  const diaCompleto = now.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', timeZone: 'America/Sao_Paulo' })
+  const firstName = user?.name?.split(' ')[0] || ''
 
   return (
     <div className="intraday-layout">
-      {/* Topbar */}
-      <div className="intraday-topbar">
-        <div className="intraday-topbar__brand">
-          <img src="/shopper-icon.avif" alt="Shopper" className="topbar-icon" />
-          <div className="brand-divider" />
-          <div>
-            <div className="brand-label">INTRADAY</div>
-            <div className="brand-title">Performance Operacional</div>
+      {/* V1-style topbar */}
+      <div className="top-bar">
+        <img src="/shopper-icon.avif" alt="Shopper" className="top-bar-logo-img" />
+        <div className="top-bar-divider" />
+        <div className="top-bar-context">
+          <span className="top-bar-eyebrow">Intraday</span>
+          <span className="top-bar-store">Performance Operacional</span>
+        </div>
+        <div className="top-bar-spacer" />
+        <button
+          className="top-bar-logout"
+          onClick={onVoltar}
+          title="Voltar ao menu"
+          style={{ marginRight: 8 }}
+        >
+          <HomeIcon />
+          <span className="top-bar-logout-text">Menu</span>
+        </button>
+        <button
+          onClick={handleAtualizar}
+          disabled={loading || refreshing || bqRefreshing}
+          title={bqRefreshing ? 'Aguarde — atualização em andamento' : 'Atualizar dados'}
+          style={{
+            padding: '7px 14px', borderRadius: 999, fontSize: 13, fontWeight: 700,
+            background: 'var(--shopper-navy)', color: '#fff', border: 'none', cursor: 'pointer',
+            opacity: (loading || refreshing || bqRefreshing) ? 0.5 : 1, transition: 'opacity .15s',
+            fontFamily: 'inherit',
+          }}
+        >
+          {refreshing ? '⏳ Atualizando...' : (loading && lojas.length > 0) ? '⏳' : '↺ Atualizar'}
+        </button>
+        {user && (
+          <div className="top-bar-user">
+            {user.picture && (
+              <img src={user.picture} alt={user.name} className="top-bar-avatar" referrerPolicy="no-referrer" />
+            )}
+            <span className="top-bar-username">{firstName}</span>
+            <button className="top-bar-logout" onClick={onLogout} title="Sair">
+              <LogOutIcon />
+              <span className="top-bar-logout-text">Sair</span>
+            </button>
           </div>
-        </div>
-        <div className="intraday-topbar__right">
-          <button className="btn-performance" onClick={onPerformanceClick} title="Performance Semanal">
-            📊 Performance
-          </button>
-          <button className="btn-performance" onClick={onFeedbacksClick} title="Feedbacks de bonificação">
-            💬 Feedbacks
-          </button>
-          <label className="auto-refresh-toggle">
-            <input type="checkbox" checked={autoRefresh} onChange={e => setAutoRefresh(e.target.checked)} />
-            Auto (1min)
-          </label>
-          <button className="btn-refresh" onClick={handleAtualizar} disabled={loading || refreshing || bqRefreshing}
-            title={bqRefreshing ? 'Aguarde — atualização em andamento' : 'Atualizar dados'}>
-            {refreshing ? '⏳ Atualizando...' : (loading && lojas.length > 0) ? '⏳' : '↺ Atualizar'}
-          </button>
-          {user && (
-            <div className="topbar-user">
-              {user.picture && <img src={user.picture} alt={user.name} className="topbar-avatar" referrerPolicy="no-referrer" />}
-              <span className="topbar-username">{user.name?.split(' ')[0]}</span>
-              <button className="btn-logout" onClick={onLogout} title="Sair">Sair</button>
-            </div>
-          )}
-        </div>
+        )}
       </div>
 
-      {/* Banner de atualização — visível para todos os usuários */}
+      {/* BQ refresh warning */}
       {bqRefreshing && (
         <div style={{
           background: '#fff3cd', borderBottom: '2px solid #f39c12',
@@ -164,23 +198,30 @@ export default function Gerencial({ onLojaClick, onPerformanceClick, onFeedbacks
         </div>
       )}
 
-      {/* Barra de data */}
-      <div className="intraday-datebar">
-        <div className="intraday-datebar__left">
-          <div className="last-update-label">Última atualização</div>
-          <div className="last-update-time">{ultimaAtt || '—'}</div>
-          <div className="last-update-date">{diaSemana.charAt(0).toUpperCase() + diaSemana.slice(1)}, {diaCompleto}</div>
+      {/* DateFilter bar — replaces the full datebar */}
+      <div style={{
+        background: '#fff', borderBottom: '1px solid var(--border-1)',
+        padding: '10px 32px', display: 'flex', alignItems: 'center',
+        justifyContent: 'space-between', gap: 16, flexWrap: 'wrap',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {autoRefresh ? (
+            <span className="auto-refresh-chip">
+              <CheckIcon /> Atualização automática de minuto em minuto ligada
+            </span>
+          ) : (
+            <span className="auto-refresh-chip auto-refresh-chip-off">
+              Atualização automática desligada
+            </span>
+          )}
         </div>
-        <div className="intraday-datebar__right">
-          <DateFilter dataInicio={dataInicio} dataFim={dataFim} onChange={handleDateChange} />
-        </div>
+        <DateFilter dataInicio={dataInicio} dataFim={dataFim} onChange={handleDateChange} />
       </div>
 
       <div className="intraday-content">
-        {/* Erro */}
         {erro && <div className="error-banner">⚠ {erro}</div>}
 
-        {/* Status bar */}
+        {/* Status mini-cards */}
         <div className="status-bar">
           <div className="status-bar__item status-bar__item--critico">
             <span className="status-bar__num">{criticos}</span>
@@ -201,29 +242,30 @@ export default function Gerencial({ onLojaClick, onPerformanceClick, onFeedbacks
           </div>
         </div>
 
-        {/* Loading — só mostra spinner na primeira carga (sem dados ainda) */}
         {loading && lojas.length === 0 && (
           <div className="loading-state">
-            <div className="spinner" />
-            <span>Carregando dados...</span>
+            <div className="spinner" /><span>Carregando dados...</span>
           </div>
         )}
 
         {!loading && lojas.length === 0 && !erro && (
           <div className="empty-state empty-state--full">
             Nenhuma loja encontrada para {fmtPeriodo(dataInicio, dataFim)}.
-            <div style={{fontSize:'0.85rem', marginTop:'8px', opacity:0.6}}>
+            <div style={{ fontSize: '.85rem', marginTop: 8, opacity: .6 }}>
               Nenhum pedido finalizado encontrado para este período.
             </div>
           </div>
         )}
 
-        {/* Grid de lojas — pior SLA primeiro */}
         {lojas.length > 0 && (
           <>
-            <div className="gerencial-header">
-              <span className="gerencial-sort-label">Ordenado por SLA · pior primeiro</span>
+            {/* Visão Gerencial header */}
+            <div className="gerencial-section-header">
+              <div className="gerencial-section-eyebrow">Visão Gerencial</div>
+              <div className="gerencial-section-title">{lojas.length} loja{lojas.length !== 1 ? 's' : ''} em operação</div>
+              <p className="gerencial-section-sub">Toque em uma loja para abrir a visão de supervisor</p>
             </div>
+
             <section className="lojas-grid">
               {lojas.map((loja, i) => (
                 <LojaCard

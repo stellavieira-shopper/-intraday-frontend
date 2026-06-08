@@ -99,46 +99,50 @@ export default function Loja({ loja, dataInicio: dataInicioInit, dataFim: dataFi
   const rupturaColor = pctRuptura === null ? 'gray' : pctRuptura <= 5 ? 'green' : pctRuptura <= 15 ? 'orange' : 'red'
   const fotoColor = pctFoto === null ? 'gray' : pctFoto >= 70 ? 'green' : pctFoto >= 30 ? 'orange' : 'red'
 
-  const now = new Date()
-  const diaSemana = now.toLocaleDateString('pt-BR', { weekday: 'long', timeZone: 'America/Sao_Paulo' })
-  const diaCompleto = now.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', timeZone: 'America/Sao_Paulo' })
-
   return (
     <div className="intraday-layout">
-      {/* Topbar */}
-      <div className="intraday-topbar">
-        <div className="intraday-topbar__brand">
-          <img src="/shopper-icon.avif" alt="Shopper" className="topbar-icon" />
-          <div className="brand-divider" />
-          <div>
-            <div className="brand-label">INTRADAY</div>
-            <div className="brand-title">Performance Operacional</div>
+      {/* V1-style topbar */}
+      <div className="top-bar">
+        <img src="/shopper-icon.avif" alt="Shopper" className="top-bar-logo-img" />
+        <div className="top-bar-divider" />
+        <div className="top-bar-context">
+          <span className="top-bar-eyebrow">Intraday · Supervisor</span>
+          <span className="top-bar-store">{nome}</span>
+        </div>
+        <div className="top-bar-spacer" />
+        <button onClick={buscar} disabled={loading}
+          style={{
+            padding: '7px 14px', borderRadius: 999, fontSize: 13, fontWeight: 700,
+            background: 'var(--shopper-navy)', color: '#fff', border: 'none',
+            cursor: 'pointer', opacity: loading ? 0.5 : 1, fontFamily: 'inherit',
+          }}>
+          {loading ? '⏳' : '↺'} Atualizar
+        </button>
+        {user && (
+          <div className="top-bar-user">
+            {user.picture && <img src={user.picture} alt={user.name} className="top-bar-avatar" referrerPolicy="no-referrer" />}
+            <span className="top-bar-username">{user.name?.split(' ')[0]}</span>
+            <button className="top-bar-logout" onClick={onLogout} title="Sair">
+              <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+              <span className="top-bar-logout-text">Sair</span>
+            </button>
           </div>
-        </div>
-        <div className="intraday-topbar__right">
-          <button className="btn-refresh" onClick={buscar} disabled={loading}>
-            {loading ? '⏳' : '↺'} Atualizar
-          </button>
-          {user && (
-            <div className="topbar-user">
-              {user.picture && <img src={user.picture} alt={user.name} className="topbar-avatar" referrerPolicy="no-referrer" />}
-              <span className="topbar-username">{user.name?.split(' ')[0]}</span>
-              <button className="btn-logout" onClick={onLogout} title="Sair">Sair</button>
-            </div>
-          )}
-        </div>
+        )}
       </div>
 
-      {/* Barra de data */}
-      <div className="intraday-datebar">
-        <div className="intraday-datebar__left">
-          <div className="last-update-label">Última atualização</div>
-          <div className="last-update-time">{ultimaAtt || '—'}</div>
-          <div className="last-update-date">{diaSemana.charAt(0).toUpperCase() + diaSemana.slice(1)}, {diaCompleto}</div>
+      {/* Slim datebar */}
+      <div style={{
+        background: '#fff', borderBottom: '1px solid var(--border-1)',
+        padding: '10px 32px', display: 'flex', alignItems: 'center',
+        justifyContent: 'space-between', gap: 16, flexWrap: 'wrap',
+      }}>
+        <div style={{ fontSize: 12, color: 'var(--fg-3)', fontWeight: 600 }}>
+          {ultimaAtt ? `↻ Atualizado às ${ultimaAtt}` : ''}
         </div>
-        <div className="intraday-datebar__right">
-          <DateFilter dataInicio={dataInicio} dataFim={dataFim} onChange={handleDateChange} />
-        </div>
+        <DateFilter dataInicio={dataInicio} dataFim={dataFim} onChange={handleDateChange} />
       </div>
 
       {/* Hero da loja */}
@@ -229,7 +233,7 @@ export default function Loja({ loja, dataInicio: dataInicioInit, dataFim: dataFi
                         const pRup  = t.total   > 0 ? ((t.com_ruptura / t.total) * 100).toFixed(1)  : '0.0'
                         const pFoto = t.finalizados > 0 ? ((t.com_foto / t.finalizados) * 100).toFixed(1) : null
                         const isTurbo  = t.tipo === 'Turbo / Express'
-                        const temSla   = t.com_sla > 0   // Fast Delivery também tem SLA de 5 min
+                        const temSla   = t.com_sla > 0
                         const slaColor = pSla === null ? '#94a3b8' : Number(pSla) >= 85 ? 'var(--green)' : Number(pSla) >= 70 ? 'var(--yellow)' : 'var(--red)'
                         const ruptColor = Number(pRup) <= 5 ? 'var(--green)' : Number(pRup) <= 15 ? 'var(--yellow)' : 'var(--red)'
                         const fotoColor = pFoto === null ? '#94a3b8' : Number(pFoto) >= 70 ? 'var(--green)' : Number(pFoto) >= 30 ? 'var(--yellow)' : 'var(--red)'

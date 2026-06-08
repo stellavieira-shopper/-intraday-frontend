@@ -2,55 +2,248 @@
    INTRADAY PERFORMANCE — TEMA CLARO
    ============================================================ */
 
+@import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,300;0,400;0,700;0,900;1,300;1,400;1,700&family=Inter:wght@400;500;600;700&display=swap');
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
 :root {
-  --bg:           #f5f6fa;
-  --bg-card:      #ffffff;
-  --bg-card-hover:#f8f9fc;
-  --border:       #e8eaed;
-  --border-light: #f0f2f5;
-  --shadow:       0 1px 4px rgba(0,0,0,0.08), 0 2px 12px rgba(0,0,0,0.04);
-  --shadow-hover: 0 4px 16px rgba(0,0,0,0.12);
+  /* V1 Shopper design tokens */
+  --shopper-navy:       rgb(0, 45, 98);
+  --shopper-navy-deep:  rgb(21, 26, 51);
+  --shopper-navy-soft:  rgb(30, 32, 68);
+  --shopper-green:      rgb(13, 171, 119);
+  --shopper-green-2:    rgb(7, 167, 118);
+  --shopper-green-deep: rgb(25, 62, 54);
+  --color-success:      rgb(1, 188, 110);
+  --color-warning:      rgb(247, 128, 34);
+  --color-danger:       rgb(208, 31, 49);
+  --color-info:         rgb(2, 136, 209);
+  --fg-1:               rgb(29, 29, 27);
+  --fg-2:               rgb(76, 76, 76);
+  --fg-3:               rgb(102, 102, 102);
+  --fg-muted:           rgb(153, 153, 153);
+  --bg-1:               rgb(255, 255, 255);
+  --bg-2:               rgb(247, 247, 247);
+  --bg-3:               rgb(244, 244, 244);
+  --border-1:           rgb(226, 226, 226);
+  --border-2:           rgb(217, 217, 217);
+  --font-sans:          'Lato', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+  --font-numeric:       'Inter', 'Lato', system-ui, sans-serif;
+  --fw-regular: 400; --fw-bold: 700; --fw-black: 900;
+  --r-sm: 4px; --r-md: 8px; --r-lg: 12px; --r-xl: 16px; --r-pill: 999px;
+  --shadow-xs: 0 1px 2px rgba(0,45,98,.06);
+  --shadow-sm: 0 2px 6px rgba(0,45,98,.08);
+  --shadow-md: 0 6px 16px rgba(0,45,98,.10);
+  --shadow-lg: 0 16px 40px rgba(0,45,98,.14);
 
-  --text:         #1a1f2e;
-  --text-muted:   #64748b;
-  --text-dim:     #94a3b8;
-
+  /* V2 compatibility aliases */
+  --bg:           var(--bg-2);
+  --bg-card:      var(--bg-1);
+  --bg-card-hover:var(--bg-2);
+  --border:       var(--border-1);
+  --border-light: rgb(240,242,245);
+  --shadow:       var(--shadow-sm);
+  --shadow-hover: var(--shadow-md);
+  --text:         var(--fg-1);
+  --text-muted:   var(--fg-2);
+  --text-dim:     var(--fg-3);
   --shopper-red:  #e8192c;
-  --blue:         #1e40af;
-  --blue-light:   #3b82f6;
-  --green:        #16a34a;
-  --green-light:  #22c55e;
-  --yellow:       #d97706;
-  --yellow-light: #f59e0b;
-  --orange:       #ea580c;
-  --orange-light: #f97316;
-  --red:          #dc2626;
-  --red-light:    #ef4444;
-  --purple:       #7c3aed;
-  --teal:         #0d9488;
-  --gray:         #64748b;
-
-  --critico:      #dc2626;
-  --atencao:      #d97706;
-  --saudavel:     #16a34a;
-
-  --radius:       12px;
-  --radius-sm:    6px;
-  --radius-xs:    4px;
+  --blue:         #1e40af; --blue-light: #3b82f6;
+  --green:        #16a34a; --green-light: #22c55e;
+  --yellow:       #d97706; --yellow-light: #f59e0b;
+  --orange:       #ea580c; --orange-light: #f97316;
+  --red:          #dc2626; --red-light:    #ef4444;
+  --purple:       #7c3aed; --teal: #0d9488; --gray: #64748b;
+  --critico:  #dc2626; --atencao: #d97706; --saudavel: #16a34a;
+  --radius: 12px; --radius-sm: 6px; --radius-xs: 4px;
 }
 
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  font-family: var(--font-sans);
   font-size: 14px;
   line-height: 1.5;
   min-height: 100vh;
 }
+
+/* ============================================================
+   V1 DESIGN — TOP BAR
+   ============================================================ */
+.top-bar {
+  background: #fff;
+  border-bottom: 1px solid var(--border-1);
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.top-bar-logo-img { height: 32px; width: auto; display: block; }
+.top-bar-divider { height: 24px; width: 1px; background: var(--border-1); }
+.top-bar-context { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.top-bar-eyebrow { font-size: 10px; font-weight: 700; letter-spacing: .12em; color: var(--fg-3); text-transform: uppercase; }
+.top-bar-store { font-size: 14px; font-weight: 700; color: var(--fg-1); line-height: 1; }
+.top-bar-spacer { flex: 1; }
+.top-bar-logout {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: none; border: 1px solid var(--border-1);
+  color: var(--fg-2); font-size: 12px; font-weight: 700;
+  padding: 7px 14px; border-radius: 999px; cursor: pointer; font-family: inherit;
+}
+.top-bar-logout:hover { background: var(--bg-3); color: var(--fg-1); }
+.top-bar-user { display: flex; align-items: center; gap: 8px; }
+.top-bar-avatar { height: 32px; width: 32px; border-radius: 50%; object-fit: cover; }
+.top-bar-username { font-size: 13px; font-weight: 600; color: var(--fg-1); }
+@media (max-width: 720px) {
+  .top-bar { padding: 10px 14px; gap: 10px; }
+  .top-bar-divider { display: none; }
+  .top-bar-logout-text { display: none; }
+  .top-bar-logout { padding: 7px 10px; }
+}
+
+/* ============================================================
+   V1 DESIGN — PAGE LAYOUT
+   ============================================================ */
+.page {
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 24px;
+  flex: 1;
+}
+@media (max-width: 720px) { .page { padding: 16px 14px 80px; } }
+.page-header {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 16px; margin-bottom: 24px; flex-wrap: wrap;
+}
+.page-title-wrap { display: flex; flex-direction: column; gap: 6px; }
+.page-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--fg-3); }
+.page-title { font-size: 28px; font-weight: 900; color: #1A1A3A; margin: 0; letter-spacing: -.01em; line-height: 1.1; }
+.page-subtitle { font-size: 14px; color: var(--fg-2); margin: 0; }
+
+/* ============================================================
+   V1 DESIGN — KPI GRID + CARDS
+   ============================================================ */
+.kpi-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px;
+}
+.kpi-grid.kpi-grid-5 { grid-template-columns: repeat(5, 1fr); }
+@media (max-width: 1100px) { .kpi-grid.kpi-grid-5 { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 980px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; } .kpi-grid.kpi-grid-5 { grid-template-columns: repeat(2, 1fr); } }
+.kpi-card {
+  background: #fff; border: 1px solid var(--border-1); border-radius: 14px;
+  padding: 18px 20px 16px; display: flex; flex-direction: column; gap: 10px;
+  position: relative; overflow: hidden;
+  transition: border-color 160ms ease, transform 160ms ease;
+}
+.kpi-card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.kpi-label { font-size: 12px; font-weight: 700; color: var(--fg-2); letter-spacing: .02em; }
+.kpi-status-dot { width: 8px; height: 8px; border-radius: 999px; background: var(--fg-muted); }
+.kpi-status-dot.ok   { background: var(--color-success); }
+.kpi-status-dot.warn { background: var(--color-warning); }
+.kpi-status-dot.bad  { background: var(--color-danger); }
+.kpi-value-row { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.kpi-value {
+  font-family: var(--font-numeric); font-variant-numeric: tabular-nums;
+  font-size: 44px; font-weight: 700; line-height: 1; color: var(--fg-1); letter-spacing: -.02em;
+}
+.kpi-value.ok   { color: #08956B; }
+.kpi-value.warn { color: #C4711A; }
+.kpi-value.bad  { color: var(--color-danger); }
+.kpi-unit { font-size: 18px; font-weight: 700; color: var(--fg-3); }
+.kpi-raw { font-size: 12px; font-weight: 600; color: var(--fg-3); }
+.kpi-raw strong { color: var(--fg-1); font-weight: 700; }
+.kpi-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.kpi-track { height: 4px; background: var(--bg-3); border-radius: 999px; overflow: hidden; }
+.kpi-track-fill { height: 100%; background: var(--shopper-navy); border-radius: 999px; transition: width 320ms ease; }
+.kpi-track-fill.ok   { background: var(--color-success); }
+.kpi-track-fill.warn { background: var(--color-warning); }
+.kpi-track-fill.bad  { background: var(--color-danger); }
+@media (max-width: 720px) { .kpi-card { padding: 14px 14px 12px; } .kpi-value { font-size: 34px; } .kpi-unit { font-size: 15px; } }
+
+/* ============================================================
+   V1 DESIGN — BACKLINK
+   ============================================================ */
+.backlink {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: none; border: none; color: var(--fg-2);
+  font-size: 13px; font-weight: 700; cursor: pointer;
+  padding: 6px 10px; border-radius: 999px; font-family: inherit;
+  margin-bottom: 16px;
+}
+.backlink:hover { background: var(--bg-3); color: var(--fg-1); }
+
+/* ============================================================
+   V1 DESIGN — AUTO-REFRESH CHIP
+   ============================================================ */
+.auto-refresh-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px; border-radius: 999px;
+  background: rgba(1, 188, 110, 0.10);
+  font-size: 12px; font-weight: 600; color: #07734A;
+  border: 1px solid rgba(1,188,110,0.2);
+}
+.auto-refresh-chip-off {
+  background: var(--bg-2); color: var(--fg-3); border: 1px solid var(--border-1);
+}
+
+/* ============================================================
+   V1 DESIGN — GERENCIAL HEADER
+   ============================================================ */
+.gerencial-section-header {
+  margin-bottom: 16px;
+}
+.gerencial-section-eyebrow {
+  font-size: 11px; font-weight: 700; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--fg-3); margin-bottom: 4px;
+}
+.gerencial-section-title {
+  font-size: 24px; font-weight: 900; color: #1A1A3A;
+  margin: 0 0 4px; letter-spacing: -.01em; line-height: 1.15;
+}
+.gerencial-section-sub {
+  font-size: 13px; color: var(--fg-2); margin: 0;
+}
+
+/* ============================================================
+   V1 DESIGN — HUB
+   ============================================================ */
+.hub-page {
+  min-height: 100vh; background: var(--bg-2);
+  display: flex; flex-direction: column;
+}
+.hub-content {
+  flex: 1; display: flex; align-items: center; justify-content: center; padding: 32px 24px;
+}
+.hub-inner { max-width: 880px; width: 100%; }
+.hub-greeting { font-size: 13px; font-weight: 700; color: var(--fg-3); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 8px; }
+.hub-name { font-size: 32px; font-weight: 900; color: #1A1A3A; margin: 0 0 32px; letter-spacing: -.01em; line-height: 1.1; }
+.hub-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 720px) { .hub-tiles { grid-template-columns: 1fr; } }
+.hub-tile {
+  background: #fff; border: 1px solid var(--border-1); border-radius: 18px;
+  padding: 32px; cursor: pointer;
+  transition: border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+  display: flex; flex-direction: column; gap: 14px;
+  text-align: left; min-height: 220px; font-family: inherit; color: var(--fg-1);
+}
+.hub-tile:hover { border-color: var(--shopper-navy); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.hub-tile-icon {
+  width: 48px; height: 48px; border-radius: 14px;
+  background: var(--shopper-navy); color: #fff;
+  display: grid; place-items: center; margin-bottom: 6px;
+}
+.hub-tile.green .hub-tile-icon { background: var(--shopper-green); }
+.hub-tile-eyebrow { font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--fg-3); }
+.hub-tile-title { font-size: 22px; font-weight: 800; color: var(--fg-1); margin: 0; letter-spacing: -.01em; line-height: 1.15; }
+.hub-tile-desc { font-size: 13px; color: var(--fg-2); line-height: 1.5; margin: 0; flex: 1; }
+.hub-tile-cta { font-size: 13px; font-weight: 800; color: var(--shopper-navy); display: inline-flex; align-items: center; gap: 6px; }
+.hub-tile.green .hub-tile-cta { color: var(--shopper-green); }
 
 /* ============================================================
    LAYOUT

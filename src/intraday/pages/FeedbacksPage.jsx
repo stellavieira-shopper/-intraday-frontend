@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import axios from 'axios'
-import PerformanceFeedbackPage from '../feedbacks/PerformanceFeedbackPage'
+import FeedbackManagerView from '../feedbacks/FeedbackMgr.jsx'
+import PerformanceFeedbackPage from '../feedbacks/PerformanceFeedbackPage.jsx'
 import { buildWeeksFromIndex } from '../feedbacks/FeedbackData'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3000'
@@ -19,12 +20,14 @@ function parseWeekId(weekId) {
   return { year_ref: parseInt(year, 10), week_ref: parseInt(wPart, 10) }
 }
 
-export default function FeedbacksPage({ onVoltar }) {
+export default function FeedbacksPage({ onVoltar, user, onLogout }) {
   const [feedbackIndex, setFeedbackIndex] = useState([])
   const [weekBundles, setWeekBundles]     = useState({})
   const [loading, setLoading]             = useState(true)
   const [error, setError]                 = useState(null)
   const [bundleError, setBundleError]     = useState(null)
+  // When set, shows PerformanceFeedbackPage for a specific person + week
+  const [drillPerson, setDrillPerson]     = useState(null) // { personId, weekId }
 
   useEffect(() => {
     async function fetchIndex() {
@@ -42,7 +45,6 @@ export default function FeedbacksPage({ onVoltar }) {
   }, [])
 
   const handleWeekLoad = useCallback(async (weekId) => {
-    // Re-busca se o bundle existente não tiver erros_por_pessoa (versão antiga em cache)
     if (weekBundles[weekId] && weekBundles[weekId].erros_por_pessoa !== undefined) return
     setBundleError(null)
     try {
@@ -59,6 +61,20 @@ export default function FeedbacksPage({ onVoltar }) {
   if (loading) return <div style={{ padding: '2rem', color: '#888' }}>Carregando…</div>
   if (error)   return <div style={{ padding: '2rem', color: '#c00' }}>Erro: {error}</div>
 
+  // Drill into individual feedback
+  if (drillPerson) {
+    return (
+      <PerformanceFeedbackPage
+        feedbackIndex={feedbackIndex}
+        weekBundles={weekBundles}
+        onWeekLoad={handleWeekLoad}
+        onBack={() => setDrillPerson(null)}
+        initialPersonId={drillPerson.personId}
+        initialWeekId={drillPerson.weekId}
+      />
+    )
+  }
+
   return (
     <div>
       {bundleError && (
@@ -66,11 +82,15 @@ export default function FeedbacksPage({ onVoltar }) {
           Erro ao carregar semana: {bundleError}
         </div>
       )}
-      <PerformanceFeedbackPage
+      <FeedbackManagerView
+        viewerRole="admin"
         feedbackIndex={feedbackIndex}
         weekBundles={weekBundles}
         onWeekLoad={handleWeekLoad}
+        onOpenPersonFeedback={(personId, weekId) => setDrillPerson({ personId, weekId })}
         onBack={onVoltar}
+        user={user}
+        onLogout={onLogout}
       />
     </div>
   )

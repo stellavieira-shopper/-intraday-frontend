@@ -603,19 +603,21 @@ export default function PerformanceFeedbackPage({ feedbackIndex, weekBundles, on
 
   return (
     <div className="intraday-layout">
-      {/* Topbar */}
-      <div className="intraday-topbar">
-        <div className="intraday-topbar__brand">
-          <button type="button" className="btn-voltar" onClick={onBack} style={{ marginRight: 8 }}>← Voltar</button>
-          <div className="brand-divider" />
-          <img src="/shopper-icon.avif" alt="Shopper" className="topbar-icon" />
-          <div className="brand-divider" />
-          <div>
-            <div className="brand-label">INTRADAY</div>
-            <div className="brand-title">Feedback de Bonificação</div>
-          </div>
+      {/* V1-style topbar */}
+      <div className="top-bar">
+        <img src="/shopper-icon.avif" alt="Shopper" className="top-bar-logo-img" />
+        <div className="top-bar-divider" />
+        <div className="top-bar-context">
+          <span className="top-bar-eyebrow">Feedbacks</span>
+          <span className="top-bar-store">Bonificação Individual</span>
         </div>
-        <div className="intraday-topbar__right" />
+        <div className="top-bar-spacer" />
+        <button type="button" className="top-bar-logout" onClick={onBack} title="Voltar">
+          <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" />
+          </svg>
+          <span className="top-bar-logout-text">Voltar</span>
+        </button>
       </div>
 
       {/* Barra de filtros */}
