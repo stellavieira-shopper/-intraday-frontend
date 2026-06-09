@@ -6,11 +6,6 @@ function pctVal(num, den) {
   return (num / den) * 100
 }
 
-function fmtPct(num, den) {
-  const v = pctVal(num, den)
-  return v === null ? '—' : `${v.toFixed(1)}`
-}
-
 function slaColor(pct) {
   if (pct === null) return ''
   if (pct >= 95)  return '--green'
@@ -34,7 +29,7 @@ function fotoColor(pct) {
 
 export default function LojaCard({ loja, dataInicio, dataFim, onClick }) {
   const saude = calcSaude(loja)
-  const nome  = nomeLoja(loja.loja)
+  const nome  = nomeLoja(loja.loja || loja.nome_loja)
 
   const total      = Number(loja.total_pedidos)       || 0
   const comSla     = Number(loja.pedidos_com_sla)     || 0
@@ -52,14 +47,13 @@ export default function LojaCard({ loja, dataInicio, dataFim, onClick }) {
   const avgIniciar = loja.avg_tempo_iniciar_min != null ? `${loja.avg_tempo_iniciar_min}min` : '—'
 
   return (
-    <div className={`loja-card loja-card--${saude.variant}`} onClick={() => onClick(loja.loja, dataInicio, dataFim)}>
+    <div className={`loja-card loja-card--${saude.variant}`} onClick={() => onClick(loja.loja || loja.nome_loja, dataInicio, dataFim)}>
       <div className="loja-card__header">
         <span className="loja-card__nome">{nome}</span>
         <StatusBadge label={saude.label} variant={saude.variant} />
       </div>
 
       <div className="loja-card__grid">
-        {/* SLA */}
         <div className="loja-card__metric">
           <span className="loja-card__metric-lbl">SLA 5MIN</span>
           <span className={`loja-card__metric-val loja-card__metric-val${slaColor(pctSla)}`}>
@@ -68,7 +62,6 @@ export default function LojaCard({ loja, dataInicio, dataFim, onClick }) {
           <span className="loja-card__metric-sub">{comSla > 0 ? `${foraSla} fora` : 'sem dados'}</span>
         </div>
 
-        {/* Ruptura */}
         <div className="loja-card__metric">
           <span className="loja-card__metric-lbl">RUPTURA</span>
           <span className={`loja-card__metric-val loja-card__metric-val${rupturaColor(pctRuptura)}`}>
@@ -77,14 +70,12 @@ export default function LojaCard({ loja, dataInicio, dataFim, onClick }) {
           <span className="loja-card__metric-sub">{comRuptura} pedidos</span>
         </div>
 
-        {/* Erros — placeholder */}
         <div className="loja-card__metric">
           <span className="loja-card__metric-lbl">ERROS</span>
           <span className="loja-card__metric-val loja-card__metric-val--green">0.0%</span>
           <span className="loja-card__metric-sub">0 pedidos</span>
         </div>
 
-        {/* Foto */}
         <div className="loja-card__metric">
           <span className="loja-card__metric-lbl">FOTO</span>
           <span className={`loja-card__metric-val loja-card__metric-val${fotoColor(pctFoto)}`}>

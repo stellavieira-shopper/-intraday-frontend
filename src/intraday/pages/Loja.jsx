@@ -99,13 +99,8 @@ export default function Loja({ loja, dataInicio: dataInicioInit, dataFim: dataFi
   const rupturaColor = pctRuptura === null ? 'gray' : pctRuptura <= 5 ? 'green' : pctRuptura <= 15 ? 'orange' : 'red'
   const fotoColor = pctFoto === null ? 'gray' : pctFoto >= 70 ? 'green' : pctFoto >= 30 ? 'orange' : 'red'
 
-  const now = new Date()
-  const diaSemana = now.toLocaleDateString('pt-BR', { weekday: 'long', timeZone: 'America/Sao_Paulo' })
-  const diaCompleto = now.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', timeZone: 'America/Sao_Paulo' })
-
   return (
     <div className="intraday-layout">
-      {/* Topbar */}
       <div className="intraday-topbar">
         <div className="intraday-topbar__brand">
           <img src="/shopper-icon.avif" alt="Shopper" className="topbar-icon" />
@@ -117,7 +112,7 @@ export default function Loja({ loja, dataInicio: dataInicioInit, dataFim: dataFi
         </div>
         <div className="intraday-topbar__right">
           <button className="btn-refresh" onClick={buscar} disabled={loading}>
-            {loading ? '⏳' : '↺'} Atualizar
+            {loading ? '⏳ Atualizando...' : '↺ Atualizar'}
           </button>
           {user && (
             <div className="topbar-user">
@@ -129,12 +124,10 @@ export default function Loja({ loja, dataInicio: dataInicioInit, dataFim: dataFi
         </div>
       </div>
 
-      {/* Barra de data */}
       <div className="intraday-datebar">
         <div className="intraday-datebar__left">
           <div className="last-update-label">Última atualização</div>
           <div className="last-update-time">{ultimaAtt || '—'}</div>
-          <div className="last-update-date">{diaSemana.charAt(0).toUpperCase() + diaSemana.slice(1)}, {diaCompleto}</div>
         </div>
         <div className="intraday-datebar__right">
           <DateFilter dataInicio={dataInicio} dataFim={dataFim} onChange={handleDateChange} />
@@ -229,7 +222,7 @@ export default function Loja({ loja, dataInicio: dataInicioInit, dataFim: dataFi
                         const pRup  = t.total   > 0 ? ((t.com_ruptura / t.total) * 100).toFixed(1)  : '0.0'
                         const pFoto = t.finalizados > 0 ? ((t.com_foto / t.finalizados) * 100).toFixed(1) : null
                         const isTurbo  = t.tipo === 'Turbo / Express'
-                        const temSla   = t.com_sla > 0   // Fast Delivery também tem SLA de 5 min
+                        const temSla   = t.com_sla > 0
                         const slaColor = pSla === null ? '#94a3b8' : Number(pSla) >= 85 ? 'var(--green)' : Number(pSla) >= 70 ? 'var(--yellow)' : 'var(--red)'
                         const ruptColor = Number(pRup) <= 5 ? 'var(--green)' : Number(pRup) <= 15 ? 'var(--yellow)' : 'var(--red)'
                         const fotoColor = pFoto === null ? '#94a3b8' : Number(pFoto) >= 70 ? 'var(--green)' : Number(pFoto) >= 30 ? 'var(--yellow)' : 'var(--red)'

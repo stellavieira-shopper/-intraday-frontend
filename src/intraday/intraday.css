@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    INTRADAY PERFORMANCE — TEMA CLARO
    ============================================================ */
 
@@ -1243,6 +1243,198 @@ body {
 .perf-motivo--taxa        { background: #f1f5f9; color: var(--text-muted); }
 
 .perf-escopo { font-size: 10px; color: var(--text-dim); font-weight: 400; }
+
+/* ============================================================
+   FEEDBACK TABS (na topbar — centradas absolutamente)
+   ============================================================ */
+
+.feedback-tabs {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  pointer-events: auto;
+}
+
+.feedback-tab {
+  padding: 6px 18px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all .12s;
+}
+.feedback-tab:hover { color: var(--text); border-color: var(--text-dim); }
+.feedback-tab--active {
+  background: var(--text);
+  color: #fff;
+  border-color: var(--text);
+}
+
+/* ============================================================
+   FEEDBACK KPI SUMMARY CARD
+   ============================================================ */
+
+.fmgr-summary-card {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  background: #00306a;
+  border-radius: var(--radius);
+  padding: 24px 32px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.fmgr-summary-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 220px;
+}
+
+.fmgr-summary-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(255,255,255,.65);
+}
+
+.fmgr-summary-value {
+  font-size: 36px;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.fmgr-summary-sub {
+  font-size: 12px;
+  color: rgba(255,255,255,.6);
+}
+
+.fmgr-summary-metrics {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.fmgr-summary-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-left: 20px;
+  border-left: 1px solid rgba(255,255,255,.2);
+}
+
+.fmgr-summary-metric-num {
+  font-size: 24px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.1;
+}
+
+.fmgr-summary-metric-den {
+  font-size: 16px;
+  font-weight: 500;
+  color: rgba(255,255,255,.55);
+}
+
+.fmgr-summary-metric-text {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.fmgr-summary-metric-lbl {
+  font-size: 11px;
+  color: rgba(255,255,255,.6);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  font-weight: 600;
+}
+
+/* ============================================================
+   HUB PAGE
+   ============================================================ */
+
+.hub-center {
+  max-width: 720px;
+  margin: 60px auto;
+  width: 100%;
+}
+
+.hub-greeting {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.hub-name {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 32px;
+  letter-spacing: -0.01em;
+}
+
+.hub-tiles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.hub-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 24px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  text-align: left;
+  transition: box-shadow .15s, border-color .15s;
+}
+.hub-tile:hover { box-shadow: var(--shadow-md); border-color: var(--text-dim); }
+
+.hub-tile__icon { font-size: 28px; margin-bottom: 4px; }
+.hub-tile__eyebrow { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); }
+.hub-tile__title { font-size: 20px; font-weight: 800; color: var(--text); margin: 0; }
+.hub-tile__desc { font-size: 13px; color: var(--text-muted); line-height: 1.5; margin: 0; }
+.hub-tile__cta { font-size: 13px; font-weight: 700; color: var(--blue, #1a73e8); margin-top: 8px; }
+
+/* ============================================================
+   SORT BUTTONS (gerencial)
+   ============================================================ */
+
+.gerencial-sort-btns {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.sort-btn {
+  padding: 4px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card-bg);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all .12s;
+}
+.sort-btn:hover { border-color: var(--text-dim); color: var(--text); }
+.sort-btn--active { background: var(--text); color: #fff; border-color: var(--text); }
 
 /* ============================================================
    SCROLLBAR

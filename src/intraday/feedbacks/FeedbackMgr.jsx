@@ -42,11 +42,21 @@ const slaToneFMgr = (v) => {
 function aggregateStoresFMgr(snapshots) {
   const byStore = {};
   (snapshots || []).forEach((snap) => {
-    const storeId = snap.identity.store_id;
+    // Support both V1 nested format (snap.identity.*) and V2 flat format (snap.store_code, snap.nome, etc.)
+    const id = snap.identity || {};
+    const storeId   = id.store_id   || snap.store_code  || snap.nome_loja || 'unknown';
+    const storeName = id.store_name  || snap.nome_loja   || storeId;
+    const personId  = id.person_id   || snap.store_code  || snap.nome || storeId;
+    const personName= id.name        || snap.nome        || '—';
+    const role      = id.role        || snap.role        || null;
+    const roleLabel = id.role_label  || ROLE_SHORT[role] || role || '';
+    const shiftId   = id.shift_id    || snap.shift_id    || null;
+    const shiftLabel= id.shift_label || (shiftId ? SHIFT_LABEL[shiftId] : '');
+
     if (!byStore[storeId]) {
       byStore[storeId] = {
         storeId,
-        storeName: snap.identity.store_name || storeId,
+        storeName,
         people: [],
         totalPago: 0,
         elegiveis: 0,
@@ -60,9 +70,12 @@ function aggregateStoresFMgr(snapshots) {
       };
     }
     const st = byStore[storeId];
-    const valor = (snap.summary && snap.summary.bonus_final) || 0;
-    const desc  = (snap.summary && snap.summary.discounts_total) || 0;
-    const max   = (snap.summary && snap.summary.max_possible_total) || 0;
+
+    // Support both V1 (snap.summary.*) and V2 flat (snap.valor_final_bonus, etc.)
+    const summary = snap.summary || {};
+    const valor = summary.bonus_final    ?? snap.valor_final_bonus    ?? 0;
+    const desc  = summary.discounts_total ?? snap.total_descontos     ?? 0;
+    const max   = summary.max_possible_total ?? snap.teto_bonus       ?? 0;
 
     const gatesStore = (snap.prerequisites && snap.prerequisites.store) || [];
     const gatesIndividual = (snap.prerequisites && snap.prerequisites.individual) || [];
@@ -75,24 +88,24 @@ function aggregateStoresFMgr(snapshots) {
     }
 
     st.people.push({
-      personId: snap.identity.person_id,
-      name: snap.identity.name,
-      role: snap.identity.role,
-      roleLabel: snap.identity.role_label || ROLE_SHORT[snap.identity.role] || snap.identity.role,
-      shiftId: snap.identity.shift_id || null,
-      shiftLabel: snap.identity.shift_label || (snap.identity.shift_id ? SHIFT_LABEL[snap.identity.shift_id] : ''),
+      personId,
+      name: personName,
+      role,
+      roleLabel,
+      shiftId,
+      shiftLabel,
       valorPago: valor,
       descontos: desc,
       maxPossivel: max,
-      ordersPaid: (snap.summary && snap.summary.orders_paid) || 0,
-      supplyPaid: (snap.summary && snap.summary.supply_paid) || 0,
+      ordersPaid: summary.orders_paid || 0,
+      supplyPaid: summary.supply_paid || 0,
       mainRate: snap.orders ? snap.orders.main_rate_numeric : null,
       gatesStore,
       gatesIndividual,
       gatesComponent,
     });
-    st.totalPago     += valor;
-    st.elegiveis     += 1;
+    st.totalPago      += valor;
+    st.elegiveis      += 1;
     st.totalDescontos += desc;
     st.maxPossivel    += max;
     if (valor > 0) st.receberam += 1;
@@ -125,8 +138,8 @@ function MgrKpiStrip({ stores }) {
   const tetoTotal     = stores.reduce((s, st) => s + st.maxPossivel, 0);
   const lojasComBonus = stores.filter((s) => s.totalPago > 0).length;
   const lojasZeradas  = stores.filter((s) => s.totalPago === 0).length;
+  const lojasGateAtivo= stores.filter((s) => s.gateLojaBlocked).length;
 
-  // main reason among zeroed people — counted by SPECIFIC gate label
   const reasons = {};
   stores.forEach((st) => {
     st.people.forEach((p) => {
@@ -142,52 +155,38 @@ function MgrKpiStrip({ stores }) {
   const reasonsSorted = Object.values(reasons).sort((a, b) => b.count - a.count);
   const topReason = reasonsSorted[0];
   const totalZeroed = totalElegiv - totalReceb;
-
-  const pctReceberam = totalElegiv ? (totalReceb / totalElegiv) * 100 : 0;
-  const pctTeto      = tetoTotal   ? (totalPago / tetoTotal)   * 100 : 0;
+  const pctTeto = tetoTotal ? (totalPago / tetoTotal) * 100 : 0;
 
   return (
-    <div className="fmgr-kpi-strip">
-      <div className="fmgr-kpi fmgr-kpi-primary">
-        <span className="fmgr-kpi-label">Total pago na semana</span>
-        <span className="fmgr-kpi-value">
-          <span className="fmgr-kpi-currency">R$</span> {fmtMoneyFMgr(totalPago)}
-        </span>
-        <span className="fmgr-kpi-foot">
-          <strong>{fmtPctFMgr(pctTeto)}</strong> de um teto de <strong>R$ {fmtMoneyFMgr(tetoTotal)}</strong>
+    <div className="fmgr-summary-card">
+      <div className="fmgr-summary-left">
+        <span className="fmgr-summary-eyebrow">Total a pagar na semana</span>
+        <span className="fmgr-summary-value">R$ {fmtMoneyFMgr(totalPago)}</span>
+        <span className="fmgr-summary-sub">
+          {fmtPctFMgr(pctTeto)} de um teto de R$ {fmtMoneyFMgr(tetoTotal)}
         </span>
       </div>
-
-      <div className="fmgr-kpi">
-        <span className="fmgr-kpi-label">Pessoas que receberam</span>
-        <span className="fmgr-kpi-value">
-          {fmtIntFMgr(totalReceb)}<span className="fmgr-kpi-of"> / {fmtIntFMgr(totalElegiv)}</span>
-        </span>
-        <span className="fmgr-kpi-foot">
-          <strong>{fmtPctFMgr(pctReceberam)}</strong> dos elegíveis ganharam bônus
-        </span>
-      </div>
-
-      <div className="fmgr-kpi">
-        <span className="fmgr-kpi-label">Lojas com bônus</span>
-        <span className="fmgr-kpi-value">
-          {fmtIntFMgr(lojasComBonus)}<span className="fmgr-kpi-of"> / {fmtIntFMgr(stores.length)}</span>
-        </span>
-        <span className="fmgr-kpi-foot">
-          <strong>{fmtIntFMgr(lojasZeradas)}</strong> loja{lojasZeradas !== 1 ? 's' : ''} zerada{lojasZeradas !== 1 ? 's' : ''} por gate
-        </span>
-      </div>
-
-      <div className="fmgr-kpi">
-        <span className="fmgr-kpi-label">Principal motivo de zeragem</span>
-        <span className="fmgr-kpi-value fmgr-kpi-value--text">
-          {topReason ? topReason.label : '—'}
-        </span>
-        <span className="fmgr-kpi-foot">
-          {topReason
-            ? <><strong>{fmtIntFMgr(topReason.count)}</strong> de <strong>{fmtIntFMgr(totalZeroed)}</strong> pessoa{totalZeroed !== 1 ? 's' : ''} zerada{totalZeroed !== 1 ? 's' : ''}{reasonsSorted.length > 1 ? ` · +${reasonsSorted.length - 1} outro${reasonsSorted.length - 1 !== 1 ? 's' : ''} motivo${reasonsSorted.length - 1 !== 1 ? 's' : ''}` : ''}</>
-            : 'Sem ocorrências'}
-        </span>
+      <div className="fmgr-summary-metrics">
+        <div className="fmgr-summary-metric">
+          <span className="fmgr-summary-metric-num">{fmtIntFMgr(stores.length)}</span>
+          <span className="fmgr-summary-metric-lbl">Lojas</span>
+        </div>
+        <div className="fmgr-summary-metric">
+          <span className="fmgr-summary-metric-num">{fmtIntFMgr(lojasGateAtivo)}</span>
+          <span className="fmgr-summary-metric-lbl">Com gate ativo</span>
+        </div>
+        <div className="fmgr-summary-metric">
+          <span className="fmgr-summary-metric-num">
+            {fmtIntFMgr(totalReceb)}<span className="fmgr-summary-metric-den">/{fmtIntFMgr(totalElegiv)}</span>
+          </span>
+          <span className="fmgr-summary-metric-lbl">Bonificados</span>
+        </div>
+        {topReason && (
+          <div className="fmgr-summary-metric">
+            <span className="fmgr-summary-metric-num fmgr-summary-metric-text">{topReason.label}</span>
+            <span className="fmgr-summary-metric-lbl">Principal motivo de zeragem</span>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -595,6 +594,8 @@ export default function FeedbackManagerView({
   onWeekLoad,
   onOpenPersonFeedback,
   onBack,
+  user,
+  onLogout,
 }) {
   const FU = FeedbackUtils;
 
@@ -640,12 +641,7 @@ export default function FeedbackManagerView({
   if (weeks.length === 0) {
     return (
       <div className="page">
-        {onBack && (
-          <button className="backlink" onClick={onBack}>
-            <Icon name="arrow_left" size={14} /> Voltar para o menu
-          </button>
-        )}
-        <div style={{ padding: '2rem', color: 'var(--fg-3)' }}>
+        <div style={{ padding: '2rem', color: 'var(--text-muted)' }}>
           Sem semanas de feedback publicadas. Aguarde o próximo fechamento.
         </div>
       </div>
@@ -670,24 +666,6 @@ export default function FeedbackManagerView({
   // ── OVERVIEW ──
   return (
     <div className="page">
-      {onBack && (
-        <button className="backlink" onClick={onBack}>
-          <Icon name="arrow_left" size={14} /> Voltar para o menu
-        </button>
-      )}
-
-      <div className="page-header">
-        <div className="page-title-wrap">
-          <span className="page-eyebrow">Bonificação semanal · Visão gerencial</span>
-          <h1 className="page-title">Pagamentos da semana</h1>
-          <p className="page-subtitle">
-            {currentWeek
-              ? <>Resumo de todas as lojas processadas no período {currentWeek.rangeLabel}.</>
-              : 'Selecione uma semana para ver os pagamentos.'}
-          </p>
-        </div>
-      </div>
-
       <MgrWeekNav weeks={weeks} weekId={weekId} onChange={setWeekId} />
 
       {!bundle && (
