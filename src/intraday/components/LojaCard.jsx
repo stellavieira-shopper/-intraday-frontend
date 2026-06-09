@@ -1,4 +1,4 @@
-import { calcSaude } from './StatusBadge.jsx'
+import StatusBadge, { calcSaude } from './StatusBadge.jsx'
 import { nomeLoja } from '../utils/nomeLoja.js'
 
 function pctVal(num, den) {
@@ -6,47 +6,30 @@ function pctVal(num, den) {
   return (num / den) * 100
 }
 
-// Map V2 saude variant to V1 status string
-function variantToStatus(variant) {
-  if (variant === 'saudavel') return 'ok'
-  if (variant === 'atencao')  return 'warn'
-  return 'bad'
+function slaColor(pct) {
+  if (pct === null) return ''
+  if (pct >= 95)  return '--green'
+  if (pct >= 92)  return '--orange'
+  return '--red'
 }
 
-function slaStatus(pct) {
-  if (pct === null) return 'neutral'
-  if (pct >= 95) return 'ok'
-  if (pct >= 85) return 'warn'
-  return 'bad'
+function rupturaColor(pct) {
+  if (pct === null) return ''
+  if (pct < 2)  return '--green'
+  if (pct < 5)  return '--orange'
+  return '--red'
 }
 
-function ruptStatus(pct) {
-  if (pct === null) return 'neutral'
-  if (pct < 2)  return 'ok'
-  if (pct < 5)  return 'warn'
-  return 'bad'
-}
-
-function fotoStatus(pct) {
-  if (pct === null) return 'neutral'
-  if (pct >= 90) return 'ok'
-  if (pct >= 75) return 'warn'
-  return 'bad'
-}
-
-function ChevronRight() {
-  return (
-    <svg width={14} height={14} viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="9 18 15 12 9 6" />
-    </svg>
-  )
+function fotoColor(pct) {
+  if (pct === null) return ''
+  if (pct >= 90)  return '--green'
+  if (pct >= 80)  return '--orange'
+  return '--red'
 }
 
 export default function LojaCard({ loja, dataInicio, dataFim, onClick }) {
-  const saude  = calcSaude(loja)
-  const nome   = nomeLoja(loja.loja || loja.nome_loja)
-  const status = variantToStatus(saude.variant)
+  const saude = calcSaude(loja)
+  const nome  = nomeLoja(loja.loja || loja.nome_loja)
 
   const total      = Number(loja.total_pedidos)       || 0
   const comSla     = Number(loja.pedidos_com_sla)     || 0
@@ -61,62 +44,54 @@ export default function LojaCard({ loja, dataInicio, dataFim, onClick }) {
   const pctRuptura = pctVal(comRuptura, total)
   const pctFoto    = pctVal(comFoto, finalizados)
 
-  const avgIniciar = loja.avg_tempo_iniciar_min != null
-    ? `T. iniciar ${loja.avg_tempo_iniciar_min}min`
-    : null
-
-  const pillLabel = status === 'ok' ? 'Saudável' : status === 'warn' ? 'Atenção' : 'Crítico'
+  const avgIniciar = loja.avg_tempo_iniciar_min != null ? `${loja.avg_tempo_iniciar_min}min` : '—'
 
   return (
-    <div className={`store-card store-card--${status}`} onClick={() => onClick(loja.loja || loja.nome_loja, dataInicio, dataFim)}>
-      <div className="store-card-head">
-        <div>
-          <div className="store-name">{nome}</div>
-        </div>
-        <span className={`store-pill ${status}`}>{pillLabel}</span>
+    <div className={`loja-card loja-card--${saude.variant}`} onClick={() => onClick(loja.loja || loja.nome_loja, dataInicio, dataFim)}>
+      <div className="loja-card__header">
+        <span className="loja-card__nome">{nome}</span>
+        <StatusBadge label={saude.label} variant={saude.variant} />
       </div>
 
-      <div className="store-metrics">
-        <div className="store-metric">
-          <span className="store-metric-label">SLA 5min</span>
-          <span className={`store-metric-value ${slaStatus(pctSla)}`}>
+      <div className="loja-card__grid">
+        <div className="loja-card__metric">
+          <span className="loja-card__metric-lbl">SLA 5MIN</span>
+          <span className={`loja-card__metric-val loja-card__metric-val${slaColor(pctSla)}`}>
             {pctSla !== null ? `${pctSla.toFixed(1)}%` : '—'}
           </span>
-          <span className="store-metric-raw">{comSla > 0 ? `${foraSla} fora` : 'sem dados'}</span>
+          <span className="loja-card__metric-sub">{comSla > 0 ? `${foraSla} fora` : 'sem dados'}</span>
         </div>
 
-        <div className="store-metric">
-          <span className="store-metric-label">Ruptura</span>
-          <span className={`store-metric-value ${ruptStatus(pctRuptura)}`}>
+        <div className="loja-card__metric">
+          <span className="loja-card__metric-lbl">RUPTURA</span>
+          <span className={`loja-card__metric-val loja-card__metric-val${rupturaColor(pctRuptura)}`}>
             {pctRuptura !== null ? `${pctRuptura.toFixed(1)}%` : '—'}
           </span>
-          <span className="store-metric-raw">{comRuptura} pedidos</span>
+          <span className="loja-card__metric-sub">{comRuptura} pedidos</span>
         </div>
 
-        <div className="store-metric">
-          <span className="store-metric-label">Erros</span>
-          <span className="store-metric-value ok">0.0%</span>
-          <span className="store-metric-raw">0 pedidos</span>
+        <div className="loja-card__metric">
+          <span className="loja-card__metric-lbl">ERROS</span>
+          <span className="loja-card__metric-val loja-card__metric-val--green">0.0%</span>
+          <span className="loja-card__metric-sub">0 pedidos</span>
         </div>
 
-        <div className="store-metric">
-          <span className="store-metric-label">Foto</span>
-          <span className={`store-metric-value ${fotoStatus(pctFoto)}`}>
+        <div className="loja-card__metric">
+          <span className="loja-card__metric-lbl">FOTO</span>
+          <span className={`loja-card__metric-val loja-card__metric-val${fotoColor(pctFoto)}`}>
             {pctFoto !== null ? `${pctFoto.toFixed(1)}%` : '—'}
           </span>
-          <span className="store-metric-raw">{semFoto > 0 ? `${semFoto} sem foto` : 'todos com foto'}</span>
-        </div>
-
-        <div className="store-metric">
-          <span className="store-metric-label">Pedidos</span>
-          <span className="store-metric-value">{total}</span>
-          <span className="store-metric-raw">{avgIniciar || 'todos os turnos'}</span>
+          <span className="loja-card__metric-sub">{semFoto > 0 ? `${semFoto} sem foto` : 'todos com foto'}</span>
         </div>
       </div>
 
-      <div className="store-foot">
-        <span>{loja.loja || loja.nome_loja || ''}</span>
-        <span className="store-foot-cta">Abrir loja <ChevronRight /></span>
+      <div className="loja-card__footer">
+        <div>
+          <div className="loja-card__pedidos-lbl">PEDIDOS</div>
+          <div className="loja-card__pedidos-val">{total}</div>
+          <div className="loja-card__pedidos-sub">T. iniciar {avgIniciar}</div>
+        </div>
+        <span className="loja-card__abrir">Abrir loja ›</span>
       </div>
     </div>
   )

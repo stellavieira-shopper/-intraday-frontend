@@ -560,19 +560,21 @@ function PessoaSelect({ people, value, onChange, selectStyle }) {
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
-export default function PerformanceFeedbackPage({ feedbackIndex, weekBundles, onWeekLoad, onBack }) {
+export default function PerformanceFeedbackPage({ feedbackIndex, weekBundles, onWeekLoad, onBack, initialPersonId, initialWeekId }) {
   const weeks = useMemo(() => (feedbackIndex || []).map(e => {
     const info = isoWeekDates(e.week_id)
     return { id: e.week_id, ...info }
   }), [feedbackIndex])
 
-  const [selWeek,   setSelWeek]   = useState(null)
-  const [selStore,  setSelStore]  = useState('')
+  const [selWeek,   setSelWeek]   = useState(() => initialWeekId || null)
+  const [selStore,  setSelStore]  = useState(() =>
+    initialPersonId?.includes('|') ? initialPersonId.split('|')[0] : ''
+  )
   const [selTurno,  setSelTurno]  = useState('')
-  const [selPerson, setSelPerson] = useState('')
+  const [selPerson, setSelPerson] = useState(() => initialPersonId || '')
   const [activeCard, setActiveCard] = useState(null)
 
-  useEffect(() => { if (weeks.length && !selWeek) setSelWeek(weeks[0].id) }, [weeks])
+  useEffect(() => { if (weeks.length && !selWeek) setSelWeek(initialWeekId || weeks[0].id) }, [weeks])
   useEffect(() => { if (selWeek) onWeekLoad(selWeek) }, [selWeek])
   useEffect(() => { setActiveCard(null) }, [selWeek])
 
@@ -590,7 +592,11 @@ export default function PerformanceFeedbackPage({ feedbackIndex, weekBundles, on
   // Auto-seleciona primeira pessoa quando a lista muda
   useEffect(() => {
     if (people.length && !people.find(p => p._pid === selPerson))
-      setSelPerson(people[0]._pid)
+      setSelPerson(
+        (initialPersonId && people.find(p => p._pid === initialPersonId))
+          ? initialPersonId
+          : people[0]._pid
+      )
   }, [people])
 
   const snap      = people.find(p => p._pid === selPerson) || null
@@ -602,24 +608,7 @@ export default function PerformanceFeedbackPage({ feedbackIndex, weekBundles, on
   }
 
   return (
-    <div className="intraday-layout">
-      {/* V1-style topbar */}
-      <div className="top-bar">
-        <img src="/shopper-icon.avif" alt="Shopper" className="top-bar-logo-img" />
-        <div className="top-bar-divider" />
-        <div className="top-bar-context">
-          <span className="top-bar-eyebrow">Feedbacks</span>
-          <span className="top-bar-store">Bonificação Individual</span>
-        </div>
-        <div className="top-bar-spacer" />
-        <button type="button" className="top-bar-logout" onClick={onBack} title="Voltar">
-          <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-            <line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" />
-          </svg>
-          <span className="top-bar-logout-text">Voltar</span>
-        </button>
-      </div>
-
+    <div>
       {/* Barra de filtros */}
       <div style={{ background: '#fff', borderBottom: '1px solid var(--border)', padding: '10px 32px', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

@@ -138,8 +138,8 @@ function MgrKpiStrip({ stores }) {
   const tetoTotal     = stores.reduce((s, st) => s + st.maxPossivel, 0);
   const lojasComBonus = stores.filter((s) => s.totalPago > 0).length;
   const lojasZeradas  = stores.filter((s) => s.totalPago === 0).length;
+  const lojasGateAtivo= stores.filter((s) => s.gateLojaBlocked).length;
 
-  // main reason among zeroed people — counted by SPECIFIC gate label
   const reasons = {};
   stores.forEach((st) => {
     st.people.forEach((p) => {
@@ -155,52 +155,38 @@ function MgrKpiStrip({ stores }) {
   const reasonsSorted = Object.values(reasons).sort((a, b) => b.count - a.count);
   const topReason = reasonsSorted[0];
   const totalZeroed = totalElegiv - totalReceb;
-
-  const pctReceberam = totalElegiv ? (totalReceb / totalElegiv) * 100 : 0;
-  const pctTeto      = tetoTotal   ? (totalPago / tetoTotal)   * 100 : 0;
+  const pctTeto = tetoTotal ? (totalPago / tetoTotal) * 100 : 0;
 
   return (
-    <div className="fmgr-kpi-strip">
-      <div className="fmgr-kpi fmgr-kpi-primary">
-        <span className="fmgr-kpi-label">Total pago na semana</span>
-        <span className="fmgr-kpi-value">
-          <span className="fmgr-kpi-currency">R$</span> {fmtMoneyFMgr(totalPago)}
-        </span>
-        <span className="fmgr-kpi-foot">
-          <strong>{fmtPctFMgr(pctTeto)}</strong> de um teto de <strong>R$ {fmtMoneyFMgr(tetoTotal)}</strong>
+    <div className="fmgr-summary-card">
+      <div className="fmgr-summary-left">
+        <span className="fmgr-summary-eyebrow">Total a pagar na semana</span>
+        <span className="fmgr-summary-value">R$ {fmtMoneyFMgr(totalPago)}</span>
+        <span className="fmgr-summary-sub">
+          {fmtPctFMgr(pctTeto)} de um teto de R$ {fmtMoneyFMgr(tetoTotal)}
         </span>
       </div>
-
-      <div className="fmgr-kpi">
-        <span className="fmgr-kpi-label">Pessoas que receberam</span>
-        <span className="fmgr-kpi-value">
-          {fmtIntFMgr(totalReceb)}<span className="fmgr-kpi-of"> / {fmtIntFMgr(totalElegiv)}</span>
-        </span>
-        <span className="fmgr-kpi-foot">
-          <strong>{fmtPctFMgr(pctReceberam)}</strong> dos elegíveis ganharam bônus
-        </span>
-      </div>
-
-      <div className="fmgr-kpi">
-        <span className="fmgr-kpi-label">Lojas com bônus</span>
-        <span className="fmgr-kpi-value">
-          {fmtIntFMgr(lojasComBonus)}<span className="fmgr-kpi-of"> / {fmtIntFMgr(stores.length)}</span>
-        </span>
-        <span className="fmgr-kpi-foot">
-          <strong>{fmtIntFMgr(lojasZeradas)}</strong> loja{lojasZeradas !== 1 ? 's' : ''} zerada{lojasZeradas !== 1 ? 's' : ''} por gate
-        </span>
-      </div>
-
-      <div className="fmgr-kpi">
-        <span className="fmgr-kpi-label">Principal motivo de zeragem</span>
-        <span className="fmgr-kpi-value fmgr-kpi-value--text">
-          {topReason ? topReason.label : '—'}
-        </span>
-        <span className="fmgr-kpi-foot">
-          {topReason
-            ? <><strong>{fmtIntFMgr(topReason.count)}</strong> de <strong>{fmtIntFMgr(totalZeroed)}</strong> pessoa{totalZeroed !== 1 ? 's' : ''} zerada{totalZeroed !== 1 ? 's' : ''}{reasonsSorted.length > 1 ? ` · +${reasonsSorted.length - 1} outro${reasonsSorted.length - 1 !== 1 ? 's' : ''} motivo${reasonsSorted.length - 1 !== 1 ? 's' : ''}` : ''}</>
-            : 'Sem ocorrências'}
-        </span>
+      <div className="fmgr-summary-metrics">
+        <div className="fmgr-summary-metric">
+          <span className="fmgr-summary-metric-num">{fmtIntFMgr(stores.length)}</span>
+          <span className="fmgr-summary-metric-lbl">Lojas</span>
+        </div>
+        <div className="fmgr-summary-metric">
+          <span className="fmgr-summary-metric-num">{fmtIntFMgr(lojasGateAtivo)}</span>
+          <span className="fmgr-summary-metric-lbl">Com gate ativo</span>
+        </div>
+        <div className="fmgr-summary-metric">
+          <span className="fmgr-summary-metric-num">
+            {fmtIntFMgr(totalReceb)}<span className="fmgr-summary-metric-den">/{fmtIntFMgr(totalElegiv)}</span>
+          </span>
+          <span className="fmgr-summary-metric-lbl">Bonificados</span>
+        </div>
+        {topReason && (
+          <div className="fmgr-summary-metric">
+            <span className="fmgr-summary-metric-num fmgr-summary-metric-text">{topReason.label}</span>
+            <span className="fmgr-summary-metric-lbl">Principal motivo de zeragem</span>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -652,53 +638,11 @@ export default function FeedbackManagerView({
   const currentWeek = weeks.find((w) => w.id === weekId);
   const drillStore = stores.find((s) => s.storeId === drillStoreId);
 
-  const topBar = (
-    <div className="top-bar">
-      <img src="/shopper-icon.avif" alt="Shopper" className="top-bar-logo-img" />
-      <div className="top-bar-divider" />
-      <div className="top-bar-context">
-        <span className="top-bar-eyebrow">Feedbacks</span>
-        <span className="top-bar-store">Bonificação Semanal</span>
-      </div>
-      <div className="top-bar-spacer" />
-      <button className="top-bar-logout" onClick={onBack} title="Voltar ao menu" style={{ marginRight: 8 }}>
-        <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-          <polyline points="9 22 9 12 15 12 15 22" />
-        </svg>
-        <span className="top-bar-logout-text">Menu</span>
-      </button>
-      {user && (
-        <div className="top-bar-user">
-          {user.picture && <img src={user.picture} alt={user.name} className="top-bar-avatar" referrerPolicy="no-referrer" />}
-          <span className="top-bar-username">{user?.name?.split(' ')[0]}</span>
-          {onLogout && (
-            <button className="top-bar-logout" onClick={onLogout} title="Sair">
-              <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                <polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
-              </svg>
-              <span className="top-bar-logout-text">Sair</span>
-            </button>
-          )}
-        </div>
-      )}
-    </div>
-  );
-
   if (weeks.length === 0) {
     return (
-      <div>
-        {topBar}
-        <div className="page">
-          {onBack && (
-            <button className="backlink" onClick={onBack}>
-              <Icon name="arrow_left" size={14} /> Voltar para o menu
-            </button>
-          )}
-          <div style={{ padding: '2rem', color: 'var(--fg-3)' }}>
-            Sem semanas de feedback publicadas. Aguarde o próximo fechamento.
-          </div>
+      <div className="page">
+        <div style={{ padding: '2rem', color: 'var(--text-muted)' }}>
+          Sem semanas de feedback publicadas. Aguarde o próximo fechamento.
         </div>
       </div>
     );
@@ -707,44 +651,21 @@ export default function FeedbackManagerView({
   // ── DRILL-DOWN: store detail ──
   if (drillStore && currentWeek) {
     return (
-      <div>
-        {topBar}
-        <div className="page">
-          <MgrStoreDetail
-            store={drillStore}
-            week={currentWeek}
-            viewerRole={viewerRole}
-            onBack={() => setDrillStoreId(null)}
-            onOpenPersonFeedback={onOpenPersonFeedback}
-          />
-        </div>
+      <div className="page">
+        <MgrStoreDetail
+          store={drillStore}
+          week={currentWeek}
+          viewerRole={viewerRole}
+          onBack={() => setDrillStoreId(null)}
+          onOpenPersonFeedback={onOpenPersonFeedback}
+        />
       </div>
     );
   }
 
   // ── OVERVIEW ──
   return (
-    <div>
-      {topBar}
-      <div className="page">
-      {onBack && (
-        <button className="backlink" onClick={onBack}>
-          <Icon name="arrow_left" size={14} /> Voltar para o menu
-        </button>
-      )}
-
-      <div className="page-header">
-        <div className="page-title-wrap">
-          <span className="page-eyebrow">Bonificação semanal · Visão gerencial</span>
-          <h1 className="page-title">Pagamentos da semana</h1>
-          <p className="page-subtitle">
-            {currentWeek
-              ? <>Resumo de todas as lojas processadas no período {currentWeek.rangeLabel}.</>
-              : 'Selecione uma semana para ver os pagamentos.'}
-          </p>
-        </div>
-      </div>
-
+    <div className="page">
       <MgrWeekNav weeks={weeks} weekId={weekId} onChange={setWeekId} />
 
       {!bundle && (
@@ -786,7 +707,6 @@ export default function FeedbackManagerView({
           </div>
         </>
       )}
-      </div>
     </div>
   );
 };
