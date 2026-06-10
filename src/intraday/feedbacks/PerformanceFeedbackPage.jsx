@@ -150,8 +150,9 @@ function GatesSection({ snap }) {
             const taxaInd   = Number(snap.taxa_separacao_individual || 0) * 100
             const faixa     = Number(snap.faixa_salario || 0)
             const cargo     = snap.funcao_bucket
-            const faixaMax  = cargo === 'SUPERVISOR' ? 200 : cargo === 'TEAM_LIDER' ? 150 : 100
-            const faixaMed  = cargo === 'SUPERVISOR' ? 150 : cargo === 'TEAM_LIDER' ? 100 : 50
+            const faixaMax  = cargo === 'SUPERVISOR' ? 250 : cargo === 'TEAM_LIDER' ? 200 : 150
+            const faixaMed  = cargo === 'SUPERVISOR' ? 200 : cargo === 'TEAM_LIDER' ? 150 : 100
+            const faixaLow  = cargo === 'SUPERVISOR' ? 150 : cargo === 'TEAM_LIDER' ? 100 : 50
             const sepIndOk  = taxaInd >= 85
             const indOk     = asdOk && sepIndOk
             return (
@@ -169,7 +170,8 @@ function GatesSection({ snap }) {
                   label="Taxa de separação individual"
                   desc={
                     taxaInd >= 95 ? `≥ 95% → faixa máxima R$${faixaMax}`
-                    : taxaInd >= 85 ? `85–95% → faixa intermediária R$${faixaMed}`
+                    : taxaInd >= 90 ? `90–95% → faixa alta R$${faixaMed}`
+                    : taxaInd >= 85 ? `85–90% → faixa base R$${faixaLow}`
                     : `< 85% → faixa R$0 — sem bônus de pedidos`
                   }
                   value={`${taxaInd.toFixed(1)}%`}
@@ -272,9 +274,9 @@ function CalcPanel({ snap, card }) {
   const gateAtivo = snap.gate_loja_80_flag || snap.gate_foto_flag || snap.assiduidade_any_flag
 
   const scopeLabel = cargo === 'SUPERVISOR' ? 'da loja' : cargo === 'TEAM_LIDER' ? 'do turno' : 'individual'
-  const faixaRule  = cargo === 'SUPERVISOR' ? '< 85%: R$0 · 85–95%: R$150 · ≥95%: R$200'
-                   : cargo === 'TEAM_LIDER' ? '< 85%: R$0 · 85–95%: R$100 · ≥95%: R$150'
-                   : '< 85%: R$0 · 85–95%: R$50 · ≥95%: R$100'
+  const faixaRule  = cargo === 'SUPERVISOR' ? '< 85%: R$0 · 85–90%: R$150 · 90–95%: R$200 · ≥95%: R$250'
+                   : cargo === 'TEAM_LIDER' ? '< 85%: R$0 · 85–90%: R$100 · 90–95%: R$150 · ≥95%: R$200'
+                   : '< 85%: R$0 · 85–90%: R$50 · 90–95%: R$100 · ≥95%: R$150'
   const tetoBase   = cargo === 'SUPERVISOR' ? 440 : cargo === 'TEAM_LIDER' ? 330 : 220
   const propPed    = '100% pedidos'
 
