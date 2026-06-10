@@ -29,11 +29,31 @@ function pctClass(val, limites) {
   if (pct < limites.atencao) return 'atencao'
   return 'saudavel'
 }
+function traduzMotivo(motivo) {
+  if (!motivo) return 'irregularidade de assiduidade'
+  return motivo.trim()
+    .replace(/unjustified absence/gi, 'falta injustificada')
+    .replace(/justified absence/gi,   'falta justificada')
+    .replace(/partial absence/gi,     'falta parcial')
+    .replace(/inss leave/gi,          'licença INSS')
+    .replace(/late arrival/gi,        'atraso')
+    .replace(/early departure/gi,     'saída antecipada')
+    .replace(/\bdelay\b/gi,           'atraso')
+    .replace(/\babsence\b/gi,         'falta')
+    .replace(/\bsuspension\b/gi,      'suspensão')
+    .replace(/\bwarning\b/gi,         'advertência')
+    .replace(/medical certificate/gi, 'atestado médico')
+    .replace(/\bmedical\b/gi,         'atestado')
+    .replace(/\bcertificate\b/gi,     'atestado')
+    .replace(/vacation/gi,            'férias')
+    .replace(/declaration/gi,         'declaração')
+    .replace(/\s*\|\s*/g,             ' · ')
+}
 function motivoZero(c) {
-  if (!c.assiduidade_ok) return { label: 'Assiduidade', cls: 'perf-motivo--assiduidade' }
+  if (!c.assiduidade_ok) return { label: traduzMotivo(c.motivo_falta), cls: 'perf-motivo--assiduidade' }
   if (c.gate_loja)       return { label: 'Gate SLA',    cls: 'perf-motivo--gate' }
   if (c.gate_foto)       return { label: 'Gate Foto',   cls: 'perf-motivo--gate' }
-  if (c.valor_final === 0) return { label: 'Taxa < 95%', cls: 'perf-motivo--taxa' }
+  if (c.valor_final === 0) return { label: 'Taxa < 85%', cls: 'perf-motivo--taxa' }
   return null
 }
 function semanaRangeLabel(year, week) {

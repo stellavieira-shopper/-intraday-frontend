@@ -365,7 +365,7 @@ function TurbosTable({ pedidos }) {
         </div>
         {total > 0 && (
           <div style={{ textAlign: 'right', flexShrink: 0 }}>
-            <div style={{ fontSize: 20, fontWeight: 800, color: ok === total ? 'var(--green)' : ok / total >= 0.95 ? 'var(--yellow)' : 'var(--red)' }}>{pctStr}</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: ok / total >= 0.95 ? 'var(--green)' : ok / total >= 0.85 ? 'var(--yellow)' : 'var(--red)' }}>{pctStr}</div>
             <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{ok}/{total} dentro do prazo</div>
           </div>
         )}
