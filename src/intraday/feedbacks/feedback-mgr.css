@@ -2,34 +2,6 @@
    Feedback Manager — visão gerencial semanal (admin / supervisor)
    ============================================================================ */
 
-/* ── Compat: V1 tokens → main CSS variables ──────────────────────────────── */
-:root {
-  --border-1:         var(--border, #e8eaed);
-  --border-2:         var(--border-light, #f0f2f5);
-  --r-md:             var(--radius, 12px);
-  --r-sm:             var(--radius-sm, 6px);
-  --r-pill:           100px;
-  --font-sans:        'Inter', 'Segoe UI', system-ui, sans-serif;
-  --font-numeric:     'Inter', 'Segoe UI', system-ui, sans-serif;
-  --fw-bold:          600;
-  --fw-medium:        500;
-  --fw-regular:       400;
-  --fg-1:             var(--text, #1a1f2e);
-  --fg-2:             #374151;
-  --fg-3:             var(--text-dim, #94a3b8);
-  --bg-3:             var(--bg, #f5f6fa);
-  --fs-14:            14px;
-  --fs-16:            16px;
-  --fs-18:            18px;
-  --fs-28:            28px;
-  --fs-32:            32px;
-  --shopper-navy:     var(--blue, #1e40af);
-  --shopper-navy-soft:#eff6ff;
-  --shopper-green:    var(--green, #16a34a);
-  --color-danger:     var(--red, #dc2626);
-  --shadow-sm:        var(--shadow, 0 1px 4px rgba(0,0,0,.08));
-}
-
 /* ── Week navigator ──────────────────────────────────────────────────────── */
 .fmgr-weeknav {
   display: flex;
