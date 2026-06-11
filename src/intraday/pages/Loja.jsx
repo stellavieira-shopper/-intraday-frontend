@@ -101,37 +101,48 @@ export default function Loja({ loja, dataInicio: dataInicioInit, dataFim: dataFi
 
   return (
     <div className="intraday-layout">
-      <div className="intraday-topbar">
-        <div className="intraday-topbar__brand">
-          <img src="/shopper-icon.avif" alt="Shopper" className="topbar-icon" />
-          <div className="brand-divider" />
-          <div>
-            <div className="brand-label">INTRADAY</div>
-            <div className="brand-title">Performance Operacional</div>
+      {/* V1-style topbar */}
+      <div className="top-bar">
+        <img src="/shopper-icon.avif" alt="Shopper" className="top-bar-logo-img" />
+        <div className="top-bar-divider" />
+        <div className="top-bar-context">
+          <span className="top-bar-eyebrow">Intraday · Supervisor</span>
+          <span className="top-bar-store">{nome}</span>
+        </div>
+        <div className="top-bar-spacer" />
+        <button onClick={buscar} disabled={loading}
+          style={{
+            padding: '7px 14px', borderRadius: 999, fontSize: 13, fontWeight: 700,
+            background: 'var(--shopper-navy)', color: '#fff', border: 'none',
+            cursor: 'pointer', opacity: loading ? 0.5 : 1, fontFamily: 'inherit',
+          }}>
+          {loading ? '⏳' : '↺'} Atualizar
+        </button>
+        {user && (
+          <div className="top-bar-user">
+            {user.picture && <img src={user.picture} alt={user.name} className="top-bar-avatar" referrerPolicy="no-referrer" />}
+            <span className="top-bar-username">{user.name?.split(' ')[0]}</span>
+            <button className="top-bar-logout" onClick={onLogout} title="Sair">
+              <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+              <span className="top-bar-logout-text">Sair</span>
+            </button>
           </div>
-        </div>
-        <div className="intraday-topbar__right">
-          <button className="btn-refresh" onClick={buscar} disabled={loading}>
-            {loading ? '⏳ Atualizando...' : '↺ Atualizar'}
-          </button>
-          {user && (
-            <div className="topbar-user">
-              {user.picture && <img src={user.picture} alt={user.name} className="topbar-avatar" referrerPolicy="no-referrer" />}
-              <span className="topbar-username">{user.name?.split(' ')[0]}</span>
-              <button className="btn-logout" onClick={onLogout} title="Sair">Sair</button>
-            </div>
-          )}
-        </div>
+        )}
       </div>
 
-      <div className="intraday-datebar">
-        <div className="intraday-datebar__left">
-          <div className="last-update-label">Última atualização</div>
-          <div className="last-update-time">{ultimaAtt || '—'}</div>
+      {/* Slim datebar */}
+      <div style={{
+        background: '#fff', borderBottom: '1px solid var(--border-1)',
+        padding: '10px 32px', display: 'flex', alignItems: 'center',
+        justifyContent: 'space-between', gap: 16, flexWrap: 'wrap',
+      }}>
+        <div style={{ fontSize: 12, color: 'var(--fg-3)', fontWeight: 600 }}>
+          {ultimaAtt ? `↻ Atualizado às ${ultimaAtt}` : ''}
         </div>
-        <div className="intraday-datebar__right">
-          <DateFilter dataInicio={dataInicio} dataFim={dataFim} onChange={handleDateChange} />
-        </div>
+        <DateFilter dataInicio={dataInicio} dataFim={dataFim} onChange={handleDateChange} />
       </div>
 
       {/* Hero da loja */}
