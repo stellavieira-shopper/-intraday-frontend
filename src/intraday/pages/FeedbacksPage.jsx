@@ -53,7 +53,11 @@ function motivoZero(c) {
   if (!c.assiduidade_ok) return { label: traduzMotivo(c.motivo_falta), cls: 'perf-motivo--assiduidade' }
   if (c.gate_loja)       return { label: 'Gate SLA',    cls: 'perf-motivo--gate' }
   if (c.gate_foto)       return { label: 'Gate Foto',   cls: 'perf-motivo--gate' }
-  if (c.valor_final === 0) return { label: 'Taxa < 85%', cls: 'perf-motivo--taxa' }
+  if (c.valor_final === 0) {
+    if ((c.faixa_salario || 0) === 0)                               return { label: 'Taxa < 85%',      cls: 'perf-motivo--taxa' }
+    if ((c.erros_normais || 0) + (c.erros_graves || 0) > 0)        return { label: 'Erros de clientes', cls: 'perf-motivo--taxa' }
+    return { label: 'Ganho zero (loja)', cls: 'perf-motivo--taxa' }
+  }
   return null
 }
 function semanaRangeLabel(year, week) {
@@ -166,7 +170,6 @@ function ColabsTable({ colaboradores, storeCode, onOpenIndividual, weekId }) {
             <th>Turno</th>
             <th>Taxa ind.</th>
             <th>Rupturas</th>
-            <th>Abast.</th>
             <th>Valor</th>
             {onOpenIndividual && <th></th>}
           </tr>
@@ -187,7 +190,6 @@ function ColabsTable({ colaboradores, storeCode, onOpenIndividual, weekId }) {
                 <td style={{ whiteSpace: 'nowrap' }}>
                   {c.rupturas > 0 ? <span>{c.rupturas} · −{fmtR(c.desconto_ruptura)}</span> : '0'}
                 </td>
-                <td>{c.nota_abast != null ? c.nota_abast.toFixed(1) : '—'}</td>
                 <td className="perf-td--valor">
                   {motivo
                     ? <span className={`perf-motivo ${motivo.cls}`}>{motivo.label}</span>
@@ -383,7 +385,7 @@ function PerfStoreCard({ loja, onOpenStore }) {
 }
 
 // ── Visão Geral — conteúdo ────────────────────────────────────────────────────
-function VisaoGeralContent({ semanas, onOpenIndividual }) {
+function VisaoGeralContent({ semanas, onOpenIndividual, initialStoreCode, onStoreRestored }) {
   const [semana, setSemana]       = useState(null)
   const [lojas, setLojas]         = useState([])
   const [loading, setLoading]     = useState(false)
@@ -412,6 +414,12 @@ function VisaoGeralContent({ semanas, onOpenIndividual }) {
 
   useEffect(() => { buscar() }, [buscar])
   useEffect(() => { setDrillStore(null) }, [semana])
+  useEffect(() => {
+    if (initialStoreCode && lojas.length > 0 && !drillStore) {
+      const loja = lojas.find(l => l.store_code === initialStoreCode)
+      if (loja) { setDrillStore(loja); onStoreRestored?.() }
+    }
+  }, [initialStoreCode, lojas])
 
   const weekId = semana ? semanaToWeekId(semana) : ''
   const totalElegiveis   = lojas.reduce((a, l) => a + l.total_elegiveis, 0)
@@ -524,6 +532,7 @@ export default function FeedbacksPage({ onVoltar, user, onLogout }) {
   const [bundleError, setBundleError]   = useState(null)
   const [activeTab, setActiveTab]       = useState('geral')
   const [drillPerson, setDrillPerson]   = useState(null)
+  const [backToStore, setBackToStore]   = useState(null)
   const firstName = user?.name?.split(' ')[0] || ''
 
   useEffect(() => {
@@ -615,13 +624,18 @@ export default function FeedbacksPage({ onVoltar, user, onLogout }) {
       )}
 
       {activeTab === 'geral' ? (
-        <VisaoGeralContent semanas={semanas} onOpenIndividual={handleOpenPerson} />
+        <VisaoGeralContent semanas={semanas} onOpenIndividual={handleOpenPerson} initialStoreCode={backToStore} onStoreRestored={() => setBackToStore(null)} />
       ) : (
         <PerformanceFeedbackPage
           feedbackIndex={semanasToIndex(semanas)}
           weekBundles={weekBundles}
           onWeekLoad={handleWeekLoad}
-          onBack={() => { setActiveTab('geral'); setDrillPerson(null) }}
+          onBack={() => {
+            const storeCode = drillPerson?.personId?.split('|')[0] || null
+            setBackToStore(storeCode)
+            setActiveTab('geral')
+            setDrillPerson(null)
+          }}
           initialPersonId={drillPerson?.personId}
           initialWeekId={drillPerson?.weekId}
         />
