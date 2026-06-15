@@ -114,13 +114,14 @@ function GateRow({ label, desc, value, passed }) {
 
 // ── Pré-requisitos ────────────────────────────────────────────────────────────
 function GatesSection({ snap }) {
+  const piso   = snap.store_code === 'pamplona' ? 0.80 : 0.85
   const sepOk  = Number(snap.taxa_separacao_loja || 0) >= 0.80
   const comOk  = Number(snap.taxa_completo_loja  || 0) >= 0.80
   // Usa gate_foto_flag do mart — pode ter sido ajustado (ex: desconsiderado manualmente)
   const fotOk  = !snap.gate_foto_flag
   const asdOk  = !snap.assiduidade_any_flag
   const lojaOk    = sepOk && comOk && fotOk
-  const sepIndOk  = Number(snap.taxa_separacao_individual || 0) >= 0.95
+  const sepIndOk  = Number(snap.taxa_separacao_individual || 0) >= piso
   const tudoOk    = lojaOk && asdOk && sepIndOk
 
   return (
@@ -150,10 +151,11 @@ function GatesSection({ snap }) {
             const taxaInd   = Number(snap.taxa_separacao_individual || 0) * 100
             const faixa     = Number(snap.faixa_salario || 0)
             const cargo     = snap.funcao_bucket
+            const pisoPct   = snap.store_code === 'pamplona' ? 80 : 85
             const faixaMax  = cargo === 'SUPERVISOR' ? 250 : cargo === 'TEAM_LIDER' ? 200 : 150
             const faixaMed  = cargo === 'SUPERVISOR' ? 200 : cargo === 'TEAM_LIDER' ? 150 : 100
             const faixaLow  = cargo === 'SUPERVISOR' ? 150 : cargo === 'TEAM_LIDER' ? 100 : 50
-            const sepIndOk  = taxaInd >= 85
+            const sepIndOk  = taxaInd >= pisoPct
             const indOk     = asdOk && sepIndOk
             return (
               <>
@@ -171,8 +173,8 @@ function GatesSection({ snap }) {
                   desc={
                     taxaInd >= 95 ? `≥ 95% → faixa máxima R$${faixaMax}`
                     : taxaInd >= 90 ? `90–95% → faixa alta R$${faixaMed}`
-                    : taxaInd >= 85 ? `85–90% → faixa base R$${faixaLow}`
-                    : `< 85% → faixa R$0 — sem bônus de pedidos`
+                    : taxaInd >= pisoPct ? `${pisoPct}–90% → faixa base R$${faixaLow}`
+                    : `< ${pisoPct}% → faixa R$0 — sem bônus de pedidos`
                   }
                   value={`${taxaInd.toFixed(1)}%`}
                   passed={sepIndOk}
@@ -273,10 +275,11 @@ function CalcPanel({ snap, card }) {
   const cargo     = snap.funcao_bucket
   const gateAtivo = snap.gate_loja_80_flag || snap.gate_foto_flag || snap.assiduidade_any_flag
 
+  const pisoPct    = snap.store_code === 'pamplona' ? 80 : 85
   const scopeLabel = cargo === 'SUPERVISOR' ? 'da loja' : cargo === 'TEAM_LIDER' ? 'do turno' : 'individual'
-  const faixaRule  = cargo === 'SUPERVISOR' ? '< 85%: R$0 · 85–90%: R$150 · 90–95%: R$200 · ≥95%: R$250'
-                   : cargo === 'TEAM_LIDER' ? '< 85%: R$0 · 85–90%: R$100 · 90–95%: R$150 · ≥95%: R$200'
-                   : '< 85%: R$0 · 85–90%: R$50 · 90–95%: R$100 · ≥95%: R$150'
+  const faixaRule  = cargo === 'SUPERVISOR' ? `< ${pisoPct}%: R$0 · ${pisoPct}–90%: R$150 · 90–95%: R$200 · ≥95%: R$250`
+                   : cargo === 'TEAM_LIDER' ? `< ${pisoPct}%: R$0 · ${pisoPct}–90%: R$100 · 90–95%: R$150 · ≥95%: R$200`
+                   : `< ${pisoPct}%: R$0 · ${pisoPct}–90%: R$50 · 90–95%: R$100 · ≥95%: R$150`
   const tetoBase   = cargo === 'SUPERVISOR' ? 440 : cargo === 'TEAM_LIDER' ? 330 : 220
   const propPed    = '100% pedidos'
 
@@ -296,8 +299,8 @@ function CalcPanel({ snap, card }) {
         formula="Faixa × (0,7 × mult.sep.loja + 0,3 × mult.completos.loja) − desconto rupturas"
         applied={`R$${fmtR(faixa)} × (0,7×${fmtX(mSep)} + 0,3×${fmtX(mCom)}) − ${fmtR(ruptDesc)} = ${fmtR(Math.max(bruto - ruptDesc, 0))}`} />
       <CalcRow label={`Taxa de separação ${scopeLabel}`} rule={`Define a faixa. ${faixaRule}`} value={fmtPctRaw(taxaIndiv * 100)} highlight />
-      <CalcRow label="Faixa base" rule={faixa > 0 ? 'Valor fixo pelo cargo/taxa' : 'Abaixo de 85% — faixa zero'} value={fmtR(faixa)} negative={faixa === 0} />
-      <CalcRow label="Separação da loja" rule="< 85%: 0× · 85–95%: 0,8× · 95–98%: 1,5× · ≥98%: 2,0×" value={`${fmtPctRaw(taxaSep * 100)} → ${fmtX(mSep)}`} highlight />
+      <CalcRow label="Faixa base" rule={faixa > 0 ? 'Valor fixo pelo cargo/taxa' : `Abaixo de ${pisoPct}% — faixa zero`} value={fmtR(faixa)} negative={faixa === 0} />
+      <CalcRow label="Separação da loja" rule={`< ${pisoPct}%: 0× · ${pisoPct}–95%: 0,8× · 95–98%: 1,5× · ≥98%: 2,0×`} value={`${fmtPctRaw(taxaSep * 100)} → ${fmtX(mSep)}`} highlight />
       <CalcRow label="Completos da loja" rule="< 95%: 0× · 95–98%: 0,8× · 98–99%: 1,5× · ≥99%: 2,0×" value={`${fmtPctRaw(taxaCom * 100)} → ${fmtX(mCom)}`} highlight />
       <CalcRow label="Fator final da loja" rule="0,7 × mult.sep + 0,3 × mult.completos" value={`${fator.toFixed(2)}×`} />
       <CalcRow label="Valor bruto de pedidos" rule="Faixa × fator" value={fmtR(bruto)} />
