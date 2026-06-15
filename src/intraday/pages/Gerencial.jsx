@@ -56,11 +56,201 @@ const SORT_OPTIONS = [
   { key: 'pedidos', label: 'Mais pedidos' },
 ]
 
+const FC_NOME = { 5: 'Pamplona', 6: 'Higienópolis', 8: 'São Caetano', 9: 'Vila Olímpia', 10: 'Barra Funda', 11: 'Alto de Pinheiros' }
+const FC_IDS_DARK = new Set(Object.keys(FC_NOME).map(Number))
+function nomeLoja(id) { return FC_NOME[id] || (id ? `FC ${id}` : 'Loja desconhecida') }
+
+function fmtTs(v) {
+  if (!v) return '—'
+  const d = new Date(v.value || v)
+  if (isNaN(d)) return String(v)
+  return d.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+}
+
+const GRAVE_STYLE = {
+  SIM:   { background: '#fde8e8', color: '#c0392b' },
+  GRAVE: { background: '#fde8e8', color: '#c0392b' },
+  NAO:   { background: '#e8f5e9', color: '#27ae60' },
+}
+function graveStyle(v) { return GRAVE_STYLE[String(v).toUpperCase()] || { background: '#f0f0f0', color: '#555' } }
+
+function ErrosClientesTab({ rows, loading, erro }) {
+  const [filtroLoja, setFiltroLoja] = useState('')
+
+  const LOJAS_DARK = Object.entries(FC_NOME)
+  const darkRows = rows.filter(r => FC_IDS_DARK.has(r.fulfillment_center_id))
+  const filtrado = darkRows.filter(r => !filtroLoja || String(r.fulfillment_center_id) === filtroLoja)
+
+  const COLS = ['Loja','Pedido','Data Entrega','Tipo de Erro','Grave','Responsabilidade','Produto','Tratativa','Link']
+
+  return (
+    <div>
+      {erro && <div className="error-banner">⚠ {erro}</div>}
+      {loading && (
+        <div className="loading-state"><div className="spinner" /><span>Carregando erros de clientes...</span></div>
+      )}
+      {!loading && (
+        <>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+            <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>Loja</span>
+            <button onClick={() => setFiltroLoja('')}
+              style={{ padding: '5px 14px', borderRadius: 20, border: '1px solid var(--border)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                background: !filtroLoja ? 'var(--shopper-red)' : '#fff', color: !filtroLoja ? '#fff' : 'var(--text)' }}>
+              Todas
+            </button>
+            {LOJAS_DARK.map(([id, nome]) => (
+              <button key={id} onClick={() => setFiltroLoja(filtroLoja === id ? '' : id)}
+                style={{ padding: '5px 14px', borderRadius: 20, border: '1px solid var(--border)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                  background: filtroLoja === id ? 'var(--shopper-red)' : '#fff', color: filtroLoja === id ? '#fff' : 'var(--text)' }}>
+                {nome}
+              </button>
+            ))}
+            <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 'auto' }}>
+              {filtrado.length.toLocaleString('pt-BR')} registro(s)
+            </span>
+          </div>
+          <div style={{ overflowX: 'auto', borderRadius: 8, border: '1px solid var(--border)' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+              <thead>
+                <tr style={{ background: '#f8f9fc' }}>
+                  {COLS.map(h => (
+                    <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 700, fontSize: 11,
+                      textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)',
+                      borderBottom: '2px solid var(--border)', whiteSpace: 'nowrap' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filtrado.length === 0 && (
+                  <tr><td colSpan={COLS.length} style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>Nenhum erro encontrado.</td></tr>
+                )}
+                {filtrado.map((r, i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid var(--border-light)', background: i % 2 === 0 ? '#fff' : '#fafbfc' }}>
+                    <td style={{ padding: '7px 12px', fontWeight: 600 }}>{nomeLoja(r.fulfillment_center_id)}</td>
+                    <td style={{ padding: '7px 12px', fontFamily: 'monospace', fontSize: 11, color: 'var(--text-muted)' }}>{r.cod_pedido}</td>
+                    <td style={{ padding: '7px 12px', whiteSpace: 'nowrap' }}>{r.data_entrega || '—'}</td>
+                    <td style={{ padding: '7px 12px' }}>{r.erro || '—'}</td>
+                    <td style={{ padding: '7px 12px' }}>
+                      <span style={{ ...graveStyle(r.grave), borderRadius: 4, padding: '2px 8px', fontSize: 10, fontWeight: 700 }}>
+                        {r.grave || '—'}
+                      </span>
+                    </td>
+                    <td style={{ padding: '7px 12px' }}>{r.responsabilidade || '—'}</td>
+                    <td style={{ padding: '7px 12px', maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.produto}>{r.produto || '—'}</td>
+                    <td style={{ padding: '7px 12px', maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.tratativa}>{r.tratativa || '—'}</td>
+                    <td style={{ padding: '7px 12px' }}>
+                      {(() => {
+                        const raw = r.link_drive || ''
+                        if (!raw || raw.startsWith('ERRO')) return <span style={{ color: 'var(--text-muted)' }}>—</span>
+                        const url = raw.startsWith('http') ? raw : `https://drive.google.com/drive${raw}`
+                        return <a href={url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--shopper-red)', fontWeight: 600, fontSize: 11 }}>Ver →</a>
+                      })()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+function RupturasTab({ dataInicio, dataFim }) {
+  const [rows, setRows]       = useState([])
+  const [loading, setLoading] = useState(false)
+  const [erro, setErro]       = useState(null)
+  const [filtroLoja, setFiltroLoja] = useState('')
+
+  useEffect(() => {
+    let active = true
+    setLoading(true)
+    setErro(null)
+    axios.get(`${API}/api/intraday/rupturas`, { params: { data_inicio: dataInicio, data_fim: dataFim } })
+      .then(r => { if (active) setRows(r.data.rupturas || []) })
+      .catch(e => { if (active) setErro(e.response?.data?.erro || e.message) })
+      .finally(() => { if (active) setLoading(false) })
+    return () => { active = false }
+  }, [dataInicio, dataFim])
+
+  const lojas = [...new Set(rows.map(r => r.fulfillment_center_id))].sort()
+  const filtrado = rows.filter(r => !filtroLoja || String(r.fulfillment_center_id) === filtroLoja)
+
+  const LOJAS_DARK = Object.entries(FC_NOME)
+
+  return (
+    <div>
+      {erro && <div className="error-banner">⚠ {erro}</div>}
+      {loading && (
+        <div className="loading-state"><div className="spinner" /><span>Carregando rupturas...</span></div>
+      )}
+      {!loading && (
+        <>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+            <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>Loja</span>
+            <button onClick={() => setFiltroLoja('')}
+              style={{ padding: '5px 14px', borderRadius: 20, border: '1px solid var(--border)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                background: !filtroLoja ? 'var(--shopper-red)' : '#fff', color: !filtroLoja ? '#fff' : 'var(--text)' }}>
+              Todas
+            </button>
+            {LOJAS_DARK.map(([id, nome]) => (
+              <button key={id} onClick={() => setFiltroLoja(filtroLoja === id ? '' : id)}
+                style={{ padding: '5px 14px', borderRadius: 20, border: '1px solid var(--border)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                  background: filtroLoja === id ? 'var(--shopper-red)' : '#fff', color: filtroLoja === id ? '#fff' : 'var(--text)' }}>
+                {nome}
+              </button>
+            ))}
+            <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 'auto' }}>
+              {filtrado.length.toLocaleString('pt-BR')} registro(s)
+            </span>
+          </div>
+          <div style={{ overflowX: 'auto', borderRadius: 8, border: '1px solid var(--border)' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+              <thead>
+                <tr style={{ background: '#f8f9fc' }}>
+                  {['Loja','Pedido','Prev. Entrega','Criado em','Resolvido em','Qtd.','Subst.','Tipo','Itens Pedido','Itens Dist.'].map(h => (
+                    <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 700, fontSize: 11,
+                      textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)',
+                      borderBottom: '2px solid var(--border)', whiteSpace: 'nowrap' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filtrado.length === 0 && (
+                  <tr><td colSpan={10} style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>Nenhum registro encontrado.</td></tr>
+                )}
+                {filtrado.map((r, i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid var(--border-light)', background: i % 2 === 0 ? '#fff' : '#fafbfc' }}>
+                    <td style={{ padding: '7px 12px', fontWeight: 600 }}>{nomeLoja(r.fulfillment_center_id)}</td>
+                    <td style={{ padding: '7px 12px', fontFamily: 'monospace', fontSize: 11, color: 'var(--text-muted)' }}>{r.cod_pedido}</td>
+                    <td style={{ padding: '7px 12px', whiteSpace: 'nowrap' }}>{r.dt_previsao_entrega?.value || r.dt_previsao_entrega || '—'}</td>
+                    <td style={{ padding: '7px 12px', whiteSpace: 'nowrap' }}>{fmtTs(r.created_at)}</td>
+                    <td style={{ padding: '7px 12px', whiteSpace: 'nowrap', color: r.resolved_at ? 'var(--green)' : 'var(--text-muted)' }}>{fmtTs(r.resolved_at)}</td>
+                    <td style={{ padding: '7px 12px', textAlign: 'center' }}>{r.qtd_total ?? '—'}</td>
+                    <td style={{ padding: '7px 12px', textAlign: 'center', color: r.replaced_qty > 0 ? 'var(--blue)' : 'var(--text-muted)' }}>{r.replaced_qty ?? 0}</td>
+                    <td style={{ padding: '7px 12px' }}>
+                      <span style={{ background: '#fde8e8', color: '#c0392b', borderRadius: 4, padding: '2px 8px', fontSize: 10, fontWeight: 700 }}>{r.issue_type || '—'}</span>
+                    </td>
+                    <td style={{ padding: '7px 12px', textAlign: 'center' }}>{r.qtd_total_pedido ?? '—'}</td>
+                    <td style={{ padding: '7px 12px', textAlign: 'center' }}>{r.itens_distintos_pedido ?? '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
 export default function Gerencial({ onLojaClick, onVoltar, user, onLogout }) {
   const [dataInicio, setDataInicio] = useState(hoje())
   const [dataFim, setDataFim]       = useState(hoje())
   const [lojas, setLojas]               = useState([])
   const [loading, setLoading]           = useState(false)
+  const [aba, setAba]                   = useState('lojas')
   const [refreshing, setRefreshing]     = useState(false)
   const [bqRefreshing, setBqRefreshing] = useState(false)
   const [fromCache, setFromCache]       = useState(false)
@@ -68,6 +258,9 @@ export default function Gerencial({ onLojaClick, onVoltar, user, onLogout }) {
   const [lastUpdated, setLastUpdated]   = useState(null)
   const [autoRefresh, setAutoRefresh]   = useState(true)
   const [sortBy, setSortBy]             = useState('sla')
+  const [erros, setErros]               = useState([])
+  const [errosLoading, setErrosLoading] = useState(false)
+  const [errosErro, setErrosErro]       = useState(null)
 
   useEffect(() => {
     let active = true
@@ -87,6 +280,19 @@ export default function Gerencial({ onLojaClick, onVoltar, user, onLogout }) {
     setDataFim(fim)
     setAutoRefresh(ini === hoje() && fim === hoje())
   }
+
+  const buscarErros = useCallback(async () => {
+    setErrosLoading(true)
+    setErrosErro(null)
+    try {
+      const { data: resp } = await axios.get(`${API}/api/intraday/erros-clientes`)
+      setErros(resp.erros || [])
+    } catch (e) {
+      setErrosErro(e.response?.data?.erro || e.message)
+    } finally {
+      setErrosLoading(false)
+    }
+  }, [])
 
   const buscar = useCallback(async () => {
     setLoading(true)
@@ -120,6 +326,7 @@ export default function Gerencial({ onLojaClick, onVoltar, user, onLogout }) {
   }
 
   useEffect(() => { buscar() }, [buscar])
+  useEffect(() => { buscarErros() }, [buscarErros])
 
   const buscarRef = useRef(buscar)
   useEffect(() => { buscarRef.current = buscar }, [buscar])
@@ -159,6 +366,16 @@ export default function Gerencial({ onLojaClick, onVoltar, user, onLogout }) {
   const aggRupturaPct = totals.total      > 0 ? (totals.comRuptura / totals.total) * 100    : null
   const aggFotoPct    = totals.finalizados> 0 ? (totals.comFoto / totals.finalizados) * 100 : null
   const semFotoTotal  = totals.finalizados - totals.comFoto
+
+  const errosPeriodo = erros.filter(e => {
+    if (!e.data_entrega) return false
+    const [d, m, y] = e.data_entrega.split('/')
+    if (!y) return false
+    const iso = `${y}-${m}-${d}`
+    return iso >= dataInicio && iso <= dataFim
+  })
+  const pedidosComErro = new Set(errosPeriodo.map(e => e.cod_pedido)).size
+  const aggErroPct     = totals.total > 0 ? (pedidosComErro / totals.total) * 100 : null
 
   const lojasOrdenadas = sortLojas(lojas, sortBy)
 
@@ -226,6 +443,22 @@ export default function Gerencial({ onLojaClick, onVoltar, user, onLogout }) {
       </div>
 
       <div className="intraday-content">
+        {/* Seletor de abas */}
+        <div style={{ display: 'flex', gap: 4, marginBottom: 20, borderBottom: '2px solid var(--border)', paddingBottom: 0 }}>
+          {[{ key: 'lojas', label: 'Lojas' }, { key: 'rupturas', label: 'Rupturas Detalhadas' }, { key: 'erros', label: 'Erros Reportados por Clientes' }].map(tab => (
+            <button key={tab.key} onClick={() => setAba(tab.key)} style={{
+              padding: '8px 20px', border: 'none', background: 'none', cursor: 'pointer',
+              fontSize: 13, fontWeight: 700, color: aba === tab.key ? 'var(--shopper-red)' : 'var(--text-muted)',
+              borderBottom: aba === tab.key ? '2px solid var(--shopper-red)' : '2px solid transparent',
+              marginBottom: -2, transition: 'color 0.15s'
+            }}>{tab.label}</button>
+          ))}
+        </div>
+
+        {aba === 'rupturas' && <RupturasTab dataInicio={dataInicio} dataFim={dataFim} />}
+        {aba === 'erros'    && <ErrosClientesTab rows={errosPeriodo} loading={errosLoading} erro={errosErro} />}
+
+        {aba === 'lojas' && <>
         {erro && <div className="error-banner">⚠ {erro}</div>}
 
         {loading && lojas.length === 0 && (
@@ -295,6 +528,14 @@ export default function Gerencial({ onLojaClick, onVoltar, user, onLogout }) {
                   <span className="perf-summary-item__lbl">Foto Geral</span>
                 </div>
               )}
+              {aggErroPct !== null && (
+                <div className="perf-summary-item" style={{ cursor: 'pointer' }} onClick={() => setAba('erros')} title="Ver erros de clientes">
+                  <span className="perf-summary-item__num" style={{ color: aggErroPct <= 1 ? 'var(--green)' : aggErroPct <= 3 ? 'var(--yellow)' : 'var(--red)' }}>
+                    {aggErroPct.toFixed(1)}%
+                  </span>
+                  <span className="perf-summary-item__lbl">Pedidos c/ Erro</span>
+                </div>
+              )}
             </div>
 
             <div className="gerencial-header">
@@ -327,6 +568,7 @@ export default function Gerencial({ onLojaClick, onVoltar, user, onLogout }) {
             </section>
           </>
         )}
+        </>}
       </div>
     </div>
   )
