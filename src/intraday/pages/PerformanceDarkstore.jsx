@@ -73,7 +73,7 @@ function motivoZero(c) {
   }
   if (c.gate_loja)         return { label: 'Gate SLA',    cls: 'perf-motivo--gate' }
   if (c.gate_foto)         return { label: 'Gate Foto',   cls: 'perf-motivo--gate' }
-  if (c.valor_final === 0) return { label: 'Taxa < 85%',  cls: 'perf-motivo--taxa' }
+  if (c.valor_final === 0) return { label: `Taxa < ${c.store_code === 'pamplona' ? 80 : 85}%`, cls: 'perf-motivo--taxa' }
   return null
 }
 
@@ -118,7 +118,6 @@ function ColabsTable({ colaboradores }) {
             <th>Turno</th>
             <th>Taxa ind.</th>
             <th>Rupturas (loja)</th>
-            <th>Abast.</th>
             <th>Valor</th>
           </tr>
         </thead>
@@ -141,7 +140,6 @@ function ColabsTable({ colaboradores }) {
                     : '0'
                   }
                 </td>
-                <td>{c.nota_abast != null ? `${c.nota_abast.toFixed(1)}` : '—'}</td>
                 <td className="perf-td--valor">
                   {motivo
                     ? <span className={`perf-motivo ${motivo.cls}`}>{motivo.label}</span>

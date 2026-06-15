@@ -54,7 +54,7 @@ function motivoZero(c) {
   if (c.gate_loja)       return { label: 'Gate SLA',    cls: 'perf-motivo--gate' }
   if (c.gate_foto)       return { label: 'Gate Foto',   cls: 'perf-motivo--gate' }
   if (c.valor_final === 0) {
-    if ((c.faixa_salario || 0) === 0)                               return { label: 'Taxa < 85%',      cls: 'perf-motivo--taxa' }
+    if ((c.faixa_salario || 0) === 0)                               return { label: `Taxa < ${c.store_code === 'pamplona' ? 80 : 85}%`, cls: 'perf-motivo--taxa' }
     if ((c.erros_normais || 0) + (c.erros_graves || 0) > 0)        return { label: 'Erros de clientes', cls: 'perf-motivo--taxa' }
     return { label: 'Ganho zero (loja)', cls: 'perf-motivo--taxa' }
   }
