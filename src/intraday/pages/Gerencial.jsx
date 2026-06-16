@@ -81,23 +81,12 @@ function graveStyle(v) { return GRAVE_STYLE[String(v).toUpperCase()] || { backgr
 
 function ErrosClientesTab({ rows, loading, erro }) {
   const [filtroLoja, setFiltroLoja] = useState('')
-  const [filtroDesc, setFiltroDesc] = useState('Considerar')
 
   const LOJAS_DARK = Object.entries(FC_NOME)
   const darkRows = rows.filter(r => FC_IDS_DARK.has(r.fulfillment_center_id))
-  const filtrado = darkRows.filter(r =>
-    (!filtroLoja || String(r.fulfillment_center_id) === filtroLoja) &&
-    (!filtroDesc  || r.considerar === filtroDesc)
-  )
+  const filtrado = darkRows.filter(r => !filtroLoja || String(r.fulfillment_center_id) === filtroLoja)
 
   const COLS = ['Loja','Pedido','Data Entrega','Tipo de Erro','Grave','Status','Responsabilidade','Produto','Tratativa','Link']
-
-  const DESC_OPTS = [
-    { v: '',               label: 'Todas' },
-    { v: 'Considerar',    label: 'Considerar' },
-    { v: 'Descontar',     label: 'Descontar' },
-    { v: 'Desconsiderar', label: 'Desconsiderar' },
-  ]
 
   return (
     <div>
@@ -107,16 +96,6 @@ function ErrosClientesTab({ rows, loading, erro }) {
       )}
       {!loading && (
         <>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-            <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>Status</span>
-            {DESC_OPTS.map(({ v, label }) => (
-              <button key={v} onClick={() => setFiltroDesc(v)}
-                style={{ padding: '5px 14px', borderRadius: 20, border: '1px solid var(--border)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                  background: filtroDesc === v ? 'var(--shopper-red)' : '#fff', color: filtroDesc === v ? '#fff' : 'var(--text)' }}>
-                {label}
-              </button>
-            ))}
-          </div>
           <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
             <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>Loja</span>
             <button onClick={() => setFiltroLoja('')}
