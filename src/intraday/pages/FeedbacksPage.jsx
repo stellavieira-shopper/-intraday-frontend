@@ -49,12 +49,12 @@ function traduzMotivo(motivo) {
     .replace(/declaration/gi,         'declaração')
     .replace(/\s*\|\s*/g,             ' · ')
 }
-function motivoZero(c) {
+function motivoZero(c, storeCode) {
   if (!c.assiduidade_ok) return { label: traduzMotivo(c.motivo_falta), cls: 'perf-motivo--assiduidade' }
   if (c.gate_loja)       return { label: 'Gate SLA',    cls: 'perf-motivo--gate' }
   if (c.gate_foto)       return { label: 'Gate Foto',   cls: 'perf-motivo--gate' }
   if (c.valor_final === 0) {
-    if ((c.faixa_salario || 0) === 0)                               return { label: `Taxa < ${c.store_code === 'pamplona' ? 80 : 85}%`, cls: 'perf-motivo--taxa' }
+    if ((c.faixa_salario || 0) === 0)                               return { label: `Taxa < ${storeCode === 'pamplona' ? 80 : 85}%`, cls: 'perf-motivo--taxa' }
     if ((c.erros_normais || 0) + (c.erros_graves || 0) > 0)        return { label: 'Erros de clientes', cls: 'perf-motivo--taxa' }
     return { label: 'Ganho zero (loja)', cls: 'perf-motivo--taxa' }
   }
@@ -176,7 +176,7 @@ function ColabsTable({ colaboradores, storeCode, onOpenIndividual, weekId }) {
         </thead>
         <tbody>
           {sorted.map((c, i) => {
-            const motivo = motivoZero(c)
+            const motivo = motivoZero(c, storeCode)
             return (
               <tr key={i} className={c.valor_final > 0 ? '' : 'perf-row--zero'}>
                 <td className="perf-td--nome">{c.nome}</td>

@@ -66,14 +66,14 @@ function traduzMotivo(motivo) {
     .replace(/\s*\|\s*/g,             ' · ')
 }
 
-function motivoZero(c) {
+function motivoZero(c, storeCode) {
   if (!c.assiduidade_ok) {
     const label = traduzMotivo(c.motivo_falta)
     return { label, cls: 'perf-motivo--assiduidade' }
   }
   if (c.gate_loja)         return { label: 'Gate SLA',    cls: 'perf-motivo--gate' }
   if (c.gate_foto)         return { label: 'Gate Foto',   cls: 'perf-motivo--gate' }
-  if (c.valor_final === 0) return { label: `Taxa < ${c.store_code === 'pamplona' ? 80 : 85}%`, cls: 'perf-motivo--taxa' }
+  if (c.valor_final === 0) return { label: `Taxa < ${storeCode === 'pamplona' ? 80 : 85}%`, cls: 'perf-motivo--taxa' }
   return null
 }
 
@@ -99,7 +99,7 @@ function GatePill({ ativo, label }) {
   )
 }
 
-function ColabsTable({ colaboradores }) {
+function ColabsTable({ colaboradores, storeCode }) {
   const sorted = [...colaboradores].sort((a, b) => {
     const ordemFuncao = { SUPERVISOR: 0, TEAM_LIDER: 1, OPERADOR: 2 }
     const fa = ordemFuncao[a.funcao] ?? 9
@@ -123,7 +123,7 @@ function ColabsTable({ colaboradores }) {
         </thead>
         <tbody>
           {sorted.map((c, i) => {
-            const motivo = motivoZero(c)
+            const motivo = motivoZero(c, storeCode)
             return (
               <tr key={i} className={c.valor_final > 0 ? '' : 'perf-row--zero'}>
                 <td className="perf-td--nome">{c.nome}</td>
@@ -192,7 +192,7 @@ function StoreCard({ loja }) {
         {expandido ? '▲ Ocultar colaboradores' : `▼ Ver ${loja.total_elegiveis} colaboradores`}
       </button>
 
-      {expandido && <ColabsTable colaboradores={loja.colaboradores} />}
+      {expandido && <ColabsTable colaboradores={loja.colaboradores} storeCode={loja.store_code} />}
     </div>
   )
 }
