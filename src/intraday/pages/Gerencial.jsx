@@ -56,8 +56,13 @@ const SORT_OPTIONS = [
   { key: 'pedidos', label: 'Mais pedidos' },
 ]
 
-const FC_NOME = { 5: 'Pamplona', 6: 'Higienópolis', 8: 'São Caetano', 9: 'Vila Olímpia', 10: 'Barra Funda', 11: 'Alto de Pinheiros' }
-const FC_IDS_DARK = new Set(Object.keys(FC_NOME).map(Number))
+const FC_NOME = {
+  6: 'Pamplona', 8: 'Moema', 9: 'Pinheiros', 10: 'Higienópolis',
+  11: 'Vila Olímpia', 12: 'Alto de Pinheiros', 13: 'Barra Funda',
+  14: 'Morumbi', 15: 'Vila Mariana', 16: 'Brooklin',
+  18: 'Campinas', 19: 'Tatuapé', 20: 'São Caetano',
+}
+const FC_IDS_DARK = new Set([6, 10, 11, 12, 13, 20])
 function nomeLoja(id) { return FC_NOME[id] || (id ? `FC ${id}` : 'Loja desconhecida') }
 
 function fmtTs(v) {
@@ -76,12 +81,23 @@ function graveStyle(v) { return GRAVE_STYLE[String(v).toUpperCase()] || { backgr
 
 function ErrosClientesTab({ rows, loading, erro }) {
   const [filtroLoja, setFiltroLoja] = useState('')
+  const [filtroDesc, setFiltroDesc] = useState('Considerar')
 
   const LOJAS_DARK = Object.entries(FC_NOME)
   const darkRows = rows.filter(r => FC_IDS_DARK.has(r.fulfillment_center_id))
-  const filtrado = darkRows.filter(r => !filtroLoja || String(r.fulfillment_center_id) === filtroLoja)
+  const filtrado = darkRows.filter(r =>
+    (!filtroLoja || String(r.fulfillment_center_id) === filtroLoja) &&
+    (!filtroDesc  || r.considerar === filtroDesc)
+  )
 
-  const COLS = ['Loja','Pedido','Data Entrega','Tipo de Erro','Grave','Responsabilidade','Produto','Tratativa','Link']
+  const COLS = ['Loja','Pedido','Data Entrega','Tipo de Erro','Grave','Status','Responsabilidade','Produto','Tratativa','Link']
+
+  const DESC_OPTS = [
+    { v: '',               label: 'Todas' },
+    { v: 'Considerar',    label: 'Considerar' },
+    { v: 'Descontar',     label: 'Descontar' },
+    { v: 'Desconsiderar', label: 'Desconsiderar' },
+  ]
 
   return (
     <div>
@@ -91,6 +107,16 @@ function ErrosClientesTab({ rows, loading, erro }) {
       )}
       {!loading && (
         <>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+            <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>Status</span>
+            {DESC_OPTS.map(({ v, label }) => (
+              <button key={v} onClick={() => setFiltroDesc(v)}
+                style={{ padding: '5px 14px', borderRadius: 20, border: '1px solid var(--border)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                  background: filtroDesc === v ? 'var(--shopper-red)' : '#fff', color: filtroDesc === v ? '#fff' : 'var(--text)' }}>
+                {label}
+              </button>
+            ))}
+          </div>
           <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
             <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>Loja</span>
             <button onClick={() => setFiltroLoja('')}
@@ -134,6 +160,13 @@ function ErrosClientesTab({ rows, loading, erro }) {
                       <span style={{ ...graveStyle(r.grave), borderRadius: 4, padding: '2px 8px', fontSize: 10, fontWeight: 700 }}>
                         {r.grave || '—'}
                       </span>
+                    </td>
+                    <td style={{ padding: '7px 12px' }}>
+                      <span style={{
+                        borderRadius: 4, padding: '2px 8px', fontSize: 10, fontWeight: 700,
+                        background: r.considerar === 'Considerar' ? '#fde8e8' : r.considerar === 'Descontar' ? '#fff3cd' : '#f0f0f0',
+                        color:      r.considerar === 'Considerar' ? '#c0392b' : r.considerar === 'Descontar' ? '#856404' : '#777',
+                      }}>{r.considerar || '—'}</span>
                     </td>
                     <td style={{ padding: '7px 12px' }}>{r.responsabilidade || '—'}</td>
                     <td style={{ padding: '7px 12px', maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.produto}>{r.produto || '—'}</td>
