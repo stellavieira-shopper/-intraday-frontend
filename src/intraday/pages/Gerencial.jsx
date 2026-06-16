@@ -126,6 +126,9 @@ function AbastecimentoTab({ dataInicio, dataFim }) {
   const mediaSegsSku  = comSku.length   ? Math.round(comSku.reduce((a, r)   => a + r.tempo_abastecimento_segundos / r.qtd_sku,   0) / comSku.length)   : null
   const comItens   = comTempo.filter(r => r.qtd_itens > 0)
   const mediaSegsItem = comItens.length ? Math.round(comItens.reduce((a, r) => a + r.tempo_abastecimento_segundos / r.qtd_itens, 0) / comItens.length) : null
+  const totalItens = comItens.reduce((a, r) => a + r.qtd_itens, 0)
+  const totalMins  = comItens.reduce((a, r) => a + r.tempo_abastecimento_segundos / 60, 0)
+  const itensPorMin = totalMins > 0 ? (totalItens / totalMins).toFixed(1) : null
   const tsInicio   = filtrado.map(r => new Date(r.started_dt?.value  || r.started_dt)).filter(d => !isNaN(d))
   const tsFim      = filtrado.map(r => new Date(r.finished_dt?.value || r.finished_dt)).filter(d => !isNaN(d))
   const primeiroDt = tsInicio.length ? new Date(Math.min(...tsInicio)) : null
@@ -143,6 +146,7 @@ function AbastecimentoTab({ dataInicio, dataFim }) {
           { label: 'Média por pedido', valor: mediaSegs     !== null ? fmtTempo(mediaSegs)     : '—' },
           { label: 'Média por SKU',    valor: mediaSegsSku  !== null ? fmtTempo(mediaSegsSku)  : '—' },
           { label: 'Média por item',   valor: mediaSegsItem !== null ? fmtTempo(mediaSegsItem) : '—' },
+          { label: 'Itens por minuto', valor: itensPorMin   !== null ? `${itensPorMin} it/min`  : '—' },
           { label: 'Início do abastecimento', valor: fmtHora(primeiroDt) },
           { label: 'Fim do abastecimento',    valor: fmtHora(ultimoDt) },
           { label: 'Total', valor: `${filtrado.length} abast.` },
