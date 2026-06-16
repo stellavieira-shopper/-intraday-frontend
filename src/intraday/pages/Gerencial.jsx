@@ -79,6 +79,144 @@ const GRAVE_STYLE = {
 }
 function graveStyle(v) { return GRAVE_STYLE[String(v).toUpperCase()] || { background: '#f0f0f0', color: '#555' } }
 
+function fmtTempo(segundos) {
+  if (!segundos && segundos !== 0) return '—'
+  const m = Math.floor(segundos / 60)
+  const s = segundos % 60
+  return `${m}m ${String(s).padStart(2, '0')}s`
+}
+
+function AbastecimentoTab({ dataInicio, dataFim }) {
+  const [rows, setRows]       = useState([])
+  const [loading, setLoading] = useState(false)
+  const [erro, setErro]       = useState(null)
+  const [filtroNome, setFiltroNome]   = useState('')
+  const [filtroLoja, setFiltroLoja]   = useState('')
+  const [filtroTurno, setFiltroTurno] = useState('')
+
+  useEffect(() => {
+    setLoading(true)
+    setErro(null)
+    axios.get(`${API}/api/intraday/abastecimento`, { params: { data_inicio: dataInicio, data_fim: dataFim } })
+      .then(r => setRows(r.data.registros || []))
+      .catch(e => setErro(e.response?.data?.erro || e.message))
+      .finally(() => setLoading(false))
+  }, [dataInicio, dataFim])
+
+  const lojas = [...new Set(rows.map(r => r.id_fulfillment_center).filter(id => FC_NOME[Number(id)]))].sort((a, b) => FC_NOME[Number(a)].localeCompare(FC_NOME[Number(b)]))
+
+  const filtrado = rows.filter(r => {
+    if (!FC_NOME[Number(r.id_fulfillment_center)]) return false
+    if (filtroLoja  && r.id_fulfillment_center !== filtroLoja) return false
+    if (filtroTurno && r.turno !== filtroTurno) return false
+    if (filtroNome  && !String(r.nome || '').toLowerCase().includes(filtroNome.toLowerCase())) return false
+    return true
+  })
+
+  const btnStyle = (ativo) => ({
+    padding: '4px 14px', borderRadius: 20, border: '1px solid var(--border)',
+    cursor: 'pointer', fontSize: 12, fontWeight: 600,
+    background: ativo ? 'var(--shopper-red)' : '#fff',
+    color: ativo ? '#fff' : 'var(--text)',
+  })
+
+  const comTempo   = filtrado.filter(r => r.tempo_abastecimento_segundos > 0)
+  const mediaSegs  = comTempo.length ? Math.round(comTempo.reduce((a, r) => a + r.tempo_abastecimento_segundos, 0) / comTempo.length) : null
+  const comSku     = comTempo.filter(r => r.qtd_sku > 0)
+  const mediaSegsSku  = comSku.length   ? Math.round(comSku.reduce((a, r)   => a + r.tempo_abastecimento_segundos / r.qtd_sku,   0) / comSku.length)   : null
+  const comItens   = comTempo.filter(r => r.qtd_itens > 0)
+  const mediaSegsItem = comItens.length ? Math.round(comItens.reduce((a, r) => a + r.tempo_abastecimento_segundos / r.qtd_itens, 0) / comItens.length) : null
+  const tsInicio   = filtrado.map(r => new Date(r.started_dt?.value  || r.started_dt)).filter(d => !isNaN(d))
+  const tsFim      = filtrado.map(r => new Date(r.finished_dt?.value || r.finished_dt)).filter(d => !isNaN(d))
+  const primeiroDt = tsInicio.length ? new Date(Math.min(...tsInicio)) : null
+  const ultimoDt   = tsFim.length   ? new Date(Math.max(...tsFim))    : null
+  const fmtHora = d => d ? d.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' }) : '—'
+
+  if (loading) return <div style={{ padding: 32, color: 'var(--text-muted)' }}>Carregando abastecimentos...</div>
+  if (erro)    return <div className="error-banner">⚠ {erro}</div>
+
+  return (
+    <div>
+      {/* KPIs */}
+      <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+        {[
+          { label: 'Média por pedido', valor: mediaSegs     !== null ? fmtTempo(mediaSegs)     : '—' },
+          { label: 'Média por SKU',    valor: mediaSegsSku  !== null ? fmtTempo(mediaSegsSku)  : '—' },
+          { label: 'Média por item',   valor: mediaSegsItem !== null ? fmtTempo(mediaSegsItem) : '—' },
+          { label: 'Início do abastecimento', valor: fmtHora(primeiroDt) },
+          { label: 'Fim do abastecimento',    valor: fmtHora(ultimoDt) },
+          { label: 'Total', valor: `${filtrado.length} abast.` },
+        ].map(({ label, valor }) => (
+          <div key={label} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 10, padding: '12px 20px', minWidth: 140 }}>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>{label}</div>
+            <div style={{ fontSize: 20, fontWeight: 700 }}>{valor}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Filtros */}
+      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', marginBottom: 16 }}>
+        <input
+          placeholder="Buscar por nome..."
+          value={filtroNome}
+          onChange={e => setFiltroNome(e.target.value)}
+          style={{ padding: '5px 12px', border: '1px solid var(--border)', borderRadius: 20, fontSize: 12, width: 180 }}
+        />
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          <button style={btnStyle(!filtroLoja)} onClick={() => setFiltroLoja('')}>Todas</button>
+          {lojas.map(id => (
+            <button key={id} style={btnStyle(filtroLoja === id)} onClick={() => setFiltroLoja(filtroLoja === id ? '' : id)}>
+              {nomeLoja(Number(id))}
+            </button>
+          ))}
+        </div>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {['MANHA', 'TARDE', 'NOITE'].map(t => (
+            <button key={t} style={btnStyle(filtroTurno === t)} onClick={() => setFiltroTurno(filtroTurno === t ? '' : t)}>
+              {t === 'MANHA' ? 'Manhã' : t === 'TARDE' ? 'Tarde' : 'Noite'}
+            </button>
+          ))}
+        </div>
+        <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 'auto' }}>
+          {filtrado.length} registro{filtrado.length !== 1 ? 's' : ''}
+        </span>
+      </div>
+
+      {/* Tabela */}
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+          <thead>
+            <tr style={{ background: 'var(--bg-card)', borderBottom: '2px solid var(--border)' }}>
+              {['Nome', 'Loja', 'Turno', 'Data', 'Pedido', 'SKUs', 'Itens', 'Início', 'Fim', 'Tempo'].map(h => (
+                <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 700, whiteSpace: 'nowrap' }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {filtrado.length === 0 && (
+              <tr><td colSpan={10} style={{ padding: 24, textAlign: 'center', color: 'var(--text-muted)' }}>Nenhum registro encontrado.</td></tr>
+            )}
+            {filtrado.map((r, i) => (
+              <tr key={i} style={{ borderBottom: '1px solid var(--border)', background: i % 2 === 0 ? '#fff' : 'var(--bg-card)' }}>
+                <td style={{ padding: '7px 12px', whiteSpace: 'nowrap' }}>{r.nome || '—'}</td>
+                <td style={{ padding: '7px 12px', whiteSpace: 'nowrap' }}>{nomeLoja(Number(r.id_fulfillment_center))}</td>
+                <td style={{ padding: '7px 12px' }}>{r.turno || '—'}</td>
+                <td style={{ padding: '7px 12px', whiteSpace: 'nowrap' }}>{r.data_ref?.value || r.data_ref || '—'}</td>
+                <td style={{ padding: '7px 12px', fontFamily: 'monospace', fontSize: 11 }}>{r.order_code || '—'}</td>
+                <td style={{ padding: '7px 12px', textAlign: 'center' }}>{r.qtd_sku ?? '—'}</td>
+                <td style={{ padding: '7px 12px', textAlign: 'center' }}>{r.qtd_itens ?? '—'}</td>
+                <td style={{ padding: '7px 12px', whiteSpace: 'nowrap' }}>{fmtTs(r.started_dt)}</td>
+                <td style={{ padding: '7px 12px', whiteSpace: 'nowrap' }}>{fmtTs(r.finished_dt)}</td>
+                <td style={{ padding: '7px 12px', whiteSpace: 'nowrap', fontWeight: 600 }}>{fmtTempo(r.tempo_abastecimento_segundos)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
 function ErrosClientesTab({ rows, loading, erro }) {
   const [filtroLoja, setFiltroLoja] = useState('')
 
@@ -457,7 +595,7 @@ export default function Gerencial({ onLojaClick, onVoltar, user, onLogout }) {
       <div className="intraday-content">
         {/* Seletor de abas */}
         <div style={{ display: 'flex', gap: 4, marginBottom: 20, borderBottom: '2px solid var(--border)', paddingBottom: 0 }}>
-          {[{ key: 'lojas', label: 'Lojas' }, { key: 'rupturas', label: 'Rupturas Detalhadas' }, { key: 'erros', label: 'Erros Reportados por Clientes' }].map(tab => (
+          {[{ key: 'lojas', label: 'Lojas' }, { key: 'rupturas', label: 'Rupturas Detalhadas' }, { key: 'erros', label: 'Erros Reportados por Clientes' }, { key: 'abastecimento', label: 'Abastecimento' }].map(tab => (
             <button key={tab.key} onClick={() => setAba(tab.key)} style={{
               padding: '8px 20px', border: 'none', background: 'none', cursor: 'pointer',
               fontSize: 13, fontWeight: 700, color: aba === tab.key ? 'var(--shopper-red)' : 'var(--text-muted)',
@@ -467,8 +605,9 @@ export default function Gerencial({ onLojaClick, onVoltar, user, onLogout }) {
           ))}
         </div>
 
-        {aba === 'rupturas' && <RupturasTab dataInicio={dataInicio} dataFim={dataFim} />}
-        {aba === 'erros'    && <ErrosClientesTab rows={errosPeriodo} loading={errosLoading} erro={errosErro} />}
+        {aba === 'rupturas'      && <RupturasTab dataInicio={dataInicio} dataFim={dataFim} />}
+        {aba === 'erros'         && <ErrosClientesTab rows={errosPeriodo} loading={errosLoading} erro={errosErro} />}
+        {aba === 'abastecimento' && <AbastecimentoTab dataInicio={dataInicio} dataFim={dataFim} />}
 
         {aba === 'lojas' && <>
         {erro && <div className="error-banner">⚠ {erro}</div>}
