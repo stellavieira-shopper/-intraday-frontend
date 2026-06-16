@@ -79,6 +79,24 @@ const GRAVE_STYLE = {
 }
 function graveStyle(v) { return GRAVE_STYLE[String(v).toUpperCase()] || { background: '#f0f0f0', color: '#555' } }
 
+const STORE_NOME_ABAST = {
+  'alto de pinheiros': 'Alto de Pinheiros',
+  'barra funda':       'Barra Funda',
+  'brooklin':          'Brooklin',
+  'campinas':          'Campinas',
+  'higienopolis':      'Higienópolis',
+  'moema':             'Moema',
+  'morumbi':           'Morumbi',
+  'pamplona':          'Pamplona',
+  'pinheiros':         'Pinheiros',
+  'são caetano':       'São Caetano',
+  'sao caetano':       'São Caetano',
+  'tatuapé':           'Tatuapé',
+  'tatuape':           'Tatuapé',
+  'vila mariana':      'Vila Mariana',
+  'vila olimpia':      'Vila Olímpia',
+}
+
 function fmtTempo(segundos) {
   if (!segundos && segundos !== 0) return '—'
   const m = Math.floor(segundos / 60)
@@ -103,11 +121,11 @@ function AbastecimentoTab({ dataInicio, dataFim }) {
       .finally(() => setLoading(false))
   }, [dataInicio, dataFim])
 
-  const lojas = [...new Set(rows.map(r => r.id_fulfillment_center).filter(id => FC_NOME[Number(id)]))].sort((a, b) => FC_NOME[Number(a)].localeCompare(FC_NOME[Number(b)]))
+  const lojas = [...new Set(rows.map(r => r.store_code).filter(sc => STORE_NOME_ABAST[sc]))].sort((a, b) => STORE_NOME_ABAST[a].localeCompare(STORE_NOME_ABAST[b]))
 
   const filtrado = rows.filter(r => {
-    if (!FC_NOME[Number(r.id_fulfillment_center)]) return false
-    if (filtroLoja  && r.id_fulfillment_center !== filtroLoja) return false
+    if (!STORE_NOME_ABAST[r.store_code]) return false
+    if (filtroLoja  && r.store_code !== filtroLoja) return false
     if (filtroTurno && r.turno !== filtroTurno) return false
     if (filtroNome  && !String(r.nome || '').toLowerCase().includes(filtroNome.toLowerCase())) return false
     return true
@@ -168,9 +186,9 @@ function AbastecimentoTab({ dataInicio, dataFim }) {
         />
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           <button style={btnStyle(!filtroLoja)} onClick={() => setFiltroLoja('')}>Todas</button>
-          {lojas.map(id => (
-            <button key={id} style={btnStyle(filtroLoja === id)} onClick={() => setFiltroLoja(filtroLoja === id ? '' : id)}>
-              {nomeLoja(Number(id))}
+          {lojas.map(sc => (
+            <button key={sc} style={btnStyle(filtroLoja === sc)} onClick={() => setFiltroLoja(filtroLoja === sc ? '' : sc)}>
+              {STORE_NOME_ABAST[sc]}
             </button>
           ))}
         </div>
@@ -203,7 +221,7 @@ function AbastecimentoTab({ dataInicio, dataFim }) {
             {filtrado.map((r, i) => (
               <tr key={i} style={{ borderBottom: '1px solid var(--border)', background: i % 2 === 0 ? '#fff' : 'var(--bg-card)' }}>
                 <td style={{ padding: '7px 12px', whiteSpace: 'nowrap' }}>{r.nome || '—'}</td>
-                <td style={{ padding: '7px 12px', whiteSpace: 'nowrap' }}>{nomeLoja(Number(r.id_fulfillment_center))}</td>
+                <td style={{ padding: '7px 12px', whiteSpace: 'nowrap' }}>{STORE_NOME_ABAST[r.store_code] || r.store_code}</td>
                 <td style={{ padding: '7px 12px' }}>{r.turno || '—'}</td>
                 <td style={{ padding: '7px 12px', whiteSpace: 'nowrap' }}>{r.data_ref?.value || r.data_ref || '—'}</td>
                 <td style={{ padding: '7px 12px', fontFamily: 'monospace', fontSize: 11 }}>{r.order_code || '—'}</td>
