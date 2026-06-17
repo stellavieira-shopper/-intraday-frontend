@@ -546,7 +546,15 @@ export default function Gerencial({ onLojaClick, onVoltar, user, onLogout }) {
     const iso = `${y}-${m}-${d}`
     return iso >= dataInicio && iso <= dataFim
   })
-  const pedidosComErro = new Set(errosPeriodo.map(e => e.cod_pedido)).size
+  const errosDark = errosPeriodo.filter(e => FC_IDS_DARK.has(e.fulfillment_center_id))
+  const errosPorFc = errosDark.reduce((acc, e) => {
+    const fc = e.fulfillment_center_id
+    if (!fc) return acc
+    if (!acc[fc]) acc[fc] = new Set()
+    acc[fc].add(e.cod_pedido)
+    return acc
+  }, {})
+  const pedidosComErro = new Set(errosDark.map(e => e.cod_pedido)).size
   const aggErroPct     = totals.total > 0 ? (pedidosComErro / totals.total) * 100 : null
 
   const lojasOrdenadas = sortLojas(lojas, sortBy)
@@ -735,6 +743,7 @@ export default function Gerencial({ onLojaClick, onVoltar, user, onLogout }) {
                   loja={loja}
                   dataInicio={dataInicio}
                   dataFim={dataFim}
+                  errosPorFc={errosPorFc}
                   onClick={(nome) => onLojaClick(nome, dataInicio, dataFim)}
                 />
               ))}

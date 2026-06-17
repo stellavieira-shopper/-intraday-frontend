@@ -27,7 +27,14 @@ function fotoColor(pct) {
   return '--red'
 }
 
-export default function LojaCard({ loja, dataInicio, dataFim, onClick }) {
+function erroColor(pct) {
+  if (pct === null) return '--green'
+  if (pct <= 1)   return '--green'
+  if (pct <= 3)   return '--orange'
+  return '--red'
+}
+
+export default function LojaCard({ loja, dataInicio, dataFim, errosPorFc = {}, onClick }) {
   const saude = calcSaude(loja)
   const nome  = nomeLoja(loja.loja || loja.nome_loja)
 
@@ -43,6 +50,10 @@ export default function LojaCard({ loja, dataInicio, dataFim, onClick }) {
   const pctSla     = pctVal(dentroSla, comSla)
   const pctRuptura = pctVal(comRuptura, total)
   const pctFoto    = pctVal(comFoto, finalizados)
+
+  const errosSet   = errosPorFc[loja.id_fulfillment_center] || new Set()
+  const errosCount = errosSet.size
+  const pctErros   = total > 0 ? (errosCount / total) * 100 : null
 
   const avgIniciar = loja.avg_tempo_iniciar_min != null ? `${loja.avg_tempo_iniciar_min}min` : '—'
 
@@ -72,8 +83,10 @@ export default function LojaCard({ loja, dataInicio, dataFim, onClick }) {
 
         <div className="loja-card__metric">
           <span className="loja-card__metric-lbl">ERROS</span>
-          <span className="loja-card__metric-val loja-card__metric-val--green">0.0%</span>
-          <span className="loja-card__metric-sub">0 pedidos</span>
+          <span className={`loja-card__metric-val loja-card__metric-val${erroColor(pctErros)}`}>
+            {pctErros !== null ? `${pctErros.toFixed(1)}%` : '—'}
+          </span>
+          <span className="loja-card__metric-sub">{errosCount} {errosCount === 1 ? 'pedido' : 'pedidos'}</span>
         </div>
 
         <div className="loja-card__metric">
