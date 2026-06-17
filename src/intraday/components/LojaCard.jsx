@@ -34,7 +34,7 @@ function erroColor(pct) {
   return '--red'
 }
 
-export default function LojaCard({ loja, dataInicio, dataFim, errosPorFc = {}, onClick }) {
+export default function LojaCard({ loja, dataInicio, dataFim, errosPorLoja = {}, onClick }) {
   const saude = calcSaude(loja)
   const nome  = nomeLoja(loja.loja || loja.nome_loja)
 
@@ -51,7 +51,7 @@ export default function LojaCard({ loja, dataInicio, dataFim, errosPorFc = {}, o
   const pctRuptura = pctVal(comRuptura, total)
   const pctFoto    = pctVal(comFoto, finalizados)
 
-  const errosSet   = errosPorFc[loja.id_fulfillment_center] || new Set()
+  const errosSet   = errosPorLoja[loja.loja] || new Set()
   const errosCount = errosSet.size
   const pctErros   = total > 0 ? (errosCount / total) * 100 : null
 

@@ -38,13 +38,20 @@ function fotoLoja(l) {
   return fin > 0 ? foto / fin : 1
 }
 
-function sortLojas(list, by) {
+function erroLoja(l, errosPorLoja) {
+  const total = Number(l.total_pedidos) || 0
+  const errosSet = errosPorLoja[l.loja] || new Set()
+  return total > 0 ? errosSet.size / total : 0
+}
+
+function sortLojas(list, by, errosPorLoja = {}) {
   const arr = [...list]
   switch (by) {
     case 'sla':     return arr.sort((a, b) => slaLoja(a)     - slaLoja(b))
     case 'ruptura': return arr.sort((a, b) => rupturaLoja(b) - rupturaLoja(a))
     case 'foto':    return arr.sort((a, b) => fotoLoja(a)    - fotoLoja(b))
     case 'pedidos': return arr.sort((a, b) => (Number(b.total_pedidos) || 0) - (Number(a.total_pedidos) || 0))
+    case 'erros':   return arr.sort((a, b) => erroLoja(b, errosPorLoja) - erroLoja(a, errosPorLoja))
     default:        return arr
   }
 }
@@ -52,6 +59,7 @@ function sortLojas(list, by) {
 const SORT_OPTIONS = [
   { key: 'sla',     label: 'Pior SLA' },
   { key: 'ruptura', label: 'Mais ruptura' },
+  { key: 'erros',   label: 'Mais erros' },
   { key: 'foto',    label: 'Menos foto' },
   { key: 'pedidos', label: 'Mais pedidos' },
 ]
@@ -381,7 +389,7 @@ function RupturasTab({ dataInicio, dataFim }) {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
               <thead>
                 <tr style={{ background: '#f8f9fc' }}>
-                  {['Loja','Pedido','Prev. Entrega','Criado em','Resolvido em','Qtd.','Subst.','Tipo','Itens Pedido','Itens Dist.'].map(h => (
+                  {['Loja','Pedido','Produto','Prev. Entrega','Criado em','Resolvido em','Qtd.','Subst.','Tipo','Itens Pedido','Itens Dist.'].map(h => (
                     <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 700, fontSize: 11,
                       textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)',
                       borderBottom: '2px solid var(--border)', whiteSpace: 'nowrap' }}>{h}</th>
@@ -390,12 +398,13 @@ function RupturasTab({ dataInicio, dataFim }) {
               </thead>
               <tbody>
                 {filtrado.length === 0 && (
-                  <tr><td colSpan={10} style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>Nenhum registro encontrado.</td></tr>
+                  <tr><td colSpan={11} style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>Nenhum registro encontrado.</td></tr>
                 )}
                 {filtrado.map((r, i) => (
                   <tr key={i} style={{ borderBottom: '1px solid var(--border-light)', background: i % 2 === 0 ? '#fff' : '#fafbfc' }}>
                     <td style={{ padding: '7px 12px', fontWeight: 600 }}>{nomeLoja(r.fulfillment_center_id)}</td>
                     <td style={{ padding: '7px 12px', fontFamily: 'monospace', fontSize: 11, color: 'var(--text-muted)' }}>{r.cod_pedido}</td>
+                    <td style={{ padding: '7px 12px', maxWidth: 220 }}>{r.produto || '—'}</td>
                     <td style={{ padding: '7px 12px', whiteSpace: 'nowrap' }}>{r.dt_previsao_entrega?.value || r.dt_previsao_entrega || '—'}</td>
                     <td style={{ padding: '7px 12px', whiteSpace: 'nowrap' }}>{fmtTs(r.created_at)}</td>
                     <td style={{ padding: '7px 12px', whiteSpace: 'nowrap', color: r.resolved_at ? 'var(--green)' : 'var(--text-muted)' }}>{fmtTs(r.resolved_at)}</td>
@@ -518,12 +527,14 @@ export default function Gerencial({ onLojaClick, onVoltar, user, onLogout }) {
     ? d.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })
     : ''
 
-  const saudes    = lojas.map(calcSaude)
+  const lojasFiltradas = lojas.filter(l => FC_NOME[l.id_fulfillment_center])
+
+  const saudes    = lojasFiltradas.map(calcSaude)
   const criticos  = saudes.filter(s => s.variant === 'critico').length
   const atencao   = saudes.filter(s => s.variant === 'atencao').length
   const saudaveis = saudes.filter(s => s.variant === 'saudavel').length
 
-  const totals = lojas.reduce((acc, l) => {
+  const totals = lojasFiltradas.reduce((acc, l) => {
     acc.total      += Number(l.total_pedidos)       || 0
     acc.comSla     += Number(l.pedidos_com_sla)     || 0
     acc.dentroSla  += Number(l.pedidos_dentro_sla)  || 0
@@ -546,18 +557,19 @@ export default function Gerencial({ onLojaClick, onVoltar, user, onLogout }) {
     const iso = `${y}-${m}-${d}`
     return iso >= dataInicio && iso <= dataFim
   })
-  const errosDark = errosPeriodo.filter(e => FC_IDS_DARK.has(e.fulfillment_center_id))
-  const errosPorFc = errosDark.reduce((acc, e) => {
-    const fc = e.fulfillment_center_id
-    if (!fc) return acc
-    if (!acc[fc]) acc[fc] = new Set()
-    acc[fc].add(e.cod_pedido)
+  const errosPorLoja = errosPeriodo.reduce((acc, e) => {
+    const loja = e.loja
+    if (!loja) return acc
+    if (!acc[loja]) acc[loja] = new Set()
+    acc[loja].add(e.cod_pedido)
     return acc
   }, {})
-  const pedidosComErro = new Set(errosDark.map(e => e.cod_pedido)).size
-  const aggErroPct     = totals.total > 0 ? (pedidosComErro / totals.total) * 100 : null
+  const pedidosComErro = new Set(errosPeriodo.filter(e => e.loja).map(e => e.cod_pedido)).size
+  const aggErroPct     = (!loading && totals.total > 0)
+    ? (pedidosComErro / totals.total) * 100
+    : null
 
-  const lojasOrdenadas = sortLojas(lojas, sortBy)
+  const lojasOrdenadas = sortLojas(lojasFiltradas, sortBy, errosPorLoja)
 
   const now = new Date()
   const diaSemana  = now.toLocaleDateString('pt-BR', { weekday: 'long', timeZone: 'America/Sao_Paulo' })
@@ -743,7 +755,7 @@ export default function Gerencial({ onLojaClick, onVoltar, user, onLogout }) {
                   loja={loja}
                   dataInicio={dataInicio}
                   dataFim={dataFim}
-                  errosPorFc={errosPorFc}
+                  errosPorLoja={errosPorLoja}
                   onClick={(nome) => onLojaClick(nome, dataInicio, dataFim)}
                 />
               ))}
