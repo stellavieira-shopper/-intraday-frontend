@@ -439,6 +439,7 @@ export default function Gerencial({ onLojaClick, onVoltar, user, onLogout }) {
   const [lastUpdated, setLastUpdated]   = useState(null)
   const [autoRefresh, setAutoRefresh]   = useState(true)
   const [sortBy, setSortBy]             = useState('sla')
+  const [canal, setCanal]               = useState('todos')
   const [erros, setErros]               = useState([])
   const [errosLoading, setErrosLoading] = useState(false)
   const [errosErro, setErrosErro]       = useState(null)
@@ -479,9 +480,9 @@ export default function Gerencial({ onLojaClick, onVoltar, user, onLogout }) {
     setLoading(true)
     setErro(null)
     try {
-      const { data: resp } = await axios.get(`${API}/api/intraday/gerencial`, {
-        params: { data_inicio: dataInicio, data_fim: dataFim }
-      })
+      const params = { data_inicio: dataInicio, data_fim: dataFim }
+      if (canal !== 'todos') params.canal = canal
+const { data: resp } = await axios.get(`${API}/api/intraday/gerencial`, { params })
       setLojas(resp.lojas || [])
       setFromCache(!!resp.fromCache)
       setBqRefreshing(!!resp.refreshing)
@@ -491,7 +492,7 @@ export default function Gerencial({ onLojaClick, onVoltar, user, onLogout }) {
     } finally {
       setLoading(false)
     }
-  }, [dataInicio, dataFim])
+  }, [dataInicio, dataFim, canal])
 
   async function handleAtualizar() {
     setRefreshing(true)
@@ -672,6 +673,29 @@ export default function Gerencial({ onLojaClick, onVoltar, user, onLogout }) {
 
         {lojas.length > 0 && (
           <>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12 }}>
+              {[
+                { id: 'todos',   label: 'Todos',       color: '#334155' },
+                { id: 'ifood',   label: 'iFood',       color: '#ef4444' },
+                { id: 'shopper', label: 'Shopper Now', color: '#10b981' },
+              ].map(c => (
+                <button
+                  key={c.id}
+                  onClick={() => setCanal(c.id)}
+                  style={{
+                    padding: '5px 16px', borderRadius: 20, fontSize: 13, cursor: 'pointer',
+                    border: canal === c.id ? 'none' : '1px solid var(--border)',
+                    fontWeight: canal === c.id ? 700 : 500,
+                    background: canal === c.id ? c.color : 'var(--surface)',
+                    color: canal === c.id ? '#fff' : 'var(--text-muted)',
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  {c.label}
+                </button>
+              ))}
+            </div>
+
             <div className="status-bar">
               <div className="status-bar__item status-bar__item--critico">
                 <span className="status-bar__num">{criticos}</span>
@@ -732,19 +756,21 @@ export default function Gerencial({ onLojaClick, onVoltar, user, onLogout }) {
             </div>
 
             <div className="gerencial-header">
-              <span className="gerencial-sort-label">
-                Ordenado por: {SORT_OPTIONS.find(o => o.key === sortBy)?.label}
-              </span>
-              <div className="gerencial-sort-btns">
-                {SORT_OPTIONS.map(opt => (
-                  <button
-                    key={opt.key}
-                    className={`sort-btn${sortBy === opt.key ? ' sort-btn--active' : ''}`}
-                    onClick={() => setSortBy(opt.key)}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span className="gerencial-sort-label">
+                  Ordenado por: {SORT_OPTIONS.find(o => o.key === sortBy)?.label}
+                </span>
+                <div className="gerencial-sort-btns">
+                  {SORT_OPTIONS.map(opt => (
+                    <button
+                      key={opt.key}
+                      className={`sort-btn${sortBy === opt.key ? ' sort-btn--active' : ''}`}
+                      onClick={() => setSortBy(opt.key)}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 

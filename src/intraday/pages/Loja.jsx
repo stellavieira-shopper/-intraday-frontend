@@ -45,9 +45,16 @@ function KpiLoja({ label, value, sup, sub, dotClass, barPct, barClass }) {
   )
 }
 
+const CANAIS = [
+  { id: 'todos',   label: 'Todos',       color: '#334155' },
+  { id: 'ifood',   label: 'iFood',       color: '#ef4444' },
+  { id: 'shopper', label: 'Shopper Now', color: '#10b981' },
+]
+
 export default function Loja({ loja, dataInicio: dataInicioInit, dataFim: dataFimInit, onVoltar, user, onLogout }) {
   const [dataInicio, setDataInicio]         = useState(dataInicioInit)
   const [dataFim, setDataFim]               = useState(dataFimInit)
+  const [canal, setCanal]                   = useState('todos')
   const [dados, setDados]                   = useState(null)
   const [loading, setLoading]               = useState(false)
   const [erro, setErro]                     = useState(null)
@@ -63,9 +70,11 @@ export default function Loja({ loja, dataInicio: dataInicioInit, dataFim: dataFi
     setLoading(true)
     setErro(null)
     try {
+      const params = { data_inicio: dataInicio, data_fim: dataFim }
+      if (canal !== 'todos') params.canal = canal
       const { data: resp } = await axios.get(
         `${API}/api/intraday/loja/${encodeURIComponent(loja)}`,
-        { params: { data_inicio: dataInicio, data_fim: dataFim } }
+        { params }
       )
       setDados(resp)
       setUltimaAtt(new Date().toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo' }))
@@ -74,7 +83,7 @@ export default function Loja({ loja, dataInicio: dataInicioInit, dataFim: dataFi
     } finally {
       setLoading(false)
     }
-  }, [loja, dataInicio, dataFim])
+  }, [loja, dataInicio, dataFim, canal])
 
   useEffect(() => { buscar() }, [buscar])
 
@@ -142,6 +151,27 @@ export default function Loja({ loja, dataInicio: dataInicioInit, dataFim: dataFi
           <span className={`saude-dot saude-dot--${saude.variant}`} />
           {nome}
         </div>
+        <div className="loja-canal-tabs" style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+          {CANAIS.map(c => (
+            <button
+              key={c.id}
+              onClick={() => setCanal(c.id)}
+              style={{
+                padding: '6px 18px',
+                borderRadius: 20,
+                border: canal === c.id ? 'none' : '1px solid var(--border)',
+                background: canal === c.id ? c.color : 'var(--surface)',
+                color: canal === c.id ? '#fff' : 'var(--text-muted)',
+                fontWeight: canal === c.id ? 700 : 500,
+                fontSize: 13,
+                cursor: 'pointer',
+                transition: 'all 0.15s',
+              }}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="intraday-content">
@@ -206,7 +236,7 @@ export default function Loja({ loja, dataInicio: dataInicioInit, dataFim: dataFi
 
             {/* Por tipo de pedido */}
             {dados.tipos && dados.tipos.length > 0 && (
-              <Accordion title="Por tipo de pedido" subtitle={`${fmtPeriodo(dataInicio, dataFim)} · SLA de 5 min aplica-se a Turbo/Express e Fast Delivery`}>
+              <Accordion title="Por tipo de pedido" subtitle={`${fmtPeriodo(dataInicio, dataFim)} · SLA de 5 min aplica-se a Turbo/Express, Fast Delivery e Turbo Shopper`}>
                 <div style={{ overflowX: 'auto', marginTop: 12 }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                     <thead>
@@ -221,17 +251,25 @@ export default function Loja({ loja, dataInicio: dataInicioInit, dataFim: dataFi
                         const pSla  = t.com_sla > 0 ? ((t.dentro_sla / t.com_sla) * 100).toFixed(1) : null
                         const pRup  = t.total   > 0 ? ((t.com_ruptura / t.total) * 100).toFixed(1)  : '0.0'
                         const pFoto = t.finalizados > 0 ? ((t.com_foto / t.finalizados) * 100).toFixed(1) : null
-                        const isTurbo  = t.tipo === 'Turbo / Express'
+                        const isTurbo  = t.tipo === 'Turbo / Express / Fast' || t.tipo === 'Turbo Shopper'
                         const temSla   = t.com_sla > 0
                         const slaColor = pSla === null ? '#94a3b8' : Number(pSla) >= 85 ? 'var(--green)' : Number(pSla) >= 70 ? 'var(--yellow)' : 'var(--red)'
                         const ruptColor = Number(pRup) <= 5 ? 'var(--green)' : Number(pRup) <= 15 ? 'var(--yellow)' : 'var(--red)'
                         const fotoColor = pFoto === null ? '#94a3b8' : Number(pFoto) >= 70 ? 'var(--green)' : Number(pFoto) >= 30 ? 'var(--yellow)' : 'var(--red)'
+                        const badgeBg = isTurbo ? '#dbeafe'
+                          : t.tipo === 'Agendado' || t.tipo === 'Agendado Volume Alto' ? '#f0fdf4'
+                          : t.tipo === 'Sem classificação' ? '#f1f5f9'
+                          : '#f3f4f6'
+                        const badgeColor = isTurbo ? '#1d4ed8'
+                          : t.tipo === 'Agendado' || t.tipo === 'Agendado Volume Alto' ? '#15803d'
+                          : t.tipo === 'Sem classificação' ? '#64748b'
+                          : '#374151'
                         return (
                           <tr key={i} style={{ borderBottom: '1px solid var(--border-light)', background: i % 2 === 0 ? 'transparent' : '#fafbfc' }}>
                             <td style={{ padding: '10px 12px', fontWeight: 600 }}>
                               <span style={{
-                                background: isTurbo ? '#dbeafe' : t.tipo === 'Fast Delivery' ? '#ede9fe' : t.tipo === 'Sem classificação' ? '#f1f5f9' : '#f0fdf4',
-                                color: isTurbo ? '#1d4ed8' : t.tipo === 'Fast Delivery' ? '#6d28d9' : t.tipo === 'Sem classificação' ? '#64748b' : '#15803d',
+                                background: badgeBg,
+                                color: badgeColor,
                                 borderRadius: 4, padding: '3px 10px', fontSize: 12, fontWeight: 700
                               }}>
                                 {t.tipo}
@@ -239,7 +277,7 @@ export default function Loja({ loja, dataInicio: dataInicioInit, dataFim: dataFi
                             </td>
                             <td style={{ padding: '10px 12px', fontWeight: 700 }}>{Number(t.total).toLocaleString('pt-BR')}</td>
                             <td style={{ padding: '10px 12px', fontWeight: 700, color: slaColor }}>
-                              {temSla
+                              {isTurbo || temSla
                                 ? (pSla !== null ? `${pSla}%` : '—')
                                 : <span style={{ color: '#94a3b8', fontSize: 12 }}>N/A</span>}
                             </td>

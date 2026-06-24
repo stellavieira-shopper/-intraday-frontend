@@ -1,3 +1,19 @@
+const TIPO_LABEL = {
+  TURBO_SHOPPER:  'Turbo Shopper',
+  SHOPPER_NOW:    'Shopper Now',
+  DEFAULT:        'Agendado',
+  LARGE_BASKET:   'Agendado Volume Alto',
+  FAST_DELIVERY:          'Fast Delivery',
+  FAST_DELIVERY_OVERLAP:  'Fast Delivery',
+  TURBO:          'Turbo',
+  EXPRESS:        'Express',
+}
+
+function tipoLabel(tipo) {
+  if (!tipo) return '—'
+  return TIPO_LABEL[tipo.toUpperCase()] || tipo
+}
+
 export default function PedidosRecentes({ pedidos }) {
   if (!pedidos || pedidos.length === 0)
     return <div className="empty-state">Nenhum pedido encontrado.</div>
@@ -30,9 +46,7 @@ export default function PedidosRecentes({ pedidos }) {
               <tr key={i}>
                 <td className="td-nome" style={{ fontFamily: 'monospace', fontSize: 12 }}>{p.cod_pedido}</td>
                 <td>
-                  {p.tipo_de_pedido
-                    ? <span style={{ fontSize: 11 }}>{p.tipo_de_pedido}{ehTurbo ? ' ⚡' : ''}</span>
-                    : '—'}
+                  <span style={{ fontSize: 11 }}>{tipoLabel(p.tipo_de_pedido)}{ehTurbo ? ' ⚡' : ''}</span>
                 </td>
                 <td className="td-nome">{p.operador ?? '—'}</td>
                 <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>{p.turno ?? '—'}</td>
