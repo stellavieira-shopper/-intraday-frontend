@@ -258,10 +258,12 @@ export default function Loja({ loja, dataInicio: dataInicioInit, dataFim: dataFi
                         const fotoColor = pFoto === null ? '#94a3b8' : Number(pFoto) >= 70 ? 'var(--green)' : Number(pFoto) >= 30 ? 'var(--yellow)' : 'var(--red)'
                         const badgeBg = isTurbo ? '#dbeafe'
                           : t.tipo === 'Agendado' || t.tipo === 'Agendado Volume Alto' ? '#f0fdf4'
+                          : t.tipo === 'Shopper Agendado' ? '#ecfdf5'
                           : t.tipo === 'Sem classificação' ? '#f1f5f9'
                           : '#f3f4f6'
                         const badgeColor = isTurbo ? '#1d4ed8'
                           : t.tipo === 'Agendado' || t.tipo === 'Agendado Volume Alto' ? '#15803d'
+                          : t.tipo === 'Shopper Agendado' ? '#065f46'
                           : t.tipo === 'Sem classificação' ? '#64748b'
                           : '#374151'
                         return (

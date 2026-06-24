@@ -1,6 +1,6 @@
 const TIPO_LABEL = {
   TURBO_SHOPPER:  'Turbo Shopper',
-  SHOPPER_NOW:    'Shopper Now',
+  SHOPPER_NOW:    'Shopper Agendado',
   DEFAULT:        'Agendado',
   LARGE_BASKET:   'Agendado Volume Alto',
   FAST_DELIVERY:          'Fast Delivery',
