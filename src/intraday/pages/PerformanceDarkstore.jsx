@@ -30,7 +30,7 @@ function nomeStore(code) {
 
 function fmtPct(val) {
   if (val == null) return '—'
-  return `${(val * 100).toFixed(1)}%`
+  return `${Math.round(val * 100)}%`
 }
 
 function fmtR(val) {

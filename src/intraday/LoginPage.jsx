@@ -35,7 +35,7 @@ export default function LoginPage({ onLogin }) {
         return
       }
       localStorage.setItem('intraday_token', data.token)
-      localStorage.setItem('intraday_user', JSON.stringify({ name: data.name, email: data.email, picture: data.picture }))
+      localStorage.setItem('intraday_user', JSON.stringify({ name: data.name, email: data.email, picture: data.picture, store_code: data.store_code ?? null, nome: data.nome ?? null, fun_o: data.fun_o ?? null }))
       onLogin(data)
     } catch {
       alert('Erro de conexão com o servidor.')

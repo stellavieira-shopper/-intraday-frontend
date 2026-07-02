@@ -16,6 +16,7 @@ const ALIASES = {
   BROOKLIN:       'Brooklin',
   CAMPINAS:       'Campinas',
   MOEMA:          'Moema',
+  'VILA GUILHERME': 'Vila Guilherme',
 }
 
 export function nomeLoja(raw) {

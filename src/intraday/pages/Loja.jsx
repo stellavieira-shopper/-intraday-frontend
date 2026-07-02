@@ -55,6 +55,7 @@ export default function Loja({ loja, dataInicio: dataInicioInit, dataFim: dataFi
   const [dataInicio, setDataInicio]         = useState(dataInicioInit)
   const [dataFim, setDataFim]               = useState(dataFimInit)
   const [canal, setCanal]                   = useState('todos')
+  const [excluirNoturno, setExcluirNoturno] = useState(false)
   const [dados, setDados]                   = useState(null)
   const [loading, setLoading]               = useState(false)
   const [erro, setErro]                     = useState(null)
@@ -72,6 +73,7 @@ export default function Loja({ loja, dataInicio: dataInicioInit, dataFim: dataFi
     try {
       const params = { data_inicio: dataInicio, data_fim: dataFim }
       if (canal !== 'todos') params.canal = canal
+      if (excluirNoturno) params.excluir_noturno = 'true'
       const { data: resp } = await axios.get(
         `${API}/api/intraday/loja/${encodeURIComponent(loja)}`,
         { params }
@@ -83,7 +85,7 @@ export default function Loja({ loja, dataInicio: dataInicioInit, dataFim: dataFi
     } finally {
       setLoading(false)
     }
-  }, [loja, dataInicio, dataFim, canal])
+  }, [loja, dataInicio, dataFim, canal, excluirNoturno])
 
   useEffect(() => { buscar() }, [buscar])
 
@@ -186,6 +188,34 @@ export default function Loja({ loja, dataInicio: dataInicioInit, dataFim: dataFi
 
         {dados && (
           <>
+            {/* Filtro noturno iFood */}
+            {canal !== 'shopper' && (
+              <div style={{ display: 'flex', gap: 8, marginBottom: 16, alignItems: 'center' }}>
+                {[
+                  { val: false, label: 'Com pedidos 23h-00h' },
+                  { val: true,  label: 'Sem pedidos 23h-00h' },
+                ].map(opt => (
+                  <button
+                    key={String(opt.val)}
+                    onClick={() => setExcluirNoturno(opt.val)}
+                    style={{
+                      padding: '5px 14px',
+                      borderRadius: 16,
+                      border: excluirNoturno === opt.val ? 'none' : '1px solid var(--border)',
+                      background: excluirNoturno === opt.val ? '#f59e0b' : 'var(--surface)',
+                      color: excluirNoturno === opt.val ? '#fff' : 'var(--text-muted)',
+                      fontWeight: excluirNoturno === opt.val ? 700 : 500,
+                      fontSize: 12,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+                <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>iFood · pedidos fora da performance</span>
+              </div>
+            )}
+
             {/* KPIs grandes */}
             <div className="loja-kpi-grid">
               <KpiLoja

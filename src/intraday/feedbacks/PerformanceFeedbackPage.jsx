@@ -9,7 +9,7 @@ const fmtX = v => `${Number(v || 0).toFixed(1)}×`
 const CARGO = { SUPERVISOR: 'Supervisor', TEAM_LIDER: 'Team Leader', OPERADOR: 'Operador' }
 
 function traduzMotivo(motivo) {
-  if (!motivo) return 'irregularidade de assiduidade'
+  if (!motivo) return 'sem ponto registrado'
   return motivo.trim()
     .replace(/unjustified absence/gi, 'falta injustificada')
     .replace(/justified absence/gi,   'falta justificada')

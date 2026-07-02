@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import axios from 'axios'
 import PerformanceFeedbackPage from '../feedbacks/PerformanceFeedbackPage.jsx'
+import MetodologiaPage from '../feedbacks/MetodologiaPage.jsx'
 import '../feedbacks/feedback-mgr.css'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
 // Semanas bloqueadas até liberação explícita
-const SEMANAS_BLOQUEADAS = [{ year_ref: 2026, week_ref: 24 }]
+const SEMANAS_BLOQUEADAS = []
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const NOMES = {
@@ -23,7 +24,12 @@ function nomeStore(code) {
   if (NOMES[low]) return NOMES[low]
   return code.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
 }
-function fmtPct(val) { return val == null ? '—' : `${(val * 100).toFixed(1)}%` }
+function fmtPct(val) {
+  if (val == null) return '—'
+  const pct = val * 100
+  if (pct >= 79.5 && pct < 80) return '80%'
+  return `${pct.toFixed(1)}%`
+}
 function fmtR(val)   { return `R$ ${Number(val).toFixed(2).replace('.', ',')}` }
 function pctClass(val, limites) {
   if (val == null) return 'gray'
@@ -33,7 +39,7 @@ function pctClass(val, limites) {
   return 'saudavel'
 }
 function traduzMotivo(motivo) {
-  if (!motivo) return 'irregularidade de assiduidade'
+  if (!motivo) return 'sem ponto registrado'
   return motivo.trim()
     .replace(/unjustified absence/gi, 'falta injustificada')
     .replace(/justified absence/gi,   'falta justificada')
@@ -286,22 +292,24 @@ function BreakdownSection({ colaboradores }) {
 }
 
 // ── Detalhe da loja (drill-down, abre como página separada) ───────────────────
-function StoreDetail({ loja, onBack, onOpenIndividual, weekId }) {
+function StoreDetail({ loja, onBack, onOpenIndividual, weekId, hideBack }) {
   const gateAtivo = loja.gate_sla_flag || loja.gate_foto_flag
   const nome = nomeStore(loja.store_code)
   return (
     <div className="intraday-content">
-      <button
-        onClick={onBack}
-        style={{
-          background: 'none', border: 'none', cursor: 'pointer',
-          fontSize: 13, color: 'var(--text-muted)', fontWeight: 600,
-          padding: '4px 0', marginBottom: 20, display: 'inline-flex',
-          alignItems: 'center', gap: 6
-        }}
-      >
-        ‹ Voltar para as lojas
-      </button>
+      {!hideBack && (
+        <button
+          onClick={onBack}
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            fontSize: 13, color: 'var(--text-muted)', fontWeight: 600,
+            padding: '4px 0', marginBottom: 20, display: 'inline-flex',
+            alignItems: 'center', gap: 6
+          }}
+        >
+          ‹ Voltar para as lojas
+        </button>
+      )}
 
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20, gap: 12 }}>
         <div>
@@ -388,7 +396,7 @@ function PerfStoreCard({ loja, onOpenStore }) {
 }
 
 // ── Visão Geral — conteúdo ────────────────────────────────────────────────────
-function VisaoGeralContent({ semanas, onOpenIndividual, initialStoreCode, onStoreRestored }) {
+function VisaoGeralContent({ semanas, onOpenIndividual, initialStoreCode, onStoreRestored, lojaStoreCode }) {
   const [semana, setSemana]       = useState(null)
   const [lojas, setLojas]         = useState([])
   const [loading, setLoading]     = useState(false)
@@ -425,6 +433,38 @@ function VisaoGeralContent({ semanas, onOpenIndividual, initialStoreCode, onStor
   }, [initialStoreCode, lojas])
 
   const weekId = semana ? semanaToWeekId(semana) : ''
+
+  // Usuário de loja: vai direto ao drill-down com WeekNav no topo
+  if (lojaStoreCode) {
+    const lojaAtual = lojas.find(l => l.store_code === lojaStoreCode)
+    return (
+      <div className="intraday-content">
+        <WeekNav semanas={semanas} semana={semana} onChange={setSemana} />
+        {erro && <div className="error-banner">⚠ {erro}</div>}
+        {loading && (
+          <div className="loading-state">
+            <div className="spinner" />
+            <span>Carregando dados da semana...</span>
+          </div>
+        )}
+        {!loading && !lojaAtual && !erro && semana && (
+          <div className="empty-state empty-state--full">
+            Nenhum dado encontrado para a semana {semana.week_ref}/{semana.year_ref}.
+          </div>
+        )}
+        {lojaAtual && (
+          <StoreDetail
+            loja={lojaAtual}
+            hideBack
+            onOpenIndividual={onOpenIndividual}
+            weekId={weekId}
+          />
+        )}
+      </div>
+    )
+  }
+
+  const lojasGrid = lojas
   const totalElegiveis   = lojas.reduce((a, l) => a + l.total_elegiveis, 0)
   const totalBonificados = lojas.reduce((a, l) => a + l.bonificados, 0)
   const totalBonus       = lojas.reduce((a, l) => a + l.total_bonus, 0)
@@ -496,9 +536,9 @@ function VisaoGeralContent({ semanas, onOpenIndividual, initialStoreCode, onStor
         </div>
       )}
 
-      {lojas.length > 0 && (
+      {lojasGrid.length > 0 && (
         <div className="perf-stores-grid">
-          {lojas.map(l => (
+          {lojasGrid.map(l => (
             <PerfStoreCard
               key={l.store_code}
               loja={l}
@@ -537,6 +577,7 @@ export default function FeedbacksPage({ onVoltar, user, onLogout }) {
   const [drillPerson, setDrillPerson]   = useState(null)
   const [backToStore, setBackToStore]   = useState(null)
   const firstName = user?.name?.split(' ')[0] || ''
+  const lojaStoreCode = user?.store_code ?? null
 
   useEffect(() => {
     async function fetchSemanas() {
@@ -608,6 +649,12 @@ export default function FeedbacksPage({ onVoltar, user, onLogout }) {
           >
             Feedbacks Individuais
           </button>
+          <button
+            className={`feedback-tab${activeTab === 'metodologia' ? ' feedback-tab--active' : ''}`}
+            onClick={() => setActiveTab('metodologia')}
+          >
+            Como funciona
+          </button>
         </div>
 
         <div className="intraday-topbar__right">
@@ -627,9 +674,10 @@ export default function FeedbacksPage({ onVoltar, user, onLogout }) {
         </div>
       )}
 
-      {activeTab === 'geral' ? (
-        <VisaoGeralContent semanas={semanas} onOpenIndividual={handleOpenPerson} initialStoreCode={backToStore} onStoreRestored={() => setBackToStore(null)} />
-      ) : (
+      {activeTab === 'geral' && (
+        <VisaoGeralContent semanas={semanas} onOpenIndividual={handleOpenPerson} initialStoreCode={backToStore} onStoreRestored={() => setBackToStore(null)} lojaStoreCode={lojaStoreCode} />
+      )}
+      {activeTab === 'individual' && (
         <PerformanceFeedbackPage
           feedbackIndex={semanasToIndex(semanas)}
           weekBundles={weekBundles}
@@ -644,6 +692,7 @@ export default function FeedbacksPage({ onVoltar, user, onLogout }) {
           initialWeekId={drillPerson?.weekId}
         />
       )}
+      {activeTab === 'metodologia' && <MetodologiaPage />}
     </div>
   )
 }

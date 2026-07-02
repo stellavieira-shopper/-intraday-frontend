@@ -68,10 +68,19 @@ const FC_NOME = {
   6: 'Pamplona', 8: 'Moema', 9: 'Pinheiros', 10: 'Higienópolis',
   11: 'Vila Olímpia', 12: 'Alto de Pinheiros', 13: 'Barra Funda',
   14: 'Morumbi', 15: 'Vila Mariana', 16: 'Brooklin',
-  18: 'Campinas', 19: 'Tatuapé', 20: 'São Caetano',
+  18: 'Campinas', 19: 'Tatuapé', 20: 'São Caetano', 21: 'Vila Guilherme',
 }
 const FC_IDS_DARK = new Set([6, 10, 11, 12, 13, 20])
 function nomeLoja(id) { return FC_NOME[id] || (id ? `FC ${id}` : 'Loja desconhecida') }
+
+// store_code → id_fulfillment_center (para filtrar o grid de lojas)
+const STORE_CODE_TO_FC_ID = {
+  'pamplona': 6,           'moema': 8,            'pinheiros': 9,
+  'higienopolis': 10,      'vila olimpia': 11,    'alto de pinheiros': 12,
+  'barra funda': 13,       'morumbi': 14,         'vila mariana': 15,
+  'brooklin': 16,          'campinas': 18,        'tatuape': 19,
+  'sao caetano': 20,       'vila guilherme': 21,
+}
 
 function fmtTs(v) {
   if (!v) return '—'
@@ -112,12 +121,12 @@ function fmtTempo(segundos) {
   return `${m}m ${String(s).padStart(2, '0')}s`
 }
 
-function AbastecimentoTab({ dataInicio, dataFim }) {
+function AbastecimentoTab({ dataInicio, dataFim, lojaStoreCode }) {
   const [rows, setRows]       = useState([])
   const [loading, setLoading] = useState(false)
   const [erro, setErro]       = useState(null)
   const [filtroNome, setFiltroNome]   = useState('')
-  const [filtroLoja, setFiltroLoja]   = useState('')
+  const [filtroLoja, setFiltroLoja]   = useState(lojaStoreCode || '')
   const [filtroTurno, setFiltroTurno] = useState('')
 
   useEffect(() => {
@@ -192,14 +201,14 @@ function AbastecimentoTab({ dataInicio, dataFim }) {
           onChange={e => setFiltroNome(e.target.value)}
           style={{ padding: '5px 12px', border: '1px solid var(--border)', borderRadius: 20, fontSize: 12, width: 180 }}
         />
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        {!lojaStoreCode && <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           <button style={btnStyle(!filtroLoja)} onClick={() => setFiltroLoja('')}>Todas</button>
           {lojas.map(sc => (
             <button key={sc} style={btnStyle(filtroLoja === sc)} onClick={() => setFiltroLoja(filtroLoja === sc ? '' : sc)}>
               {STORE_NOME_ABAST[sc]}
             </button>
           ))}
-        </div>
+        </div>}
         <div style={{ display: 'flex', gap: 6 }}>
           {['MANHA', 'TARDE', 'NOITE'].map(t => (
             <button key={t} style={btnStyle(filtroTurno === t)} onClick={() => setFiltroTurno(filtroTurno === t ? '' : t)}>
@@ -247,8 +256,8 @@ function AbastecimentoTab({ dataInicio, dataFim }) {
   )
 }
 
-function ErrosClientesTab({ rows, loading, erro }) {
-  const [filtroLoja, setFiltroLoja] = useState('')
+function ErrosClientesTab({ rows, loading, erro, lojaFcId }) {
+  const [filtroLoja, setFiltroLoja] = useState(lojaFcId ? String(lojaFcId) : '')
 
   const LOJAS_DARK = Object.entries(FC_NOME)
   const darkRows = rows.filter(r => FC_IDS_DARK.has(r.fulfillment_center_id))
@@ -265,19 +274,21 @@ function ErrosClientesTab({ rows, loading, erro }) {
       {!loading && (
         <>
           <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
-            <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>Loja</span>
-            <button onClick={() => setFiltroLoja('')}
-              style={{ padding: '5px 14px', borderRadius: 20, border: '1px solid var(--border)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                background: !filtroLoja ? 'var(--shopper-red)' : '#fff', color: !filtroLoja ? '#fff' : 'var(--text)' }}>
-              Todas
-            </button>
-            {LOJAS_DARK.map(([id, nome]) => (
-              <button key={id} onClick={() => setFiltroLoja(filtroLoja === id ? '' : id)}
+            {!lojaFcId && <>
+              <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>Loja</span>
+              <button onClick={() => setFiltroLoja('')}
                 style={{ padding: '5px 14px', borderRadius: 20, border: '1px solid var(--border)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                  background: filtroLoja === id ? 'var(--shopper-red)' : '#fff', color: filtroLoja === id ? '#fff' : 'var(--text)' }}>
-                {nome}
+                  background: !filtroLoja ? 'var(--shopper-red)' : '#fff', color: !filtroLoja ? '#fff' : 'var(--text)' }}>
+                Todas
               </button>
-            ))}
+              {LOJAS_DARK.map(([id, nome]) => (
+                <button key={id} onClick={() => setFiltroLoja(filtroLoja === id ? '' : id)}
+                  style={{ padding: '5px 14px', borderRadius: 20, border: '1px solid var(--border)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                    background: filtroLoja === id ? 'var(--shopper-red)' : '#fff', color: filtroLoja === id ? '#fff' : 'var(--text)' }}>
+                  {nome}
+                </button>
+              ))}
+            </>}
             <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 'auto' }}>
               {filtrado.length.toLocaleString('pt-BR')} registro(s)
             </span>
@@ -337,11 +348,11 @@ function ErrosClientesTab({ rows, loading, erro }) {
   )
 }
 
-function RupturasTab({ dataInicio, dataFim }) {
+function RupturasTab({ dataInicio, dataFim, lojaFcId }) {
   const [rows, setRows]       = useState([])
   const [loading, setLoading] = useState(false)
   const [erro, setErro]       = useState(null)
-  const [filtroLoja, setFiltroLoja] = useState('')
+  const [filtroLoja, setFiltroLoja] = useState(lojaFcId ? String(lojaFcId) : '')
 
   useEffect(() => {
     let active = true
@@ -368,19 +379,21 @@ function RupturasTab({ dataInicio, dataFim }) {
       {!loading && (
         <>
           <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
-            <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>Loja</span>
-            <button onClick={() => setFiltroLoja('')}
-              style={{ padding: '5px 14px', borderRadius: 20, border: '1px solid var(--border)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                background: !filtroLoja ? 'var(--shopper-red)' : '#fff', color: !filtroLoja ? '#fff' : 'var(--text)' }}>
-              Todas
-            </button>
-            {LOJAS_DARK.map(([id, nome]) => (
-              <button key={id} onClick={() => setFiltroLoja(filtroLoja === id ? '' : id)}
+            {!lojaFcId && <>
+              <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>Loja</span>
+              <button onClick={() => setFiltroLoja('')}
                 style={{ padding: '5px 14px', borderRadius: 20, border: '1px solid var(--border)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                  background: filtroLoja === id ? 'var(--shopper-red)' : '#fff', color: filtroLoja === id ? '#fff' : 'var(--text)' }}>
-                {nome}
+                  background: !filtroLoja ? 'var(--shopper-red)' : '#fff', color: !filtroLoja ? '#fff' : 'var(--text)' }}>
+                Todas
               </button>
-            ))}
+              {LOJAS_DARK.map(([id, nome]) => (
+                <button key={id} onClick={() => setFiltroLoja(filtroLoja === id ? '' : id)}
+                  style={{ padding: '5px 14px', borderRadius: 20, border: '1px solid var(--border)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                    background: filtroLoja === id ? 'var(--shopper-red)' : '#fff', color: filtroLoja === id ? '#fff' : 'var(--text)' }}>
+                  {nome}
+                </button>
+              ))}
+            </>}
             <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 'auto' }}>
               {filtrado.length.toLocaleString('pt-BR')} registro(s)
             </span>
@@ -572,6 +585,10 @@ const { data: resp } = await axios.get(`${API}/api/intraday/gerencial`, { params
 
   const lojasOrdenadas = sortLojas(lojasFiltradas, sortBy, errosPorLoja)
 
+  const lojaStoreCode = user?.store_code ?? null
+  const lojaFcId = lojaStoreCode ? (STORE_CODE_TO_FC_ID[lojaStoreCode] ?? null) : null
+  const lojasVisiveis = lojaFcId ? lojasOrdenadas.filter(l => l.id_fulfillment_center === lojaFcId) : lojasOrdenadas
+
   const now = new Date()
   const diaSemana  = now.toLocaleDateString('pt-BR', { weekday: 'long', timeZone: 'America/Sao_Paulo' })
   const diaCompleto= now.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', timeZone: 'America/Sao_Paulo' })
@@ -648,9 +665,9 @@ const { data: resp } = await axios.get(`${API}/api/intraday/gerencial`, { params
           ))}
         </div>
 
-        {aba === 'rupturas'      && <RupturasTab dataInicio={dataInicio} dataFim={dataFim} />}
-        {aba === 'erros'         && <ErrosClientesTab rows={errosPeriodo} loading={errosLoading} erro={errosErro} />}
-        {aba === 'abastecimento' && <AbastecimentoTab dataInicio={dataInicio} dataFim={dataFim} />}
+        {aba === 'rupturas'      && <RupturasTab dataInicio={dataInicio} dataFim={dataFim} lojaFcId={lojaFcId} />}
+        {aba === 'erros'         && <ErrosClientesTab rows={errosPeriodo} loading={errosLoading} erro={errosErro} lojaFcId={lojaFcId} />}
+        {aba === 'abastecimento' && <AbastecimentoTab dataInicio={dataInicio} dataFim={dataFim} lojaStoreCode={lojaStoreCode} />}
 
         {aba === 'lojas' && <>
         {erro && <div className="error-banner">⚠ {erro}</div>}
@@ -755,27 +772,29 @@ const { data: resp } = await axios.get(`${API}/api/intraday/gerencial`, { params
               )}
             </div>
 
-            <div className="gerencial-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span className="gerencial-sort-label">
-                  Ordenado por: {SORT_OPTIONS.find(o => o.key === sortBy)?.label}
-                </span>
-                <div className="gerencial-sort-btns">
-                  {SORT_OPTIONS.map(opt => (
-                    <button
-                      key={opt.key}
-                      className={`sort-btn${sortBy === opt.key ? ' sort-btn--active' : ''}`}
-                      onClick={() => setSortBy(opt.key)}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
+            {!lojaFcId && (
+              <div className="gerencial-header">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span className="gerencial-sort-label">
+                    Ordenado por: {SORT_OPTIONS.find(o => o.key === sortBy)?.label}
+                  </span>
+                  <div className="gerencial-sort-btns">
+                    {SORT_OPTIONS.map(opt => (
+                      <button
+                        key={opt.key}
+                        className={`sort-btn${sortBy === opt.key ? ' sort-btn--active' : ''}`}
+                        onClick={() => setSortBy(opt.key)}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             <section className="lojas-grid">
-              {lojasOrdenadas.map((loja, i) => (
+              {lojasVisiveis.map((loja, i) => (
                 <LojaCard
                   key={i}
                   loja={loja}

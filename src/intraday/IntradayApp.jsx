@@ -5,6 +5,7 @@ import Gerencial from './pages/Gerencial.jsx'
 import Loja from './pages/Loja.jsx'
 import PerformanceDarkstore from './pages/PerformanceDarkstore.jsx'
 import FeedbacksPage from './pages/FeedbacksPage.jsx'
+import MeuDesempenhoPage from './pages/MeuDesempenhoPage.jsx'
 import LoginPage from './LoginPage.jsx'
 
 function getStoredUser() {
@@ -39,7 +40,7 @@ export default function IntradayApp() {
 
   function handleLogin(data) {
     axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`
-    const userData = { name: data.name, email: data.email, picture: data.picture }
+    const userData = { name: data.name, email: data.email, picture: data.picture, store_code: data.store_code ?? null, nome: data.nome ?? null, fun_o: data.fun_o ?? null }
     localStorage.setItem('intraday_user', JSON.stringify(userData))
     setUser(userData)
     setNav({ pagina: 'hub' })
@@ -53,6 +54,17 @@ export default function IntradayApp() {
         user={user}
         onIntraday={() => setNav({ pagina: 'gerencial' })}
         onFeedbacks={() => setNav({ pagina: 'feedbacks' })}
+        onMeuDesempenho={() => setNav({ pagina: 'meu-desempenho' })}
+        onLogout={handleLogout}
+      />
+    )
+  }
+
+  if (nav.pagina === 'meu-desempenho') {
+    return (
+      <MeuDesempenhoPage
+        user={user}
+        onVoltar={() => setNav({ pagina: 'hub' })}
         onLogout={handleLogout}
       />
     )

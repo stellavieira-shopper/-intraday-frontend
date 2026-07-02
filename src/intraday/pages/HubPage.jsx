@@ -1,6 +1,13 @@
-export default function HubPage({ user, onIntraday, onFeedbacks, onLogout }) {
-  const firstName = user?.name?.split(' ')[0] || 'Usuário'
-  const fullName  = user?.name || 'Bem-vindo'
+function fmtLoja(code) {
+  if (!code) return null
+  return code.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+}
+
+export default function HubPage({ user, onIntraday, onFeedbacks, onMeuDesempenho, onLogout }) {
+  const fullName     = user?.name || ''
+  const firstName    = user?.name?.split(' ')[0] || ''
+  const loja         = fmtLoja(user?.store_code)
+  const isStoreEmail = !!loja && !user?.nome
 
   return (
     <div className="intraday-layout">
@@ -28,8 +35,12 @@ export default function HubPage({ user, onIntraday, onFeedbacks, onLogout }) {
 
       <div className="intraday-content">
         <div className="hub-center">
-          <div className="hub-greeting">Bem-vindo,</div>
-          <div className="hub-name">{fullName}</div>
+          <div className="hub-greeting">
+            {loja
+              ? `Bem-vindo ao painel de acompanhamento da loja ${loja}${isStoreEmail ? '' : ','}`
+              : 'Bem-vindo,'}
+          </div>
+          {!isStoreEmail && <div className="hub-name">{fullName}</div>}
 
           <div className="hub-tiles">
             <button className="hub-tile" onClick={onIntraday}>
@@ -50,6 +61,16 @@ export default function HubPage({ user, onIntraday, onFeedbacks, onLogout }) {
                 Relatório semanal auditável de bonificação — quanto ganhou, quanto perdeu e por quê.
               </p>
               <span className="hub-tile__cta">Abrir →</span>
+            </button>
+
+            <button className="hub-tile" onClick={onMeuDesempenho}>
+              <div className="hub-tile__icon">📈</div>
+              <div className="hub-tile__eyebrow">Performance individual</div>
+              <h2 className="hub-tile__title">Feedbacks Diários</h2>
+              <p className="hub-tile__desc">
+                Taxa de SLA, rupturas e pedidos por colaborador — por dia ou período, em tempo real.
+              </p>
+              <span className="hub-tile__cta">Ver colaboradores →</span>
             </button>
           </div>
         </div>
