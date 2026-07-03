@@ -7,7 +7,9 @@ import '../feedbacks/feedback-mgr.css'
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
 // Semanas bloqueadas até liberação explícita
-const SEMANAS_BLOQUEADAS = []
+const SEMANAS_BLOQUEADAS = [
+  { year_ref: 2026, week_ref: 27 },
+]
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const NOMES = {
