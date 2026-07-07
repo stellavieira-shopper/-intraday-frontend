@@ -6,6 +6,7 @@ import Loja from './pages/Loja.jsx'
 import PerformanceDarkstore from './pages/PerformanceDarkstore.jsx'
 import FeedbacksPage from './pages/FeedbacksPage.jsx'
 import MeuDesempenhoPage from './pages/MeuDesempenhoPage.jsx'
+import AdminPage from './pages/AdminPage.jsx'
 import LoginPage from './LoginPage.jsx'
 
 function getStoredUser() {
@@ -55,6 +56,17 @@ export default function IntradayApp() {
         onIntraday={() => setNav({ pagina: 'gerencial' })}
         onFeedbacks={() => setNav({ pagina: 'feedbacks' })}
         onMeuDesempenho={() => setNav({ pagina: 'meu-desempenho' })}
+        onAdmin={() => setNav({ pagina: 'admin' })}
+        onLogout={handleLogout}
+      />
+    )
+  }
+
+  if (nav.pagina === 'admin') {
+    return (
+      <AdminPage
+        user={user}
+        onVoltar={() => setNav({ pagina: 'hub' })}
         onLogout={handleLogout}
       />
     )

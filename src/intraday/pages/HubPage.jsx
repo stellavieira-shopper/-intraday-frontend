@@ -3,7 +3,10 @@ function fmtLoja(code) {
   return code.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
 }
 
-export default function HubPage({ user, onIntraday, onFeedbacks, onMeuDesempenho, onLogout }) {
+const ADMIN_EMAILS = ['stella.vieira@shopper.com.br']
+
+export default function HubPage({ user, onIntraday, onFeedbacks, onMeuDesempenho, onAdmin, onLogout }) {
+  const isAdmin = ADMIN_EMAILS.includes(user?.email)
   const fullName     = user?.name || ''
   const firstName    = user?.name?.split(' ')[0] || ''
   const loja         = fmtLoja(user?.store_code)
@@ -42,7 +45,7 @@ export default function HubPage({ user, onIntraday, onFeedbacks, onMeuDesempenho
           </div>
           {!isStoreEmail && <div className="hub-name">{fullName}</div>}
 
-          <div className="hub-tiles">
+          <div className="hub-tiles" style={{ flexWrap: 'wrap' }}>
             <button className="hub-tile" onClick={onIntraday}>
               <div className="hub-tile__icon">📊</div>
               <div className="hub-tile__eyebrow">Operação ao longo do dia</div>
@@ -72,6 +75,18 @@ export default function HubPage({ user, onIntraday, onFeedbacks, onMeuDesempenho
               </p>
               <span className="hub-tile__cta">Ver colaboradores →</span>
             </button>
+
+            {isAdmin && (
+              <button className="hub-tile" onClick={onAdmin} style={{ borderStyle: 'dashed', opacity: 0.85 }}>
+                <div className="hub-tile__icon">⚙️</div>
+                <div className="hub-tile__eyebrow">Área restrita</div>
+                <h2 className="hub-tile__title">Administração</h2>
+                <p className="hub-tile__desc">
+                  Libere ou bloqueie semanas de bonificação para visualização dos colaboradores.
+                </p>
+                <span className="hub-tile__cta">Gerenciar →</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
