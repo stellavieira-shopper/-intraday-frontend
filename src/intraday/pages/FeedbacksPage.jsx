@@ -66,12 +66,29 @@ function motivoZero(c, storeCode) {
   }
   return null
 }
+// Semanas com período diferente do padrão ISO (seg-dom)
+const PERIODOS_ESPECIAIS_FRONT = {
+  '2026-27': { start: '2026-06-29', end: '2026-07-02' }, // transição: seg a qui
+}
+
 function semanaRangeLabel(year, week) {
+  const key = `${year}-${String(week).padStart(2, '0')}`
+  if (PERIODOS_ESPECIAIS_FRONT[key]) {
+    const { start, end } = PERIODOS_ESPECIAIS_FRONT[key]
+    const fmt = d => d.split('-').reverse().slice(0, 2).join('/')
+    return `${fmt(start)} a ${fmt(end)}`
+  }
   const jan4 = new Date(Date.UTC(year, 0, 4))
   const dow  = (jan4.getUTCDay() + 6) % 7
   const mon  = new Date(jan4); mon.setUTCDate(jan4.getUTCDate() - dow + (week - 1) * 7)
-  const sun  = new Date(mon);  sun.setUTCDate(mon.getUTCDate() + 6)
   const dd   = d => d.toISOString().split('T')[0].split('-').reverse().slice(0, 2).join('/')
+  // A partir de W28/2026 o ciclo é sexta-quinta
+  if (year > 2026 || (year === 2026 && week >= 28)) {
+    const fri = new Date(mon); fri.setUTCDate(mon.getUTCDate() - 3)
+    const thu = new Date(mon); thu.setUTCDate(mon.getUTCDate() + 3)
+    return `${dd(fri)} a ${dd(thu)}`
+  }
+  const sun = new Date(mon); sun.setUTCDate(mon.getUTCDate() + 6)
   return `${dd(mon)} a ${dd(sun)}`
 }
 function semanaLabel(year, week) {
