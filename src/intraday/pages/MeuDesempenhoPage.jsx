@@ -51,11 +51,11 @@ function hoje() {
 
 function isoWeekBounds(offset = 0) {
   const now = new Date()
-  const day = (now.getDay() + 6) % 7
-  const mon = new Date(now); mon.setDate(now.getDate() - day + offset * 7)
-  const sun = new Date(mon); sun.setDate(mon.getDate() + 6)
+  const day = (now.getDay() + 2) % 7  // sexta=0, sáb=1, dom=2, seg=3, ter=4, qua=5, qui=6
+  const fri = new Date(now); fri.setDate(now.getDate() - day + offset * 7)
+  const thu = new Date(fri); thu.setDate(fri.getDate() + 6)
   const fmt = d => d.toISOString().split('T')[0]
-  return { inicio: fmt(mon), fim: fmt(sun) }
+  return { inicio: fmt(fri), fim: fmt(thu) }
 }
 
 const PERIODOS = [
