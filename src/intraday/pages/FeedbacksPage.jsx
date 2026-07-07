@@ -6,11 +6,6 @@ import '../feedbacks/feedback-mgr.css'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
-// Semanas bloqueadas até liberação explícita
-const SEMANAS_BLOQUEADAS = [
-  { year_ref: 2026, week_ref: 27 },
-]
-
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const NOMES = {
   'alto de pinheiros': 'Alto de Pinheiros',
@@ -587,7 +582,7 @@ export default function FeedbacksPage({ onVoltar, user, onLogout }) {
       try {
         const res = await axios.get(`${API}/api/intraday/performance/semanas`)
         const todas = res.data.semanas || []
-        setSemanas(todas.filter(s => !SEMANAS_BLOQUEADAS.some(b => b.year_ref === s.year_ref && b.week_ref === s.week_ref)))
+        setSemanas(todas)
       } catch (e) {
         setError(e.response?.data?.erro || e.message)
       } finally {
