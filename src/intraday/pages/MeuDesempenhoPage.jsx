@@ -62,7 +62,6 @@ const PERIODOS = [
   { id: 'hoje',        label: 'Hoje' },
   { id: 'ontem',      label: 'Ontem' },
   { id: 'semana',     label: 'Esta semana' },
-  { id: 'semana_ant', label: 'Semana passada' },
 ]
 
 function resolverPeriodo(id) {

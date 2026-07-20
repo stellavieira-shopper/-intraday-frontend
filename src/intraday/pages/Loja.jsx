@@ -141,7 +141,7 @@ export default function Loja({ loja, dataInicio: dataInicioInit, dataFim: dataFi
           <div className="last-update-time">{ultimaAtt || '—'}</div>
         </div>
         <div className="intraday-datebar__right">
-          <DateFilter dataInicio={dataInicio} dataFim={dataFim} onChange={handleDateChange} somenteAtalhos={!!(user?.store_code || user?.fun_o === 'SUPERVISOR')} />
+          <DateFilter dataInicio={dataInicio} dataFim={dataFim} onChange={handleDateChange} />
         </div>
       </div>
 
