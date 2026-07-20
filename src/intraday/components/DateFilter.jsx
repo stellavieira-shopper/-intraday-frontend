@@ -27,7 +27,7 @@ const ATALHOS = [
  *   dataFim    {string}  'YYYY-MM-DD'
  *   onChange   {fn}      ({ dataInicio, dataFim }) => void
  */
-export default function DateFilter({ dataInicio, dataFim, onChange }) {
+export default function DateFilter({ dataInicio, dataFim, onChange, somenteAtalhos = false }) {
   const isPeriodo = dataInicio !== dataFim
   const [modo, setModo] = useState(isPeriodo ? 'periodo' : 'dia')
 
@@ -37,34 +37,44 @@ export default function DateFilter({ dataInicio, dataFim, onChange }) {
 
   function mudarModo(novoModo) {
     setModo(novoModo)
-    if (novoModo === 'dia') {
-      // colapsa para a data início
-      aplicar(dataInicio, dataInicio)
-    }
-    // ao abrir "periodo" mantém o mesmo intervalo atual
+    if (novoModo === 'dia') aplicar(dataInicio, dataInicio)
   }
 
   function atalho(getRange) {
     const { ini, fim } = getRange()
-    if (ini !== fim) {
-      // range (7 dias, 30 dias) → força modo período
-      setModo('periodo')
-      aplicar(ini, fim)
-    } else {
-      // dia único (Hoje, Ontem)
-      setModo('dia')
-      aplicar(ini, ini)
-    }
+    if (ini !== fim) { setModo('periodo'); aplicar(ini, fim) }
+    else              { setModo('dia');    aplicar(ini, ini) }
   }
 
-  // Label resumida exibida quando está fechado
   const labelAtual = dataInicio === dataFim
     ? fmtLabel(dataInicio)
     : `${fmtLabel(dataInicio)} → ${fmtLabel(dataFim)}`
 
+  if (somenteAtalhos) {
+    return (
+      <div className="date-filter">
+        <div className="date-filter__atalhos">
+          {ATALHOS.map(a => {
+            const { ini, fim } = a.getRange()
+            const ativo = dataInicio === ini && dataFim === fim
+            return (
+              <button
+                key={a.label}
+                className={`df-atalho ${ativo ? 'df-atalho--active' : ''}`}
+                onClick={() => atalho(a.getRange)}
+              >
+                {a.label}
+              </button>
+            )
+          })}
+        </div>
+        <div className="date-filter__label">{labelAtual}</div>
+      </div>
+    )
+  }
+
   return (
     <div className="date-filter">
-      {/* Modo toggle */}
       <div className="date-filter__toggle">
         <button
           className={`df-mode-btn ${modo === 'dia' ? 'df-mode-btn--active' : ''}`}
@@ -80,7 +90,6 @@ export default function DateFilter({ dataInicio, dataFim, onChange }) {
         </button>
       </div>
 
-      {/* Atalhos rápidos */}
       <div className="date-filter__atalhos">
         {ATALHOS.map(a => {
           const { ini, fim } = a.getRange()
@@ -99,7 +108,6 @@ export default function DateFilter({ dataInicio, dataFim, onChange }) {
         })}
       </div>
 
-      {/* Inputs de data */}
       {modo === 'dia' ? (
         <div className="date-filter__inputs">
           <input
@@ -131,7 +139,6 @@ export default function DateFilter({ dataInicio, dataFim, onChange }) {
         </div>
       )}
 
-      {/* Label resumida */}
       <div className="date-filter__label">{labelAtual}</div>
     </div>
   )

@@ -17,10 +17,14 @@ function fmtDate(iso) {
 }
 
 export default function AdminPage({ user, onVoltar, onLogout }) {
-  const [semanas, setSemanas]   = useState([])
-  const [loading, setLoading]   = useState(true)
-  const [erro, setErro]         = useState(null)
-  const [toggling, setToggling] = useState(null) // week_key em processo
+  const [semanas, setSemanas]       = useState([])
+  const [loading, setLoading]       = useState(true)
+  const [erro, setErro]             = useState(null)
+  const [toggling, setToggling]     = useState(null)
+  const [histInicio, setHistInicio] = useState('')
+  const [histFim, setHistFim]       = useState('')
+  const [histLoading, setHistLoading] = useState(false)
+  const [histMsg, setHistMsg]       = useState(null)
 
   const firstName = user?.name?.split(' ')[0] || ''
 
@@ -38,6 +42,20 @@ export default function AdminPage({ user, onVoltar, onLogout }) {
   }, [])
 
   useEffect(() => { carregar() }, [carregar])
+
+  async function handleRefreshHistorico() {
+    if (!histInicio || !histFim) return alert('Preencha as duas datas.')
+    setHistLoading(true)
+    setHistMsg(null)
+    try {
+      await axios.post(`${API}/api/admin/refresh-historico`, { data_inicio: histInicio, data_fim: histFim })
+      setHistMsg({ ok: true, text: `Histórico de ${histInicio} até ${histFim} reprocessado.` })
+    } catch (e) {
+      setHistMsg({ ok: false, text: e.response?.data?.erro || 'Erro ao reprocessar.' })
+    } finally {
+      setHistLoading(false)
+    }
+  }
 
   async function handleToggle(semana) {
     setToggling(semana.week_key)
@@ -82,6 +100,39 @@ export default function AdminPage({ user, onVoltar, onLogout }) {
       </div>
 
       <div className="intraday-content" style={{ padding: '2rem', maxWidth: 720, margin: '0 auto' }}>
+        <h2 style={{ fontWeight: 700, fontSize: '1.25rem', marginBottom: '0.25rem', color: '#1a1a2e' }}>
+          Reprocessar histórico de pedidos
+        </h2>
+        <p style={{ color: '#64748b', fontSize: '0.875rem', marginBottom: '1rem' }}>
+          O refresh automático atualiza apenas os últimos 2 dias. Use isso para reprocessar pedidos de semanas passadas (pedidos que estavam EM_ANDAMENTO e já finalizaram).
+        </p>
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: '1rem' }}>
+          <div>
+            <label style={{ fontSize: '0.75rem', color: '#64748b', display: 'block', marginBottom: 4 }}>Data início</label>
+            <input type="date" value={histInicio} onChange={e => setHistInicio(e.target.value)}
+              style={{ border: '1px solid #e2e8f0', borderRadius: 7, padding: '0.4rem 0.7rem', fontSize: '0.875rem' }} />
+          </div>
+          <div>
+            <label style={{ fontSize: '0.75rem', color: '#64748b', display: 'block', marginBottom: 4 }}>Data fim</label>
+            <input type="date" value={histFim} onChange={e => setHistFim(e.target.value)}
+              style={{ border: '1px solid #e2e8f0', borderRadius: 7, padding: '0.4rem 0.7rem', fontSize: '0.875rem' }} />
+          </div>
+          <button onClick={handleRefreshHistorico} disabled={histLoading}
+            style={{ padding: '0.45rem 1rem', borderRadius: 7, border: 'none', cursor: 'pointer',
+              background: '#1a1a2e', color: '#fff', fontWeight: 600, fontSize: '0.8125rem',
+              opacity: histLoading ? 0.5 : 1 }}>
+            {histLoading ? 'Reprocessando…' : 'Reprocessar'}
+          </button>
+        </div>
+        {histMsg && (
+          <div style={{ padding: '0.625rem 1rem', borderRadius: 7, fontSize: '0.875rem', marginBottom: '1.5rem',
+            background: histMsg.ok ? '#dcfce7' : '#fef2f2',
+            color: histMsg.ok ? '#15803d' : '#dc2626',
+            border: `1px solid ${histMsg.ok ? '#86efac' : '#fecaca'}` }}>
+            {histMsg.text}
+          </div>
+        )}
+
         <h2 style={{ fontWeight: 700, fontSize: '1.25rem', marginBottom: '0.25rem', color: '#1a1a2e' }}>
           Liberação de semanas
         </h2>

@@ -648,7 +648,7 @@ const { data: resp } = await axios.get(`${API}/api/intraday/gerencial`, { params
           <div className="last-update-date">{diaSemana.charAt(0).toUpperCase() + diaSemana.slice(1)}, {diaCompleto}</div>
         </div>
         <div className="intraday-datebar__right">
-          <DateFilter dataInicio={dataInicio} dataFim={dataFim} onChange={handleDateChange} />
+          <DateFilter dataInicio={dataInicio} dataFim={dataFim} onChange={handleDateChange} somenteAtalhos={!!(user?.store_code || user?.fun_o === 'SUPERVISOR')} />
         </div>
       </div>
 

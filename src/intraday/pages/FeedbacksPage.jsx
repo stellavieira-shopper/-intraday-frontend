@@ -192,6 +192,7 @@ function ColabsTable({ colaboradores, storeCode, onOpenIndividual, weekId }) {
             <th>Cargo</th>
             <th>Turno</th>
             <th>Taxa ind.</th>
+            <th>Abastecimento</th>
             <th>Rupturas</th>
             <th>Valor</th>
             {onOpenIndividual && <th></th>}
@@ -210,6 +211,9 @@ function ColabsTable({ colaboradores, storeCode, onOpenIndividual, weekId }) {
                 </td>
                 <td className="perf-td--turno">{c.turno || '—'}</td>
                 <td>{fmtPct(c.taxa_individual)}</td>
+                <td style={{ whiteSpace: 'nowrap', color: c.nota_abast != null ? (c.nota_abast >= 70 ? 'var(--green)' : 'var(--red)') : 'var(--text-muted)' }}>
+                  {c.nota_abast != null ? `${c.nota_abast.toFixed(1)}%` : '—'}
+                </td>
                 <td style={{ whiteSpace: 'nowrap' }}>
                   {c.rupturas > 0 ? <span>{c.rupturas} · −{fmtR(c.desconto_ruptura)}</span> : '0'}
                 </td>
