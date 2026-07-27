@@ -153,8 +153,8 @@ function TemposTab({ lojas, lojaFcId }) {
 
   const FILTROS = [
     { key: 'todos',  label: 'Todos' },
-    { key: 'sla',    label: 'Com SLA (Express/Turbo)' },
-    { key: 'nosla',  label: 'Sem SLA (iFood)' },
+    { key: 'sla',    label: 'Com SLA' },
+    { key: 'nosla',  label: 'Sem SLA' },
   ]
 
   const thStyle = { padding: '10px 16px', textAlign: 'left', fontSize: 11, fontWeight: 700,
