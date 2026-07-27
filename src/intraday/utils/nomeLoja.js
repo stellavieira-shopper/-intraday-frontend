@@ -17,6 +17,9 @@ const ALIASES = {
   CAMPINAS:       'Campinas',
   MOEMA:          'Moema',
   'VILA GUILHERME': 'Vila Guilherme',
+  'CONSOLAÇÃO':     'Consolação',
+  MOOCA:            'Mooca',
+  'RIBEIRÃO PRETO': 'Ribeirão Preto',
 }
 
 export function nomeLoja(raw) {

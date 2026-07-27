@@ -69,8 +69,11 @@ const FC_NOME = {
   11: 'Vila Olímpia', 12: 'Alto de Pinheiros', 13: 'Barra Funda',
   14: 'Morumbi', 15: 'Vila Mariana', 16: 'Brooklin',
   18: 'Campinas', 19: 'Tatuapé', 20: 'São Caetano', 21: 'Vila Guilherme',
+  22: 'Consolação',
+  23: 'Ribeirão Preto',
+  24: 'Mooca',
 }
-const FC_IDS_DARK = new Set([6, 10, 11, 12, 13, 20])
+const FC_IDS_DARK = new Set([6, 10, 11, 12, 13, 20, 21, 22, 23, 24])
 function nomeLoja(id) { return FC_NOME[id] || (id ? `FC ${id}` : 'Loja desconhecida') }
 
 // store_code → id_fulfillment_center (para filtrar o grid de lojas)
@@ -79,7 +82,8 @@ const STORE_CODE_TO_FC_ID = {
   'higienopolis': 10,      'vila olimpia': 11,    'alto de pinheiros': 12,
   'barra funda': 13,       'morumbi': 14,         'vila mariana': 15,
   'brooklin': 16,          'campinas': 18,        'tatuape': 19,
-  'sao caetano': 20,       'vila guilherme': 21,
+  'sao caetano': 20,       'vila guilherme': 21,  'consolacao': 22,
+  'ribeirao preto': 23,    'mooca': 24,
 }
 
 function fmtTs(v) {
@@ -110,8 +114,12 @@ const STORE_NOME_ABAST = {
   'sao caetano':       'São Caetano',
   'tatuapé':           'Tatuapé',
   'tatuape':           'Tatuapé',
+  'vila guilherme':    'Vila Guilherme',
   'vila mariana':      'Vila Mariana',
   'vila olimpia':      'Vila Olímpia',
+  'consolacao':        'Consolação',
+  'ribeirao preto':    'Ribeirão Preto',
+  'mooca':             'Mooca',
 }
 
 function fmtTempo(segundos) {
