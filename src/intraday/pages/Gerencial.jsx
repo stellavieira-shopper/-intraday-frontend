@@ -130,12 +130,14 @@ function fmtTempo(segundos) {
 }
 
 function TemposTab({ lojas, lojaFcId }) {
+  const [filtro, setFiltro] = useState('todos')
   const fmtMin = v => v != null ? `${v.toFixed(1)} min` : '—'
+  const suf = filtro === 'sla' ? '_sla' : filtro === 'nosla' ? '_nosla' : ''
 
   const lista = lojas
     .filter(l => !lojaFcId || l.id_fulfillment_center === lojaFcId)
     .filter(l => l.total_pedidos > 0)
-    .sort((a, b) => (a.avg_picking_min ?? 999) - (b.avg_picking_min ?? 999))
+    .sort((a, b) => (a[`avg_picking_min${suf}`] ?? 999) - (b[`avg_picking_min${suf}`] ?? 999))
 
   const media = field => {
     const vals = lista.filter(l => l[field] != null).map(l => l[field])
@@ -143,10 +145,16 @@ function TemposTab({ lojas, lojaFcId }) {
   }
 
   const cols = [
-    { key: 'avg_tempo_iniciar_min', label: 'T. Iniciar Picking' },
-    { key: 'avg_picking_min',       label: 'T. Médio Picking' },
-    { key: 'avg_packing_min',       label: 'T. Médio Packing' },
-    { key: 'avg_cycle_min',         label: 'T. Ciclo Total' },
+    { key: `avg_tempo_iniciar_min${suf}`, label: 'T. Iniciar Picking' },
+    { key: `avg_picking_min${suf}`,       label: 'T. Médio Picking' },
+    { key: `avg_packing_min${suf}`,       label: 'T. Médio Packing' },
+    { key: `avg_cycle_min${suf}`,         label: 'T. Ciclo Total' },
+  ]
+
+  const FILTROS = [
+    { key: 'todos',  label: 'Todos' },
+    { key: 'sla',    label: 'Com SLA (Express/Turbo)' },
+    { key: 'nosla',  label: 'Sem SLA (iFood)' },
   ]
 
   const thStyle = { padding: '10px 16px', textAlign: 'left', fontSize: 11, fontWeight: 700,
@@ -164,8 +172,22 @@ function TemposTab({ lojas, lojaFcId }) {
     return {}
   }
 
+  const btnStyle = ativo => ({
+    padding: '4px 16px', borderRadius: 20, border: '1px solid var(--border)',
+    cursor: 'pointer', fontSize: 12, fontWeight: 600,
+    background: ativo ? 'var(--shopper-red)' : '#fff',
+    color: ativo ? '#fff' : 'var(--text)',
+  })
+
   return (
     <div>
+      {/* Filtro de tipo */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
+        {FILTROS.map(f => (
+          <button key={f.key} style={btnStyle(filtro === f.key)} onClick={() => setFiltro(f.key)}>{f.label}</button>
+        ))}
+      </div>
+
       {/* KPIs gerais */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
         {cols.map(c => (
