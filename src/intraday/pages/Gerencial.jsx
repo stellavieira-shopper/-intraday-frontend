@@ -129,6 +129,93 @@ function fmtTempo(segundos) {
   return `${m}m ${String(s).padStart(2, '0')}s`
 }
 
+function TemposTab({ lojas, lojaFcId }) {
+  const fmtMin = v => v != null ? `${v.toFixed(1)} min` : '—'
+
+  const lista = lojas
+    .filter(l => !lojaFcId || l.id_fulfillment_center === lojaFcId)
+    .filter(l => l.total_pedidos > 0)
+    .sort((a, b) => (a.avg_picking_min ?? 999) - (b.avg_picking_min ?? 999))
+
+  const media = field => {
+    const vals = lista.filter(l => l[field] != null).map(l => l[field])
+    return vals.length ? (vals.reduce((a, v) => a + v, 0) / vals.length).toFixed(1) : null
+  }
+
+  const cols = [
+    { key: 'avg_tempo_iniciar_min', label: 'T. Iniciar Picking' },
+    { key: 'avg_picking_min',       label: 'T. Médio Picking' },
+    { key: 'avg_packing_min',       label: 'T. Médio Packing' },
+    { key: 'avg_cycle_min',         label: 'T. Ciclo Total' },
+  ]
+
+  const thStyle = { padding: '10px 16px', textAlign: 'left', fontSize: 11, fontWeight: 700,
+    color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em',
+    borderBottom: '1px solid var(--border)', whiteSpace: 'nowrap' }
+  const tdStyle = { padding: '12px 16px', fontSize: 14, borderBottom: '1px solid var(--border)' }
+  const tdNum = { ...tdStyle, textAlign: 'right', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }
+
+  function colorVal(val, field) {
+    if (val == null) return { color: 'var(--text-muted)' }
+    const med = parseFloat(media(field))
+    if (isNaN(med)) return {}
+    if (val <= med * 0.9) return { color: '#1baf7a' }
+    if (val >= med * 1.15) return { color: '#eb6834' }
+    return {}
+  }
+
+  return (
+    <div>
+      {/* KPIs gerais */}
+      <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+        {cols.map(c => (
+          <div key={c.key} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 10, padding: '12px 20px', minWidth: 150 }}>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>{c.label}</div>
+            <div style={{ fontSize: 20, fontWeight: 700 }}>{media(c.key) ? `${media(c.key)} min` : '—'}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Tabela */}
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', background: 'var(--bg-card)', borderRadius: 10, overflow: 'hidden', border: '1px solid var(--border)' }}>
+          <thead>
+            <tr style={{ background: 'var(--bg)' }}>
+              <th style={thStyle}>Loja</th>
+              <th style={{ ...thStyle, textAlign: 'right' }}>Pedidos</th>
+              {cols.map(c => <th key={c.key} style={{ ...thStyle, textAlign: 'right' }}>{c.label}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {lista.map(l => (
+              <tr key={l.loja} style={{ transition: 'background 0.1s' }}
+                onMouseEnter={e => e.currentTarget.style.background = 'var(--bg)'}
+                onMouseLeave={e => e.currentTarget.style.background = ''}>
+                <td style={tdStyle}><strong>{nomeLoja(l.id_fulfillment_center)}</strong></td>
+                <td style={{ ...tdNum, color: 'var(--text-muted)' }}>{l.total_pedidos}</td>
+                {cols.map(c => (
+                  <td key={c.key} style={{ ...tdNum, ...colorVal(l[c.key], c.key) }}>
+                    {fmtMin(l[c.key])}
+                  </td>
+                ))}
+              </tr>
+            ))}
+            {/* Linha de média */}
+            <tr style={{ background: 'var(--bg)', borderTop: '2px solid var(--border)' }}>
+              <td style={{ ...tdStyle, fontWeight: 700 }}>Média geral</td>
+              <td style={tdNum}>—</td>
+              {cols.map(c => <td key={c.key} style={{ ...tdNum, color: 'var(--shopper-red)' }}>{media(c.key) ? `${media(c.key)} min` : '—'}</td>)}
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 10 }}>
+        Verde = abaixo da média · Laranja = acima de 15% da média
+      </div>
+    </div>
+  )
+}
+
 function AbastecimentoTab({ dataInicio, dataFim, lojaStoreCode }) {
   const [rows, setRows]       = useState([])
   const [loading, setLoading] = useState(false)
@@ -663,7 +750,7 @@ const { data: resp } = await axios.get(`${API}/api/intraday/gerencial`, { params
       <div className="intraday-content">
         {/* Seletor de abas */}
         <div style={{ display: 'flex', gap: 4, marginBottom: 20, borderBottom: '2px solid var(--border)', paddingBottom: 0 }}>
-          {[{ key: 'lojas', label: 'Lojas' }, { key: 'rupturas', label: 'Rupturas Detalhadas' }, { key: 'erros', label: 'Erros Reportados por Clientes' }, { key: 'abastecimento', label: 'Abastecimento' }].map(tab => (
+          {[{ key: 'lojas', label: 'Lojas' }, { key: 'rupturas', label: 'Rupturas Detalhadas' }, { key: 'erros', label: 'Erros Reportados por Clientes' }, { key: 'abastecimento', label: 'Abastecimento' }, { key: 'tempos', label: 'Tempos Médios' }].map(tab => (
             <button key={tab.key} onClick={() => setAba(tab.key)} style={{
               padding: '8px 20px', border: 'none', background: 'none', cursor: 'pointer',
               fontSize: 13, fontWeight: 700, color: aba === tab.key ? 'var(--shopper-red)' : 'var(--text-muted)',
@@ -676,6 +763,7 @@ const { data: resp } = await axios.get(`${API}/api/intraday/gerencial`, { params
         {aba === 'rupturas'      && <RupturasTab dataInicio={dataInicio} dataFim={dataFim} lojaFcId={lojaFcId} />}
         {aba === 'erros'         && <ErrosClientesTab rows={errosPeriodo} loading={errosLoading} erro={errosErro} lojaFcId={lojaFcId} />}
         {aba === 'abastecimento' && <AbastecimentoTab dataInicio={dataInicio} dataFim={dataFim} lojaStoreCode={lojaStoreCode} />}
+        {aba === 'tempos'        && <TemposTab lojas={lojas} lojaFcId={lojaFcId} />}
 
         {aba === 'lojas' && <>
         {erro && <div className="error-banner">⚠ {erro}</div>}
