@@ -14,6 +14,21 @@ const NOMES = {
   'higienopolis':      'Higienópolis',
   'sao caetano':       'São Caetano',
   'vila olimpia':      'Vila Olímpia',
+  'vila mariana':      'Vila Mariana',
+  'morumbi':           'Morumbi',
+  'pinheiros':         'Pinheiros',
+  'brooklin':          'Brooklin',
+  'campinas':          'Campinas',
+  'moema':             'Moema',
+  'vila guilherme':    'Vila Guilherme',
+  'consolacao':        'Consolação',
+  'mooca':             'Mooca',
+  'tatuape':           'Tatuapé',
+  'ribeirao preto':    'Ribeirão Preto',
+  'curitiba':          'Curitiba',
+  'pr - republica':    'República (CWB)',
+  'pr - rodovia':      'Rodovia (CWB)',
+  'pr - stresser':     'Stresser (CWB)',
 }
 function nomeStore(code) {
   if (!code) return ''
@@ -56,7 +71,7 @@ function traduzMotivo(motivo) {
     .replace(/\s*\|\s*/g,             ' · ')
 }
 function motivoZero(c, storeCode) {
-  if (!c.assiduidade_ok) return { label: traduzMotivo(c.motivo_falta), cls: 'perf-motivo--assiduidade' }
+  if (!c.assiduidade_ok) return { label: 'Gate Assiduidade', cls: 'perf-motivo--assiduidade' }
   if (c.gate_loja)       return { label: 'Gate SLA',    cls: 'perf-motivo--gate' }
   if (c.gate_foto)       return { label: 'Gate Foto',   cls: 'perf-motivo--gate' }
   if (c.valor_final === 0) {

@@ -72,6 +72,9 @@ const FC_NOME = {
   22: 'Consolação',
   23: 'Ribeirão Preto',
   24: 'Mooca',
+  27: 'República (CWB)',
+  28: 'Rodovia (CWB)',
+  29: 'Stresser (CWB)',
 }
 const FC_IDS_DARK = new Set([6, 10, 11, 12, 13, 20, 21, 22, 23, 24])
 function nomeLoja(id) { return FC_NOME[id] || (id ? `FC ${id}` : 'Loja desconhecida') }
@@ -84,6 +87,7 @@ const STORE_CODE_TO_FC_ID = {
   'brooklin': 16,          'campinas': 18,        'tatuape': 19,
   'sao caetano': 20,       'vila guilherme': 21,  'consolacao': 22,
   'ribeirao preto': 23,    'mooca': 24,
+  'pr - republica': 27,   'pr - rodovia': 28,   'pr - stresser': 29,
 }
 
 function fmtTs(v) {
@@ -120,6 +124,9 @@ const STORE_NOME_ABAST = {
   'consolacao':        'Consolação',
   'ribeirao preto':    'Ribeirão Preto',
   'mooca':             'Mooca',
+  'pr - republica':    'República (CWB)',
+  'pr - rodovia':      'Rodovia (CWB)',
+  'pr - stresser':     'Stresser (CWB)',
 }
 
 function fmtTempo(segundos) {
