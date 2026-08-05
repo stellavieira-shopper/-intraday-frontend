@@ -391,7 +391,7 @@ function ErrorKpiCard({ label, value, sub, tone = 'default' }) {
   )
 }
 
-function DonutChart({ title, subtitle, data, activeKey, onSelect }) {
+function DonutChart({ title, subtitle, data, activeKey, onSelect, unitLabel = 'erros' }) {
   const total = data.reduce((acc, item) => acc + item.total, 0)
   const size = 132
   const stroke = 18
@@ -433,7 +433,7 @@ function DonutChart({ title, subtitle, data, activeKey, onSelect }) {
             return circle
           })}
           <text x="50%" y="48%" textAnchor="middle" dominantBaseline="middle" style={{ fontSize: 22, fontWeight: 900, fill: 'var(--text)' }}>{total}</text>
-          <text x="50%" y="64%" textAnchor="middle" dominantBaseline="middle" style={{ fontSize: 11, fontWeight: 700, fill: 'var(--text-muted)' }}>erros</text>
+          <text x="50%" y="64%" textAnchor="middle" dominantBaseline="middle" style={{ fontSize: 11, fontWeight: 700, fill: 'var(--text-muted)' }}>{unitLabel}</text>
         </svg>
         <div style={{ display: 'grid', gap: 8 }}>
           {data.map(item => {
@@ -508,7 +508,7 @@ function ColumnChart({ title, subtitle, items, activeKeys = new Set(), onSelect,
   )
 }
 
-function HorizontalBarChart({ title, subtitle, items, activeKeys = new Set(), onSelect, valueFormatter, tooltipFormatter, color = '#334155', emptyText }) {
+function HorizontalBarChart({ title, subtitle, items, activeKeys = new Set(), onSelect, valueFormatter, tooltipFormatter, color = '#334155', emptyText, unitLabel = 'erros' }) {
   const scrollRef = useRef(null)
   const maxValue = Math.max(1, ...items.map(item => Number(item.value) || 0))
   const scrollChart = (direction) => {
@@ -539,11 +539,11 @@ function HorizontalBarChart({ title, subtitle, items, activeKeys = new Set(), on
             const active = activeKeys.has(item.key)
             return (
               <button key={item.key} onClick={() => onSelect?.(item.key)} title={tooltipFormatter ? tooltipFormatter(item) : item.label}
-                style={{ display: 'grid', gridTemplateColumns: 'minmax(180px, 280px) minmax(180px, 1fr) 64px', gap: 12, alignItems: 'center', border: active ? `2px solid ${color}` : '1px solid transparent', borderRadius: 8, background: active ? '#f8fafc' : 'transparent', padding: active ? '7px 8px' : '4px 0', cursor: onSelect ? 'pointer' : 'default', textAlign: 'left' }}>
-                <strong style={{ color: 'var(--text)', fontSize: 12, lineHeight: 1.2, whiteSpace: 'normal' }}>{item.label}</strong>
+                style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.05fr) minmax(96px, 1fr) 54px', gap: 10, alignItems: 'center', border: active ? `2px solid ${color}` : '1px solid transparent', borderRadius: 8, background: active ? '#f8fafc' : 'transparent', padding: active ? '7px 8px' : '4px 0', cursor: onSelect ? 'pointer' : 'default', textAlign: 'left', minWidth: 0 }}>
+                <strong style={{ color: 'var(--text)', fontSize: 12, lineHeight: 1.2, whiteSpace: 'normal', minWidth: 0 }}>{item.label}</strong>
                 <div style={{ height: 22, borderRadius: 999, background: '#eef2f7', overflow: 'hidden', position: 'relative' }}>
                   <div style={{ height: '100%', width: `${width}%`, background: color, borderRadius: 999, opacity: activeKeys.size > 0 && !active ? 0.35 : 1 }} />
-                  <span style={{ position: 'absolute', right: 8, top: 3, color: width > 82 ? '#fff' : 'var(--text)', fontSize: 11, fontWeight: 900 }}>{item.total} erros</span>
+                  <span style={{ position: 'absolute', right: 8, top: 3, color: width > 82 ? '#fff' : 'var(--text)', fontSize: 11, fontWeight: 900 }}>{item.total} {unitLabel}</span>
                 </div>
                 <span style={{ color, fontSize: 13, fontWeight: 900, textAlign: 'right' }}>{valueFormatter ? valueFormatter(item) : value}</span>
               </button>
@@ -880,11 +880,18 @@ function ErrosClientesTab({ rows, loading, erro, lojaFcId, lojas = [], lojasLoad
   )
 }
 
-function RupturasTab({ dataInicio, dataFim, lojaFcId }) {
+function RupturasTab({ dataInicio, dataFim, lojaFcId, lojasResumo = [], lojasLoading = false }) {
   const [rows, setRows]       = useState([])
   const [loading, setLoading] = useState(false)
   const [erro, setErro]       = useState(null)
-  const [filtroLoja, setFiltroLoja] = useState(lojaFcId ? String(lojaFcId) : '')
+  const [filtroLojas, setFiltroLojas] = useState(() => lojaFcId ? [String(lojaFcId)] : [])
+  const [filtroProdutos, setFiltroProdutos] = useState([])
+  const [filtroTipo, setFiltroTipo] = useState(null)
+  const [filtroStatus, setFiltroStatus] = useState(null)
+
+  useEffect(() => {
+    if (lojaFcId) setFiltroLojas([String(lojaFcId)])
+  }, [lojaFcId])
 
   useEffect(() => {
     let active = true
@@ -897,10 +904,102 @@ function RupturasTab({ dataInicio, dataFim, lojaFcId }) {
     return () => { active = false }
   }, [dataInicio, dataFim])
 
-  const lojas = [...new Set(rows.map(r => r.fulfillment_center_id))].sort()
-  const filtrado = rows.filter(r => !filtroLoja || String(r.fulfillment_center_id) === filtroLoja)
+  const lojasComDados = new Set([
+    ...rows.map(row => String(row.fulfillment_center_id)).filter(id => FC_NOME[id]),
+    ...lojasResumo.map(loja => String(loja.id_fulfillment_center)).filter(id => FC_NOME[id]),
+  ])
+  const LOJAS_RUPTURAS = Object.entries(FC_NOME).filter(([id]) => lojasComDados.has(id))
+  const selectedStores = lojaFcId ? [String(lojaFcId)] : filtroLojas
+  const selectedSet = new Set(selectedStores)
+  const selectedProdutosSet = new Set(filtroProdutos)
+  const rowsConhecidas = rows.filter(r => FC_NOME[r.fulfillment_center_id])
+  const filtradoPorLoja = rowsConhecidas.filter(r => selectedSet.size === 0 || selectedSet.has(String(r.fulfillment_center_id)))
+  const produtoKey = (item) => item.produto || 'Produto não informado'
+  const tipoKey = (item) => item.issue_type || 'Tipo não informado'
+  const statusKey = (item) => item.resolved_at ? 'resolvidas' : 'pendentes'
+  const filtrado = filtradoPorLoja.filter(item => {
+    if (selectedProdutosSet.size > 0 && !selectedProdutosSet.has(produtoKey(item))) return false
+    if (filtroTipo && tipoKey(item) !== filtroTipo) return false
+    if (filtroStatus && statusKey(item) !== filtroStatus) return false
+    return true
+  })
+  const periodoLabel = dataInicio && dataFim ? fmtPeriodo(dataInicio, dataFim) : 'período selecionado'
 
-  const LOJAS_DARK = Object.entries(FC_NOME)
+  const toggleLoja = (id) => {
+    setFiltroLojas(current => current.includes(id) ? current.filter(item => item !== id) : [...current, id])
+  }
+  const toggleProduto = (produto) => {
+    setFiltroProdutos(current => current.includes(produto) ? current.filter(item => item !== produto) : [...current, produto])
+  }
+
+  const taxaRupturaPorLoja = LOJAS_RUPTURAS
+    .map(([id, nome]) => {
+      const loja = lojasResumo.find(item => String(item.id_fulfillment_center) === id)
+      const pedidos = Number(loja?.total_pedidos) || 0
+      const pedidosComRuptura = Number(loja?.pedidos_com_ruptura) || 0
+      return {
+        id,
+        nome,
+        pedidos,
+        pedidosComRuptura,
+        taxa: pedidos > 0 ? (pedidosComRuptura / pedidos) * 100 : null,
+      }
+    })
+    .filter(item => selectedSet.size === 0 || selectedSet.has(item.id))
+    .filter(item => item.pedidos > 0 || item.pedidosComRuptura > 0)
+    .sort((a, b) => (b.taxa ?? -1) - (a.taxa ?? -1))
+
+  const totalPedidos = taxaRupturaPorLoja.reduce((acc, item) => acc + item.pedidos, 0)
+  const totalPedidosComRuptura = taxaRupturaPorLoja.reduce((acc, item) => acc + item.pedidosComRuptura, 0)
+  const taxaRupturaGeral = totalPedidos > 0 ? (totalPedidosComRuptura / totalPedidos) * 100 : null
+  const totalItensRuptura = filtradoPorLoja.reduce((acc, item) => acc + (Number(item.qtd_total) || 0), 0)
+  const totalSubstituidos = filtradoPorLoja.reduce((acc, item) => acc + (Number(item.replaced_qty) || 0), 0)
+
+  const produtos = Object.values(filtradoPorLoja.reduce((acc, item) => {
+    const key = produtoKey(item)
+    if (!acc[key]) acc[key] = { key, label: key, value: 0, total: 0, pedidos: new Set(), substituidos: 0 }
+    acc[key].value += 1
+    acc[key].total += Number(item.qtd_total) || 0
+    acc[key].substituidos += Number(item.replaced_qty) || 0
+    if (item.cod_pedido) acc[key].pedidos.add(item.cod_pedido)
+    return acc
+  }, {}))
+    .map(item => ({ ...item, pedidosCount: item.pedidos.size }))
+    .sort((a, b) => b.value - a.value)
+
+  const tipos = Object.values(filtradoPorLoja.reduce((acc, item) => {
+    const key = tipoKey(item)
+    if (!acc[key]) acc[key] = { key, label: key, total: 0 }
+    acc[key].total += 1
+    return acc
+  }, {})).sort((a, b) => b.total - a.total)
+  const statusAnalise = [
+    { key: 'resolvidas', label: 'Resolvidas', total: filtradoPorLoja.filter(item => statusKey(item) === 'resolvidas').length, color: '#16a34a' },
+    { key: 'pendentes', label: 'Pendentes', total: filtradoPorLoja.filter(item => statusKey(item) === 'pendentes').length, color: 'var(--shopper-red)' },
+  ]
+  const lojaChartItems = taxaRupturaPorLoja.map(item => ({
+    key: item.id,
+    label: item.nome,
+    value: item.taxa || 0,
+    pedidosComRuptura: item.pedidosComRuptura,
+    pedidos: item.pedidos,
+  }))
+  const produtoChartItems = produtos.map(item => ({
+    key: item.key,
+    label: item.label,
+    value: item.value,
+    total: item.value,
+    itens: item.total,
+    pedidosCount: item.pedidosCount,
+    substituidos: item.substituidos,
+  }))
+  const tipoChartItems = tipos.map(item => ({
+    key: item.key,
+    label: item.label,
+    value: filtradoPorLoja.length > 0 ? (item.total / filtradoPorLoja.length) * 100 : 0,
+    total: item.total,
+  }))
+  const hasAnaliseFiltro = filtroProdutos.length > 0 || filtroTipo || filtroStatus
 
   return (
     <div>
@@ -913,15 +1012,15 @@ function RupturasTab({ dataInicio, dataFim, lojaFcId }) {
           <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
             {!lojaFcId && <>
               <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>Loja</span>
-              <button onClick={() => setFiltroLoja('')}
+              <button onClick={() => setFiltroLojas([])}
                 style={{ padding: '5px 14px', borderRadius: 20, border: '1px solid var(--border)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                  background: !filtroLoja ? 'var(--shopper-red)' : '#fff', color: !filtroLoja ? '#fff' : 'var(--text)' }}>
+                  background: selectedSet.size === 0 ? 'var(--shopper-red)' : '#fff', color: selectedSet.size === 0 ? '#fff' : 'var(--text)' }}>
                 Todas
               </button>
-              {LOJAS_DARK.map(([id, nome]) => (
-                <button key={id} onClick={() => setFiltroLoja(filtroLoja === id ? '' : id)}
+              {LOJAS_RUPTURAS.map(([id, nome]) => (
+                <button key={id} onClick={() => toggleLoja(id)}
                   style={{ padding: '5px 14px', borderRadius: 20, border: '1px solid var(--border)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                    background: filtroLoja === id ? 'var(--shopper-red)' : '#fff', color: filtroLoja === id ? '#fff' : 'var(--text)' }}>
+                    background: selectedSet.has(id) ? 'var(--shopper-red)' : '#fff', color: selectedSet.has(id) ? '#fff' : 'var(--text)' }}>
                   {nome}
                 </button>
               ))}
@@ -930,12 +1029,92 @@ function RupturasTab({ dataInicio, dataFim, lojaFcId }) {
               {filtrado.length.toLocaleString('pt-BR')} registro(s)
             </span>
           </div>
-          <div style={{ overflowX: 'auto', borderRadius: 8, border: '1px solid var(--border)' }}>
+
+          {hasAnaliseFiltro && (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', margin: '-6px 0 12px' }}>
+              <button onClick={() => { setFiltroProdutos([]); setFiltroTipo(null); setFiltroStatus(null) }}
+                style={{ border: '1px solid var(--border)', background: '#fff', color: 'var(--text-muted)', borderRadius: 20, padding: '5px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                Limpar filtros da análise
+              </button>
+            </div>
+          )}
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 12, marginBottom: 12 }}>
+            <ErrorKpiCard
+              label="Taxa de ruptura geral"
+              value={lojasLoading ? '...' : taxaRupturaGeral == null ? '—' : `${taxaRupturaGeral.toFixed(2)}%`}
+              sub={`${totalPedidosComRuptura.toLocaleString('pt-BR')} pedidos com ruptura / ${totalPedidos.toLocaleString('pt-BR')} pedidos`}
+              tone="danger"
+            />
+            <ErrorKpiCard label="Rupturas no filtro" value={filtrado.length.toLocaleString('pt-BR')} sub={`${filtradoPorLoja.length.toLocaleString('pt-BR')} antes dos filtros de análise`} />
+            <ErrorKpiCard label="Itens em ruptura" value={totalItensRuptura.toLocaleString('pt-BR')} sub="soma de qtd. nos registros filtrados por loja" tone="danger" />
+            <ErrorKpiCard label="Substituídos" value={totalSubstituidos.toLocaleString('pt-BR')} sub="itens substituídos nos registros filtrados por loja" tone="ok" />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(520px, 1.45fr) minmax(280px, 1fr) minmax(280px, 1fr)', gap: 12, marginBottom: 12, alignItems: 'stretch' }}>
+            <HorizontalBarChart
+              title="Produtos com ruptura"
+              subtitle={`${selectedSet.size === 0 ? 'Todas as lojas' : `${selectedSet.size} loja(s)`} · clique no produto para filtrar a lista`}
+              items={produtoChartItems}
+              activeKeys={selectedProdutosSet}
+              onSelect={toggleProduto}
+              valueFormatter={item => `${item.value}`}
+              tooltipFormatter={item => `${item.label}: ${item.value} rupturas · ${item.itens} itens · ${item.substituidos} substituídos`}
+              color="#334155"
+              emptyText="Nenhum produto com ruptura encontrado para o filtro."
+              unitLabel="rupturas"
+            />
+            <DonutChart
+              title="Status"
+              subtitle="Resolvidas x pendentes"
+              data={statusAnalise}
+              activeKey={filtroStatus}
+              onSelect={setFiltroStatus}
+              unitLabel="rupturas"
+            />
+            <HorizontalBarChart
+              title="Tipo"
+              subtitle="Participação por tipo de ocorrência"
+              items={tipoChartItems}
+              activeKeys={new Set(filtroTipo ? [filtroTipo] : [])}
+              onSelect={key => setFiltroTipo(filtroTipo === key ? null : key)}
+              valueFormatter={item => `${item.value.toFixed(1)}%`}
+              tooltipFormatter={item => `${item.label}: ${item.value.toFixed(1)}% · ${item.total} rupturas`}
+              color="var(--shopper-red)"
+              emptyText="Nenhum tipo encontrado."
+              unitLabel="rupturas"
+            />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(420px, 1fr)', gap: 12, marginBottom: 12 }}>
+            {lojasLoading ? (
+              <section style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 8, padding: 14 }}>
+                <div className="loading-state" style={{ padding: '18px 0' }}><div className="spinner" /><span>Carregando total de pedidos...</span></div>
+              </section>
+            ) : (
+              <ColumnChart
+                title="Taxa por loja"
+                subtitle={`${periodoLabel} · todas as lojas, use as setas ou arraste para navegar`}
+                items={lojaChartItems}
+                activeKeys={selectedSet}
+                onSelect={id => {
+                  if (lojaFcId) return
+                  toggleLoja(id)
+                }}
+                valueFormatter={item => `${item.value.toFixed(2)}%`}
+                subFormatter={item => `${item.pedidosComRuptura}/${item.pedidos}`}
+                color="var(--shopper-red)"
+                emptyText="Sem pedidos ou rupturas para calcular a taxa no período."
+              />
+            )}
+          </div>
+
+          <div style={{ overflowX: 'auto', maxHeight: 420, overflowY: 'auto', borderRadius: 8, border: '1px solid var(--border)', background: '#fff' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
               <thead>
                 <tr style={{ background: '#f8f9fc' }}>
                   {['Loja','Pedido','Produto','Prev. Entrega','Criado em','Resolvido em','Qtd.','Subst.','Tipo','Itens Pedido','Itens Dist.'].map(h => (
-                    <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 700, fontSize: 11,
+                    <th key={h} style={{ position: 'sticky', top: 0, zIndex: 1, background: '#f8f9fc', padding: '8px 12px', textAlign: 'left', fontWeight: 700, fontSize: 11,
                       textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)',
                       borderBottom: '2px solid var(--border)', whiteSpace: 'nowrap' }}>{h}</th>
                   ))}
@@ -1197,7 +1376,7 @@ const { data: resp } = await axios.get(`${API}/api/intraday/gerencial`, { params
           ))}
         </div>
 
-        {aba === 'rupturas'      && <RupturasTab dataInicio={dataInicio} dataFim={dataFim} lojaFcId={lojaFcId} />}
+        {aba === 'rupturas'      && <RupturasTab dataInicio={dataInicio} dataFim={dataFim} lojaFcId={lojaFcId} lojasResumo={lojasVisiveis} lojasLoading={loading} />}
         {aba === 'erros'         && <ErrosClientesTab rows={errosPeriodo} loading={errosLoading} erro={errosErro} lojaFcId={lojaFcId} lojas={lojasVisiveis} lojasLoading={loading} dataInicio={dataInicio} dataFim={dataFim} />}
         {aba === 'abastecimento' && <AbastecimentoTab dataInicio={dataInicio} dataFim={dataFim} lojaStoreCode={lojaStoreCode} />}
         {aba === 'tempos'        && <TemposTab lojas={lojas} lojaFcId={lojaFcId} />}
