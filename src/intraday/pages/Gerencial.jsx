@@ -484,7 +484,7 @@ function ColumnChart({ title, subtitle, items, activeKeys = new Set(), onSelect,
           <div style={{ display: 'grid', gridTemplateColumns: `repeat(${items.length}, minmax(128px, 148px))`, gap: 12, alignItems: 'end', height: 210, minWidth: 'max-content' }}>
             {items.map(item => {
               const value = Number(item.value) || 0
-              const height = Math.max(8, (value / maxValue) * 142)
+              const height = Math.max(8, (value / maxValue) * 104)
               const active = activeKeys.has(item.key)
               return (
                 <button key={item.key} onClick={() => onSelect?.(item.key)}
