@@ -496,7 +496,6 @@ function ColumnChart({ title, subtitle, items, activeKeys = new Set(), onSelect,
                   </div>
                   <div style={{ color: 'var(--text)', fontSize: 11, fontWeight: 700, textAlign: 'center', lineHeight: 1.15, overflow: 'hidden' }}>
                     <div style={{ whiteSpace: 'normal' }}>{item.label}</div>
-                    {subFormatter && <div style={{ color: 'var(--text-muted)', fontWeight: 600, marginTop: 3 }}>{subFormatter(item)}</div>}
                   </div>
                 </button>
               )
