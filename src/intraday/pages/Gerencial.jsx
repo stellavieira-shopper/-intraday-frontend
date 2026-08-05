@@ -380,12 +380,332 @@ function AbastecimentoTab({ dataInicio, dataFim, lojaStoreCode }) {
   )
 }
 
-function ErrosClientesTab({ rows, loading, erro, lojaFcId }) {
-  const [filtroLoja, setFiltroLoja] = useState(lojaFcId ? String(lojaFcId) : '')
+function ErrorKpiCard({ label, value, sub, tone = 'default' }) {
+  const color = tone === 'danger' ? 'var(--shopper-red)' : tone === 'ok' ? '#16a34a' : 'var(--text)'
+  return (
+    <div style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 8, padding: 14, minHeight: 92 }}>
+      <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
+      <div style={{ marginTop: 6, color, fontSize: 28, lineHeight: 1, fontWeight: 900 }}>{value}</div>
+      <div style={{ marginTop: 6, color: 'var(--text-muted)', fontSize: 12 }}>{sub}</div>
+    </div>
+  )
+}
 
-  const LOJAS_DARK = Object.entries(FC_NOME)
-  const darkRows = rows.filter(r => FC_IDS_DARK.has(r.fulfillment_center_id))
-  const filtrado = darkRows.filter(r => !filtroLoja || String(r.fulfillment_center_id) === filtroLoja)
+function DonutChart({ title, subtitle, data, activeKey, onSelect }) {
+  const total = data.reduce((acc, item) => acc + item.total, 0)
+  const size = 132
+  const stroke = 18
+  const radius = (size - stroke) / 2
+  const circumference = 2 * Math.PI * radius
+  let offset = 0
+
+  return (
+    <section style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 8, padding: 14, minWidth: 0 }}>
+      <div style={{ marginBottom: 10 }}>
+        <h3 style={{ margin: 0, fontSize: 15, color: 'var(--text)' }}>{title}</h3>
+        <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--text-muted)' }}>{subtitle}</p>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '132px 1fr', gap: 14, alignItems: 'center' }}>
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-label={title}>
+          <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="#eef2f7" strokeWidth={stroke} />
+          {data.map(item => {
+            const pct = total > 0 ? item.total / total : 0
+            const dash = pct * circumference
+            const circle = (
+              <circle
+                key={item.key}
+                cx={size / 2}
+                cy={size / 2}
+                r={radius}
+                fill="none"
+                stroke={item.color}
+                strokeWidth={stroke}
+                strokeDasharray={`${dash} ${circumference - dash}`}
+                strokeDashoffset={-offset}
+                strokeLinecap="butt"
+                transform={`rotate(-90 ${size / 2} ${size / 2})`}
+                opacity={activeKey && activeKey !== item.key ? 0.28 : 1}
+                style={{ cursor: 'pointer' }}
+                onClick={() => onSelect?.(activeKey === item.key ? null : item.key)}
+              />
+            )
+            offset += dash
+            return circle
+          })}
+          <text x="50%" y="48%" textAnchor="middle" dominantBaseline="middle" style={{ fontSize: 22, fontWeight: 900, fill: 'var(--text)' }}>{total}</text>
+          <text x="50%" y="64%" textAnchor="middle" dominantBaseline="middle" style={{ fontSize: 11, fontWeight: 700, fill: 'var(--text-muted)' }}>erros</text>
+        </svg>
+        <div style={{ display: 'grid', gap: 8 }}>
+          {data.map(item => {
+            const pct = total > 0 ? (item.total / total) * 100 : 0
+            const active = activeKey === item.key
+            return (
+              <button key={item.key} onClick={() => onSelect?.(active ? null : item.key)}
+                style={{ border: active ? `2px solid ${item.color}` : '1px solid var(--border)', borderRadius: 8, background: '#fff', padding: '8px 10px', textAlign: 'left', cursor: 'pointer' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, fontSize: 12 }}>
+                  <strong style={{ color: 'var(--text)' }}>{item.label}</strong>
+                  <span style={{ color: item.color, fontWeight: 900 }}>{pct.toFixed(1)}%</span>
+                </div>
+                <div style={{ color: 'var(--text-muted)', fontSize: 11 }}>{item.total} registro(s)</div>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function ColumnChart({ title, subtitle, items, activeKeys = new Set(), onSelect, valueFormatter, subFormatter, color = 'var(--shopper-red)', emptyText }) {
+  const scrollRef = useRef(null)
+  const maxValue = Math.max(1, ...items.map(item => Number(item.value) || 0))
+  const scrollChart = (direction) => {
+    scrollRef.current?.scrollBy({ left: direction * 360, behavior: 'smooth' })
+  }
+
+  return (
+    <section style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 8, padding: 14, minWidth: 0 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start', marginBottom: 10 }}>
+        <div>
+          <h3 style={{ margin: 0, fontSize: 15, color: 'var(--text)' }}>{title}</h3>
+          <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--text-muted)' }}>{subtitle}</p>
+        </div>
+        {items.length > 10 && (
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button onClick={() => scrollChart(-1)} title="Ver anteriores" style={{ width: 30, height: 30, borderRadius: 999, border: '1px solid var(--border)', background: '#fff', cursor: 'pointer', fontWeight: 900 }}>‹</button>
+            <button onClick={() => scrollChart(1)} title="Ver próximas" style={{ width: 30, height: 30, borderRadius: 999, border: '1px solid var(--border)', background: '#fff', cursor: 'pointer', fontWeight: 900 }}>›</button>
+          </div>
+        )}
+      </div>
+      {items.length === 0 ? (
+        <div style={{ padding: '18px 0', color: 'var(--text-muted)', fontSize: 13 }}>{emptyText || 'Sem dados para o gráfico.'}</div>
+      ) : (
+        <div ref={scrollRef} style={{ overflowX: 'auto', overflowY: 'hidden', paddingBottom: 4 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${items.length}, minmax(128px, 148px))`, gap: 12, alignItems: 'end', height: 244, minWidth: 'max-content' }}>
+            {items.map(item => {
+              const value = Number(item.value) || 0
+              const height = Math.max(8, (value / maxValue) * 142)
+              const active = activeKeys.has(item.key)
+              return (
+                <button key={item.key} onClick={() => onSelect?.(item.key)}
+                  title={`${item.label}: ${valueFormatter ? valueFormatter(item) : value}${subFormatter ? ` · ${subFormatter(item)}` : ''}`}
+                  style={{ display: 'grid', gridTemplateRows: '26px 1fr 62px', gap: 6, alignItems: 'end', border: active ? `2px solid ${color}` : '1px solid transparent', borderRadius: 8, background: active ? '#fff7f7' : 'transparent', padding: active ? 6 : 0, cursor: onSelect ? 'pointer' : 'default', minWidth: 0 }}>
+                  <div style={{ color, fontSize: 12, fontWeight: 900, textAlign: 'center', whiteSpace: 'nowrap' }}>{valueFormatter ? valueFormatter(item) : value}</div>
+                  <div style={{ width: '100%', height: 150, display: 'flex', alignItems: 'end', justifyContent: 'center' }}>
+                    <div style={{ width: '72%', height, borderRadius: '6px 6px 2px 2px', background: color, opacity: activeKeys.size > 0 && !active ? 0.35 : 1 }} />
+                  </div>
+                  <div style={{ color: 'var(--text)', fontSize: 11, fontWeight: 700, textAlign: 'center', lineHeight: 1.15, overflow: 'hidden' }}>
+                    <div style={{ whiteSpace: 'normal' }}>{item.label}</div>
+                    {subFormatter && <div style={{ color: 'var(--text-muted)', fontWeight: 600, marginTop: 3 }}>{subFormatter(item)}</div>}
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+    </section>
+  )
+}
+
+function HorizontalBarChart({ title, subtitle, items, activeKeys = new Set(), onSelect, valueFormatter, tooltipFormatter, color = '#334155', emptyText }) {
+  const scrollRef = useRef(null)
+  const maxValue = Math.max(1, ...items.map(item => Number(item.value) || 0))
+  const scrollChart = (direction) => {
+    scrollRef.current?.scrollBy({ top: direction * 260, behavior: 'smooth' })
+  }
+
+  return (
+    <section style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 8, padding: 14, minWidth: 0 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start', marginBottom: 12 }}>
+        <div>
+          <h3 style={{ margin: 0, fontSize: 15, color: 'var(--text)' }}>{title}</h3>
+          <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--text-muted)' }}>{subtitle}</p>
+        </div>
+        {items.length > 10 && (
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button onClick={() => scrollChart(-1)} title="Ver anteriores" style={{ width: 30, height: 30, borderRadius: 999, border: '1px solid var(--border)', background: '#fff', cursor: 'pointer', fontWeight: 900 }}>↑</button>
+            <button onClick={() => scrollChart(1)} title="Ver próximos" style={{ width: 30, height: 30, borderRadius: 999, border: '1px solid var(--border)', background: '#fff', cursor: 'pointer', fontWeight: 900 }}>↓</button>
+          </div>
+        )}
+      </div>
+      {items.length === 0 ? (
+        <div style={{ padding: '18px 0', color: 'var(--text-muted)', fontSize: 13 }}>{emptyText || 'Sem dados para o gráfico.'}</div>
+      ) : (
+        <div ref={scrollRef} style={{ display: 'grid', gap: 9, maxHeight: 398, overflowY: items.length > 10 ? 'auto' : 'visible', paddingRight: items.length > 10 ? 6 : 0 }}>
+          {items.map(item => {
+            const value = Number(item.value) || 0
+            const width = Math.max(4, (value / maxValue) * 100)
+            const active = activeKeys.has(item.key)
+            return (
+              <button key={item.key} onClick={() => onSelect?.(item.key)} title={tooltipFormatter ? tooltipFormatter(item) : item.label}
+                style={{ display: 'grid', gridTemplateColumns: 'minmax(180px, 280px) minmax(180px, 1fr) 64px', gap: 12, alignItems: 'center', border: active ? `2px solid ${color}` : '1px solid transparent', borderRadius: 8, background: active ? '#f8fafc' : 'transparent', padding: active ? '7px 8px' : '4px 0', cursor: onSelect ? 'pointer' : 'default', textAlign: 'left' }}>
+                <strong style={{ color: 'var(--text)', fontSize: 12, lineHeight: 1.2, whiteSpace: 'normal' }}>{item.label}</strong>
+                <div style={{ height: 22, borderRadius: 999, background: '#eef2f7', overflow: 'hidden', position: 'relative' }}>
+                  <div style={{ height: '100%', width: `${width}%`, background: color, borderRadius: 999, opacity: activeKeys.size > 0 && !active ? 0.35 : 1 }} />
+                  <span style={{ position: 'absolute', right: 8, top: 3, color: width > 82 ? '#fff' : 'var(--text)', fontSize: 11, fontWeight: 900 }}>{item.total} erros</span>
+                </div>
+                <span style={{ color, fontSize: 13, fontWeight: 900, textAlign: 'right' }}>{valueFormatter ? valueFormatter(item) : value}</span>
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </section>
+  )
+}
+
+function ErrosClientesTab({ rows, loading, erro, lojaFcId, lojas = [], lojasLoading = false, dataInicio, dataFim }) {
+  const [filtroLojas, setFiltroLojas] = useState(() => lojaFcId ? [String(lojaFcId)] : [])
+  const [filtroTipos, setFiltroTipos] = useState([])
+  const [filtroConsiderar, setFiltroConsiderar] = useState(null)
+  const [filtroGrave, setFiltroGrave] = useState(null)
+
+  useEffect(() => {
+    if (lojaFcId) setFiltroLojas([String(lojaFcId)])
+  }, [lojaFcId])
+
+  const lojasComDados = new Set([
+    ...rows.map(row => String(row.fulfillment_center_id)).filter(id => FC_NOME[id]),
+    ...lojas.map(loja => String(loja.id_fulfillment_center)).filter(id => FC_NOME[id]),
+  ])
+  const LOJAS_ERROS = Object.entries(FC_NOME).filter(([id]) => lojasComDados.has(id))
+  const selectedStores = lojaFcId ? [String(lojaFcId)] : filtroLojas
+  const selectedSet = new Set(selectedStores)
+  const selectedTiposSet = new Set(filtroTipos)
+  const rowsConhecidas = rows.filter(r => FC_NOME[r.fulfillment_center_id])
+  const filtradoPorLoja = rowsConhecidas.filter(r => selectedSet.size === 0 || selectedSet.has(String(r.fulfillment_center_id)))
+  const statusKey = (item) => {
+    const value = String(item.considerar || '').toLowerCase()
+    if (value.includes('desconsider')) return 'desconsiderados'
+    if (value.includes('considerar') || value.includes('descontar')) return 'considerados'
+    return 'outros'
+  }
+  const graveKey = (item) => {
+    const value = String(item.grave || '').toUpperCase()
+    return value === 'SIM' || value === 'GRAVE' ? 'graves' : 'nao_graves'
+  }
+  const filtrado = filtradoPorLoja.filter(item => {
+    const tipo = item.erro || 'Sem tipo informado'
+    if (selectedTiposSet.size > 0 && !selectedTiposSet.has(tipo)) return false
+    if (filtroConsiderar && statusKey(item) !== filtroConsiderar) return false
+    if (filtroGrave && graveKey(item) !== filtroGrave) return false
+    return true
+  })
+  const periodoLabel = dataInicio && dataFim ? fmtPeriodo(dataInicio, dataFim) : 'período selecionado'
+
+  const toggleLoja = (id) => {
+    setFiltroLojas(current => {
+      if (current.includes(id)) return current.filter(item => item !== id)
+      return [...current, id]
+    })
+  }
+  const toggleTipo = (tipo) => {
+    setFiltroTipos(current => {
+      if (current.includes(tipo)) return current.filter(item => item !== tipo)
+      return [...current, tipo]
+    })
+  }
+  const hasAnaliseFiltro = filtroTipos.length > 0 || filtroConsiderar || filtroGrave
+
+  const pedidosPorLoja = lojas.reduce((acc, loja) => {
+    const id = String(loja.id_fulfillment_center)
+    if (FC_NOME[id]) acc[id] = Number(loja.total_pedidos) || 0
+    return acc
+  }, {})
+
+  const errosPedidosPorLoja = rowsConhecidas.reduce((acc, erroRow) => {
+    const id = String(erroRow.fulfillment_center_id)
+    if (!acc[id]) acc[id] = new Set()
+    if (erroRow.cod_pedido) acc[id].add(erroRow.cod_pedido)
+    return acc
+  }, {})
+
+  const taxaErroPorLoja = LOJAS_ERROS
+    .map(([id, nome]) => {
+      const pedidos = pedidosPorLoja[id] || 0
+      const errosPedidos = errosPedidosPorLoja[id]?.size || 0
+      return {
+        id,
+        nome,
+        pedidos,
+        errosPedidos,
+        taxa: pedidos > 0 ? (errosPedidos / pedidos) * 100 : null,
+      }
+    })
+    .filter(item => selectedSet.size === 0 || selectedSet.has(item.id))
+    .filter(item => item.pedidos > 0 || item.errosPedidos > 0)
+    .sort((a, b) => (b.taxa ?? -1) - (a.taxa ?? -1))
+
+  const maxTaxa = Math.max(1, ...taxaErroPorLoja.map(item => item.taxa || 0))
+  const totalPedidosGeral = taxaErroPorLoja.reduce((acc, item) => acc + item.pedidos, 0)
+  const totalPedidosComErroGeral = taxaErroPorLoja.reduce((acc, item) => acc + item.errosPedidos, 0)
+  const taxaErroGeral = totalPedidosGeral > 0 ? (totalPedidosComErroGeral / totalPedidosGeral) * 100 : null
+
+  const tiposErro = Object.values(filtradoPorLoja.reduce((acc, item) => {
+    const key = item.erro || 'Sem tipo informado'
+    if (!acc[key]) acc[key] = { tipo: key, total: 0, graves: 0, considerar: 0 }
+    acc[key].total += 1
+    if (String(item.grave || '').toUpperCase() === 'SIM' || String(item.grave || '').toUpperCase() === 'GRAVE') acc[key].graves += 1
+    if (statusKey(item) === 'considerados') acc[key].considerar += 1
+    return acc
+  }, {})).sort((a, b) => b.total - a.total)
+  const totalTiposErro = tiposErro.reduce((acc, item) => acc + item.total, 0)
+  const totalBaseAnalise = filtradoPorLoja.length
+  const statusAnalise = [
+    {
+      key: 'considerados',
+      label: 'Considerados',
+      total: filtradoPorLoja.filter(item => statusKey(item) === 'considerados').length,
+      color: 'var(--shopper-red)',
+    },
+    {
+      key: 'desconsiderados',
+      label: 'Desconsiderados',
+      total: filtradoPorLoja.filter(item => statusKey(item) === 'desconsiderados').length,
+      color: '#64748b',
+    },
+    {
+      key: 'outros',
+      label: 'Outros status',
+      total: filtradoPorLoja.filter(item => statusKey(item) === 'outros').length,
+      color: '#94a3b8',
+    },
+  ]
+  const graveAnalise = [
+    {
+      key: 'graves',
+      label: 'Graves',
+      total: filtradoPorLoja.filter(item => graveKey(item) === 'graves').length,
+      color: '#b91c1c',
+    },
+    {
+      key: 'nao_graves',
+      label: 'Não graves',
+      total: filtradoPorLoja.filter(item => graveKey(item) === 'nao_graves').length,
+      color: '#16a34a',
+    },
+  ]
+  const filtroResumo = [
+    filtroTipos.length > 0 ? `${filtroTipos.length} tipo(s)` : null,
+    filtroConsiderar ? statusAnalise.find(item => item.key === filtroConsiderar)?.label : null,
+    filtroGrave ? graveAnalise.find(item => item.key === filtroGrave)?.label : null,
+  ].filter(Boolean).join(' · ')
+  const lojaChartItems = taxaErroPorLoja.map(item => ({
+    key: item.id,
+    label: item.nome,
+    value: item.taxa || 0,
+    errosPedidos: item.errosPedidos,
+    pedidos: item.pedidos,
+  }))
+  const tipoChartItems = tiposErro.map(item => ({
+    key: item.tipo,
+    label: item.tipo,
+    value: totalTiposErro > 0 ? (item.total / totalTiposErro) * 100 : 0,
+    total: item.total,
+    graves: item.graves,
+    considerar: item.considerar,
+  }))
 
   const COLS = ['Loja','Pedido','Data Entrega','Tipo de Erro','Grave','Status','Responsabilidade','Produto','Tratativa','Link']
 
@@ -400,29 +720,117 @@ function ErrosClientesTab({ rows, loading, erro, lojaFcId }) {
           <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
             {!lojaFcId && <>
               <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>Loja</span>
-              <button onClick={() => setFiltroLoja('')}
+              <button onClick={() => setFiltroLojas([])}
                 style={{ padding: '5px 14px', borderRadius: 20, border: '1px solid var(--border)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                  background: !filtroLoja ? 'var(--shopper-red)' : '#fff', color: !filtroLoja ? '#fff' : 'var(--text)' }}>
+                  background: selectedSet.size === 0 ? 'var(--shopper-red)' : '#fff', color: selectedSet.size === 0 ? '#fff' : 'var(--text)' }}>
                 Todas
               </button>
-              {LOJAS_DARK.map(([id, nome]) => (
-                <button key={id} onClick={() => setFiltroLoja(filtroLoja === id ? '' : id)}
+              {LOJAS_ERROS.map(([id, nome]) => (
+                <button key={id} onClick={() => toggleLoja(id)}
                   style={{ padding: '5px 14px', borderRadius: 20, border: '1px solid var(--border)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                    background: filtroLoja === id ? 'var(--shopper-red)' : '#fff', color: filtroLoja === id ? '#fff' : 'var(--text)' }}>
+                    background: selectedSet.has(id) ? 'var(--shopper-red)' : '#fff', color: selectedSet.has(id) ? '#fff' : 'var(--text)' }}>
                   {nome}
                 </button>
               ))}
             </>}
             <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 'auto' }}>
-              {filtrado.length.toLocaleString('pt-BR')} registro(s)
+              {filtrado.length.toLocaleString('pt-BR')} registro(s){hasAnaliseFiltro && filtroResumo ? ` · ${filtroResumo}` : ''}
             </span>
           </div>
-          <div style={{ overflowX: 'auto', borderRadius: 8, border: '1px solid var(--border)' }}>
+
+          {hasAnaliseFiltro && (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', margin: '-6px 0 12px' }}>
+              <button
+                onClick={() => { setFiltroTipos([]); setFiltroConsiderar(null); setFiltroGrave(null) }}
+                style={{ border: '1px solid var(--border)', background: '#fff', color: 'var(--text-muted)', borderRadius: 20, padding: '5px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+              >
+                Limpar filtros da análise
+              </button>
+            </div>
+          )}
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 12, marginBottom: 12 }}>
+            <ErrorKpiCard
+              label="Taxa de erro geral"
+              value={lojasLoading ? '...' : taxaErroGeral == null ? '—' : `${taxaErroGeral.toFixed(2)}%`}
+              sub={`${totalPedidosComErroGeral.toLocaleString('pt-BR')} pedidos com erro / ${totalPedidosGeral.toLocaleString('pt-BR')} pedidos`}
+              tone="danger"
+            />
+            <ErrorKpiCard
+              label="Erros no filtro"
+              value={filtrado.length.toLocaleString('pt-BR')}
+              sub={`${totalBaseAnalise.toLocaleString('pt-BR')} antes dos filtros de análise`}
+            />
+            <ErrorKpiCard
+              label="Graves"
+              value={`${(graveAnalise.find(item => item.key === 'graves')?.total || 0).toLocaleString('pt-BR')}`}
+              sub={`${totalBaseAnalise ? (((graveAnalise.find(item => item.key === 'graves')?.total || 0) / totalBaseAnalise) * 100).toFixed(1) : '0.0'}% dos erros do filtro de lojas`}
+              tone="danger"
+            />
+            <ErrorKpiCard
+              label="Desconsiderados"
+              value={`${(statusAnalise.find(item => item.key === 'desconsiderados')?.total || 0).toLocaleString('pt-BR')}`}
+              sub={`${totalBaseAnalise ? (((statusAnalise.find(item => item.key === 'desconsiderados')?.total || 0) / totalBaseAnalise) * 100).toFixed(1) : '0.0'}% dos erros do filtro de lojas`}
+            />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(520px, 1.45fr) minmax(280px, 1fr) minmax(280px, 1fr)', gap: 12, marginBottom: 12, alignItems: 'stretch' }}>
+            <HorizontalBarChart
+              title="Tipos de erro"
+              subtitle={`${selectedSet.size === 0 ? 'Todas as lojas' : `${selectedSet.size} loja(s)`} · participação no total de erros`}
+              items={tipoChartItems}
+              activeKeys={selectedTiposSet}
+              onSelect={toggleTipo}
+              valueFormatter={item => `${item.value.toFixed(1)}%`}
+              tooltipFormatter={item => `${item.label}: ${item.value.toFixed(1)}% · ${item.total} erros · ${item.graves} graves · ${item.considerar} considerar`}
+              color="#334155"
+              emptyText="Nenhum tipo de erro encontrado para o filtro."
+            />
+            <DonutChart
+              title="Status"
+              subtitle="Considerados x desconsiderados"
+              data={statusAnalise}
+              activeKey={filtroConsiderar}
+              onSelect={setFiltroConsiderar}
+            />
+            <DonutChart
+              title="Gravidade"
+              subtitle="Participação de erros graves"
+              data={graveAnalise}
+              activeKey={filtroGrave}
+              onSelect={setFiltroGrave}
+            />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(420px, 1fr)', gap: 12, marginBottom: 12 }}>
+            {lojasLoading ? (
+              <section style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 8, padding: 14 }}>
+                <div className="loading-state" style={{ padding: '18px 0' }}><div className="spinner" /><span>Carregando total de pedidos...</span></div>
+              </section>
+            ) : (
+              <ColumnChart
+                title="Taxa por loja"
+                subtitle={`${periodoLabel} · todas as lojas, use as setas ou arraste para navegar`}
+                items={lojaChartItems}
+                activeKeys={selectedSet}
+                onSelect={id => {
+                  if (lojaFcId) return
+                  toggleLoja(id)
+                }}
+                valueFormatter={item => `${item.value.toFixed(2)}%`}
+                subFormatter={item => `${item.errosPedidos}/${item.pedidos}`}
+                color="var(--shopper-red)"
+                emptyText="Sem pedidos ou erros para calcular a taxa no período."
+              />
+            )}
+          </div>
+
+          <div style={{ overflowX: 'auto', maxHeight: 420, overflowY: 'auto', borderRadius: 8, border: '1px solid var(--border)', background: '#fff' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
               <thead>
                 <tr style={{ background: '#f8f9fc' }}>
                   {COLS.map(h => (
-                    <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 700, fontSize: 11,
+                    <th key={h} style={{ position: 'sticky', top: 0, zIndex: 1, background: '#f8f9fc', padding: '8px 12px', textAlign: 'left', fontWeight: 700, fontSize: 11,
                       textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)',
                       borderBottom: '2px solid var(--border)', whiteSpace: 'nowrap' }}>{h}</th>
                   ))}
@@ -790,7 +1198,7 @@ const { data: resp } = await axios.get(`${API}/api/intraday/gerencial`, { params
         </div>
 
         {aba === 'rupturas'      && <RupturasTab dataInicio={dataInicio} dataFim={dataFim} lojaFcId={lojaFcId} />}
-        {aba === 'erros'         && <ErrosClientesTab rows={errosPeriodo} loading={errosLoading} erro={errosErro} lojaFcId={lojaFcId} />}
+        {aba === 'erros'         && <ErrosClientesTab rows={errosPeriodo} loading={errosLoading} erro={errosErro} lojaFcId={lojaFcId} lojas={lojasVisiveis} lojasLoading={loading} dataInicio={dataInicio} dataFim={dataFim} />}
         {aba === 'abastecimento' && <AbastecimentoTab dataInicio={dataInicio} dataFim={dataFim} lojaStoreCode={lojaStoreCode} />}
         {aba === 'tempos'        && <TemposTab lojas={lojas} lojaFcId={lojaFcId} />}
 
