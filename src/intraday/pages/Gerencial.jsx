@@ -656,7 +656,7 @@ const { data: resp } = await axios.get(`${API}/api/intraday/gerencial`, { params
     if (!autoRefresh) return
     const id = setInterval(() => {
       if (!refreshing) buscarRef.current()
-    }, 60_000)
+    }, 15 * 60_000)
     return () => clearInterval(id)
   }, [autoRefresh, refreshing])
 
@@ -740,7 +740,7 @@ const { data: resp } = await axios.get(`${API}/api/intraday/gerencial`, { params
         <div className="intraday-topbar__right">
           <label className="auto-refresh-toggle">
             <input type="checkbox" checked={autoRefresh} onChange={e => setAutoRefresh(e.target.checked)} />
-            Auto (1min)
+            Auto (15min)
           </label>
           <button className="btn-refresh" onClick={handleAtualizar} disabled={loading || refreshing || bqRefreshing}
             title={bqRefreshing ? 'Aguarde — atualização em andamento' : 'Atualizar dados'}>
