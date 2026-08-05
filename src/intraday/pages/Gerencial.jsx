@@ -481,7 +481,7 @@ function ColumnChart({ title, subtitle, items, activeKeys = new Set(), onSelect,
         <div style={{ padding: '18px 0', color: 'var(--text-muted)', fontSize: 13 }}>{emptyText || 'Sem dados para o gráfico.'}</div>
       ) : (
         <div ref={scrollRef} style={{ overflowX: 'auto', overflowY: 'hidden', paddingBottom: 4 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${items.length}, minmax(128px, 148px))`, gap: 12, alignItems: 'end', height: 194, minWidth: 'max-content' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${items.length}, minmax(128px, 148px))`, gap: 12, alignItems: 'end', height: 210, minWidth: 'max-content' }}>
             {items.map(item => {
               const value = Number(item.value) || 0
               const height = Math.max(8, (value / maxValue) * 142)
@@ -489,9 +489,9 @@ function ColumnChart({ title, subtitle, items, activeKeys = new Set(), onSelect,
               return (
                 <button key={item.key} onClick={() => onSelect?.(item.key)}
                   title={`${item.label}: ${valueFormatter ? valueFormatter(item) : value}${subFormatter ? ` · ${subFormatter(item)}` : ''}`}
-                  style={{ display: 'grid', gridTemplateRows: '24px 118px 40px', gap: 5, alignItems: 'end', border: active ? `2px solid ${color}` : '1px solid transparent', borderRadius: 8, background: active ? '#fff7f7' : 'transparent', padding: active ? 6 : 0, cursor: onSelect ? 'pointer' : 'default', minWidth: 0 }}>
+                  style={{ display: 'grid', gridTemplateRows: '36px 112px 40px', gap: 5, alignItems: 'end', border: active ? `2px solid ${color}` : '1px solid transparent', borderRadius: 8, background: active ? '#fff7f7' : 'transparent', padding: active ? 6 : 0, cursor: onSelect ? 'pointer' : 'default', minWidth: 0 }}>
                   <div style={{ color, fontSize: 12, fontWeight: 900, textAlign: 'center', whiteSpace: 'nowrap' }}>{valueFormatter ? valueFormatter(item) : value}</div>
-                  <div style={{ width: '100%', height: 118, display: 'flex', alignItems: 'end', justifyContent: 'center' }}>
+                  <div style={{ width: '100%', height: 112, display: 'flex', alignItems: 'end', justifyContent: 'center' }}>
                     <div style={{ width: '72%', height, borderRadius: '6px 6px 2px 2px', background: color, opacity: activeKeys.size > 0 && !active ? 0.35 : 1 }} />
                   </div>
                   <div style={{ color: 'var(--text)', fontSize: 11, fontWeight: 700, textAlign: 'center', lineHeight: 1.15, overflow: 'hidden' }}>
