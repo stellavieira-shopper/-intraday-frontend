@@ -577,6 +577,7 @@ export default function Gerencial({ onLojaClick, onVoltar, user, onLogout }) {
   const [autoRefresh, setAutoRefresh]   = useState(true)
   const [sortBy, setSortBy]             = useState('sla')
   const [canal, setCanal]               = useState('todos')
+  const [turno, setTurno]               = useState('todos')
   const [erros, setErros]               = useState([])
   const [errosLoading, setErrosLoading] = useState(false)
   const [errosErro, setErrosErro]       = useState(null)
@@ -619,6 +620,7 @@ export default function Gerencial({ onLojaClick, onVoltar, user, onLogout }) {
     try {
       const params = { data_inicio: dataInicio, data_fim: dataFim }
       if (canal !== 'todos') params.canal = canal
+      if (turno !== 'todos') params.turno = turno
 const { data: resp } = await axios.get(`${API}/api/intraday/gerencial`, { params })
       setLojas(resp.lojas || [])
       setFromCache(!!resp.fromCache)
@@ -629,7 +631,7 @@ const { data: resp } = await axios.get(`${API}/api/intraday/gerencial`, { params
     } finally {
       setLoading(false)
     }
-  }, [dataInicio, dataFim, canal])
+  }, [dataInicio, dataFim, canal, turno])
 
   async function handleAtualizar() {
     setRefreshing(true)
@@ -815,27 +817,53 @@ const { data: resp } = await axios.get(`${API}/api/intraday/gerencial`, { params
 
         {lojas.length > 0 && (
           <>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12 }}>
-              {[
-                { id: 'todos',   label: 'Todos',       color: '#334155' },
-                { id: 'ifood',   label: 'iFood',       color: '#ef4444' },
-                { id: 'shopper', label: 'Shopper Now', color: '#10b981' },
-              ].map(c => (
-                <button
-                  key={c.id}
-                  onClick={() => setCanal(c.id)}
-                  style={{
-                    padding: '5px 16px', borderRadius: 20, fontSize: 13, cursor: 'pointer',
-                    border: canal === c.id ? 'none' : '1px solid var(--border)',
-                    fontWeight: canal === c.id ? 700 : 500,
-                    background: canal === c.id ? c.color : 'var(--surface)',
-                    color: canal === c.id ? '#fff' : 'var(--text-muted)',
-                    transition: 'all 0.15s',
-                  }}
-                >
-                  {c.label}
-                </button>
-              ))}
+            <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap', marginBottom: 12 }}>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {[
+                  { id: 'todos',   label: 'Todos',       color: '#334155' },
+                  { id: 'ifood',   label: 'iFood',       color: '#ef4444' },
+                  { id: 'shopper', label: 'Shopper Now', color: '#10b981' },
+                ].map(c => (
+                  <button
+                    key={c.id}
+                    onClick={() => setCanal(c.id)}
+                    style={{
+                      padding: '5px 16px', borderRadius: 20, fontSize: 13, cursor: 'pointer',
+                      border: canal === c.id ? 'none' : '1px solid var(--border)',
+                      fontWeight: canal === c.id ? 700 : 500,
+                      background: canal === c.id ? c.color : 'var(--surface)',
+                      color: canal === c.id ? '#fff' : 'var(--text-muted)',
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    {c.label}
+                  </button>
+                ))}
+              </div>
+              <div style={{ width: 1, height: 20, background: 'var(--border)' }} />
+              <div style={{ display: 'flex', gap: 8 }}>
+                {[
+                  { id: 'todos', label: 'Todos turnos', color: '#334155' },
+                  { id: 'manha', label: 'Manhã',        color: '#f59e0b' },
+                  { id: 'tarde', label: 'Tarde',        color: '#3b82f6' },
+                  { id: 'noite', label: 'Noite',        color: '#6366f1' },
+                ].map(t => (
+                  <button
+                    key={t.id}
+                    onClick={() => setTurno(t.id)}
+                    style={{
+                      padding: '5px 16px', borderRadius: 20, fontSize: 13, cursor: 'pointer',
+                      border: turno === t.id ? 'none' : '1px solid var(--border)',
+                      fontWeight: turno === t.id ? 700 : 500,
+                      background: turno === t.id ? t.color : 'var(--surface)',
+                      color: turno === t.id ? '#fff' : 'var(--text-muted)',
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="status-bar">
