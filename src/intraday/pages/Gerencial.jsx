@@ -76,7 +76,6 @@ const FC_NOME = {
   28: 'Rodovia (CWB)',
   29: 'Stresser (CWB)',
 }
-const FC_IDS_DARK = new Set([6, 10, 11, 12, 13, 20, 21, 22, 23, 24])
 function nomeLoja(id) { return FC_NOME[id] || (id ? `FC ${id}` : 'Loja desconhecida') }
 
 // store_code → id_fulfillment_center (para filtrar o grid de lojas)
@@ -773,7 +772,7 @@ function ErrosClientesTab({ rows, loading, erro, lojaFcId, lojas = [], lojasLoad
             />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(520px, 1.45fr) minmax(280px, 1fr) minmax(280px, 1fr)', gap: 12, marginBottom: 12, alignItems: 'stretch' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 12, marginBottom: 12, alignItems: 'stretch' }}>
             <HorizontalBarChart
               title="Tipos de erro"
               subtitle={`${selectedSet.size === 0 ? 'Todas as lojas' : `${selectedSet.size} loja(s)`} · participação no total de erros`}
@@ -1050,7 +1049,7 @@ function RupturasTab({ dataInicio, dataFim, lojaFcId, lojasResumo = [], lojasLoa
             <ErrorKpiCard label="Substituídos" value={totalSubstituidos.toLocaleString('pt-BR')} sub="itens substituídos nos registros filtrados por loja" tone="ok" />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(520px, 1.45fr) minmax(280px, 1fr) minmax(280px, 1fr)', gap: 12, marginBottom: 12, alignItems: 'stretch' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 12, marginBottom: 12, alignItems: 'stretch' }}>
             <HorizontalBarChart
               title="Produtos com ruptura"
               subtitle={`${selectedSet.size === 0 ? 'Todas as lojas' : `${selectedSet.size} loja(s)`} · clique no produto para filtrar a lista`}
