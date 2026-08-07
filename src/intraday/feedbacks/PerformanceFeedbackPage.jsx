@@ -399,7 +399,8 @@ function CalcPanel({ snap, card }) {
   const errosFaixa = errosTotal === 0 ? null
     : erroRatio >= 0.99 ? 'Grave (≥5% dos pedidos) — zera bônus'
     : erroRatio >= 0.74 ? 'Alto (4,5–5% dos pedidos) − 75%'
-    : erroRatio >= 0.24 ? 'Leve (3–4,5% dos pedidos) − 25%'
+    : erroRatio >= 0.49 ? 'Alto (4–4,5% dos pedidos) − 50%'
+    : erroRatio >= 0.24 ? 'Leve (3–4% dos pedidos) − 25%'
     : erroRatio >= 0.14 ? 'Moderado (1–3% dos pedidos) − 15%'
     : 'Baixo (<1% dos pedidos) − 10%'
   const preGate   = Math.max(bruto - ruptDesc - descErros, 0)
@@ -476,7 +477,7 @@ function CalcPanel({ snap, card }) {
       <div style={{ fontWeight: 700, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', margin: '10px 0 4px' }}>Erros de clientes (escopo individual)</div>
       <CalcRow label="Erros desta pessoa" rule="Normais + graves considerados" value={`${errosTotal} erro(s)`} highlight negative={errosTotal > 0} />
       <CalcRow label="Faixa de desconto"
-        rule="<1%→−10% · 1–3%→−15% · 3–4,5%→−25% · 4,5–5%→−75% · ≥5%→zera"
+        rule="<1%→−10% · 1–3%→−15% · 3–4%→−25% · 4–4,5%→−50% · 4,5–5%→−75% · ≥5%→zera"
         value={errosTotal === 0 ? 'Sem erros' : errosFaixa} highlight negative={errosTotal > 0} />
       <CalcRow label="Desconto erros" value={fmtR(descErros)} negative={descErros > 0} />
       <CalcRow label="Total em descontos" value={fmtR(ruptDesc + descErros)} total negative={(ruptDesc + descErros) > 0} />
