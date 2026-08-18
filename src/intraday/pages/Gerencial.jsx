@@ -556,6 +556,7 @@ function HorizontalBarChart({ title, subtitle, items, activeKeys = new Set(), on
 
 function ErrosClientesTab({ rows, loading, erro, lojaFcId, lojas = [], lojasLoading = false, dataInicio, dataFim }) {
   const [filtroLojas, setFiltroLojas] = useState(() => lojaFcId ? [String(lojaFcId)] : [])
+  const [filtroProdutos, setFiltroProdutos] = useState([])
   const [filtroTipos, setFiltroTipos] = useState([])
   const [filtroConsiderar, setFiltroConsiderar] = useState(null)
   const [filtroGrave, setFiltroGrave] = useState(null)
@@ -571,9 +572,11 @@ function ErrosClientesTab({ rows, loading, erro, lojaFcId, lojas = [], lojasLoad
   const LOJAS_ERROS = Object.entries(FC_NOME).filter(([id]) => lojasComDados.has(id))
   const selectedStores = lojaFcId ? [String(lojaFcId)] : filtroLojas
   const selectedSet = new Set(selectedStores)
+  const selectedProdutosSet = new Set(filtroProdutos)
   const selectedTiposSet = new Set(filtroTipos)
   const rowsConhecidas = rows.filter(r => FC_NOME[r.fulfillment_center_id])
   const filtradoPorLoja = rowsConhecidas.filter(r => selectedSet.size === 0 || selectedSet.has(String(r.fulfillment_center_id)))
+  const produtoKey = (item) => item.produto || 'Produto não informado'
   const statusKey = (item) => {
     const value = String(item.considerar || '').toLowerCase()
     if (value.includes('desconsider')) return 'desconsiderados'
@@ -585,6 +588,7 @@ function ErrosClientesTab({ rows, loading, erro, lojaFcId, lojas = [], lojasLoad
     return value === 'SIM' || value === 'GRAVE' ? 'graves' : 'nao_graves'
   }
   const filtrado = filtradoPorLoja.filter(item => {
+    if (selectedProdutosSet.size > 0 && !selectedProdutosSet.has(produtoKey(item))) return false
     const tipo = item.erro || 'Sem tipo informado'
     if (selectedTiposSet.size > 0 && !selectedTiposSet.has(tipo)) return false
     if (filtroConsiderar && statusKey(item) !== filtroConsiderar) return false
@@ -605,7 +609,10 @@ function ErrosClientesTab({ rows, loading, erro, lojaFcId, lojas = [], lojasLoad
       return [...current, tipo]
     })
   }
-  const hasAnaliseFiltro = filtroTipos.length > 0 || filtroConsiderar || filtroGrave
+  const toggleProduto = (produto) => {
+    setFiltroProdutos(current => current.includes(produto) ? current.filter(item => item !== produto) : [...current, produto])
+  }
+  const hasAnaliseFiltro = filtroProdutos.length > 0 || filtroTipos.length > 0 || filtroConsiderar || filtroGrave
 
   const pedidosPorLoja = lojas.reduce((acc, loja) => {
     const id = String(loja.id_fulfillment_center)
@@ -649,6 +656,17 @@ function ErrosClientesTab({ rows, loading, erro, lojaFcId, lojas = [], lojasLoad
     if (statusKey(item) === 'considerados') acc[key].considerar += 1
     return acc
   }, {})).sort((a, b) => b.total - a.total)
+  const produtosErro = Object.values(filtradoPorLoja.reduce((acc, item) => {
+    const key = produtoKey(item)
+    if (!acc[key]) acc[key] = { key, label: key, total: 0, pedidos: new Set(), graves: 0, considerar: 0 }
+    acc[key].total += 1
+    if (item.cod_pedido) acc[key].pedidos.add(item.cod_pedido)
+    if (graveKey(item) === 'graves') acc[key].graves += 1
+    if (statusKey(item) === 'considerados') acc[key].considerar += 1
+    return acc
+  }, {}))
+    .map(item => ({ ...item, pedidosCount: item.pedidos.size }))
+    .sort((a, b) => b.total - a.total)
   const totalTiposErro = tiposErro.reduce((acc, item) => acc + item.total, 0)
   const totalBaseAnalise = filtradoPorLoja.length
   const statusAnalise = [
@@ -686,6 +704,7 @@ function ErrosClientesTab({ rows, loading, erro, lojaFcId, lojas = [], lojasLoad
     },
   ]
   const filtroResumo = [
+    filtroProdutos.length > 0 ? `${filtroProdutos.length} produto(s)` : null,
     filtroTipos.length > 0 ? `${filtroTipos.length} tipo(s)` : null,
     filtroConsiderar ? statusAnalise.find(item => item.key === filtroConsiderar)?.label : null,
     filtroGrave ? graveAnalise.find(item => item.key === filtroGrave)?.label : null,
@@ -702,6 +721,15 @@ function ErrosClientesTab({ rows, loading, erro, lojaFcId, lojas = [], lojasLoad
     label: item.tipo,
     value: totalTiposErro > 0 ? (item.total / totalTiposErro) * 100 : 0,
     total: item.total,
+    graves: item.graves,
+    considerar: item.considerar,
+  }))
+  const produtoChartItems = produtosErro.map(item => ({
+    key: item.key,
+    label: item.label,
+    value: item.total,
+    total: item.total,
+    pedidosCount: item.pedidosCount,
     graves: item.graves,
     considerar: item.considerar,
   }))
@@ -740,7 +768,7 @@ function ErrosClientesTab({ rows, loading, erro, lojaFcId, lojas = [], lojasLoad
           {hasAnaliseFiltro && (
             <div style={{ display: 'flex', justifyContent: 'flex-end', margin: '-6px 0 12px' }}>
               <button
-                onClick={() => { setFiltroTipos([]); setFiltroConsiderar(null); setFiltroGrave(null) }}
+                onClick={() => { setFiltroProdutos([]); setFiltroTipos([]); setFiltroConsiderar(null); setFiltroGrave(null) }}
                 style={{ border: '1px solid var(--border)', background: '#fff', color: 'var(--text-muted)', borderRadius: 20, padding: '5px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
               >
                 Limpar filtros da análise
@@ -775,15 +803,16 @@ function ErrosClientesTab({ rows, loading, erro, lojaFcId, lojas = [], lojasLoad
 
           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(520px, 1.45fr) minmax(280px, 1fr) minmax(280px, 1fr)', gap: 12, marginBottom: 12, alignItems: 'stretch' }}>
             <HorizontalBarChart
-              title="Tipos de erro"
-              subtitle={`${selectedSet.size === 0 ? 'Todas as lojas' : `${selectedSet.size} loja(s)`} · participação no total de erros`}
-              items={tipoChartItems}
-              activeKeys={selectedTiposSet}
-              onSelect={toggleTipo}
-              valueFormatter={item => `${item.value.toFixed(1)}%`}
-              tooltipFormatter={item => `${item.label}: ${item.value.toFixed(1)}% · ${item.total} erros · ${item.graves} graves · ${item.considerar} considerar`}
+              title="Produtos com erro"
+              subtitle={`${selectedSet.size === 0 ? 'Todas as lojas' : `${selectedSet.size} loja(s)`} · clique no produto para filtrar a lista`}
+              items={produtoChartItems}
+              activeKeys={selectedProdutosSet}
+              onSelect={toggleProduto}
+              valueFormatter={item => `${item.value}`}
+              tooltipFormatter={item => `${item.label}: ${item.total} erros · ${item.pedidosCount} pedidos · ${item.graves} graves · ${item.considerar} considerar`}
               color="#334155"
-              emptyText="Nenhum tipo de erro encontrado para o filtro."
+              emptyText="Nenhum produto com erro encontrado para o filtro."
+              unitLabel="erros"
             />
             <DonutChart
               title="Status"
@@ -798,6 +827,20 @@ function ErrosClientesTab({ rows, loading, erro, lojaFcId, lojas = [], lojasLoad
               data={graveAnalise}
               activeKey={filtroGrave}
               onSelect={setFiltroGrave}
+            />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(420px, 1fr)', gap: 12, marginBottom: 12 }}>
+            <HorizontalBarChart
+              title="Tipos de erro"
+              subtitle={`${selectedSet.size === 0 ? 'Todas as lojas' : `${selectedSet.size} loja(s)`} · participação no total de erros`}
+              items={tipoChartItems}
+              activeKeys={selectedTiposSet}
+              onSelect={toggleTipo}
+              valueFormatter={item => `${item.value.toFixed(1)}%`}
+              tooltipFormatter={item => `${item.label}: ${item.value.toFixed(1)}% · ${item.total} erros · ${item.graves} graves · ${item.considerar} considerar`}
+              color="var(--shopper-red)"
+              emptyText="Nenhum tipo de erro encontrado para o filtro."
             />
           </div>
 
