@@ -364,16 +364,26 @@ function AbastecimentoPanel({ snap, notaAbst, tierAbst, bolsoAbst, valAbst, prop
       <CalcRow label="Teto do componente abastecimento" rule={propAbst} value={fmtR(bolsoAbst)} />
       <CalcRow label="Ganho com abastecimento" rule="tier × teto" value={fmtR(valAbst)} total />
 
-      <div style={{ marginTop: 20, marginBottom: 8, fontWeight: 700, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>
-        Histórico por dia da semana
-      </div>
-      {loading && <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>Carregando...</div>}
-      {!loading && dias && dias.length === 0 && <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>Sem registros de abastecimento para esta semana.</div>}
-      {!loading && dias && dias.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
-          {dias.map(d => <DiaAbastCard key={d.data_ref} dia={d} />)}
-        </div>
-      )}
+      {snap.funcao_bucket === 'SUPERVISOR'
+        ? (
+          <div style={{ marginTop: 16, padding: '12px 16px', background: 'var(--surface)', borderRadius: 8, fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6 }}>
+            O score de abastecimento do supervisor é calculado com base no desempenho coletivo da loja — não há histórico individual por dia.
+          </div>
+        ) : (
+          <>
+            <div style={{ marginTop: 20, marginBottom: 8, fontWeight: 700, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>
+              Histórico por dia da semana
+            </div>
+            {loading && <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>Carregando...</div>}
+            {!loading && dias && dias.length === 0 && <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>Sem registros de abastecimento para esta semana.</div>}
+            {!loading && dias && dias.length > 0 && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
+                {dias.map(d => <DiaAbastCard key={d.data_ref} dia={d} />)}
+              </div>
+            )}
+          </>
+        )
+      }
     </div>
   )
 }
