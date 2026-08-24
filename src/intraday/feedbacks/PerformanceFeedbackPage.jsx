@@ -9,6 +9,15 @@ const fmtX = v => `${Number(v || 0).toFixed(1)}×`
 
 const CARGO = { SUPERVISOR: 'Supervisor', TEAM_LIDER: 'Team Leader', OPERADOR: 'Operador' }
 
+// Remove anotações do organograma que aparecem junto ao nome (ex: "João Silva (Desligar)")
+const cleanNome = nome => {
+  if (!nome) return nome
+  return nome
+    .replace(/\s*[\(\[].*/g, '')   // remove tudo a partir de ( ou [
+    .replace(/\s*[-\/]\s*(desligar|demitir|afastar|bloq|bloquear|obs|inativo|desativado).*/gi, '')
+    .trim()
+}
+
 function traduzMotivo(motivo) {
   if (!motivo) return 'sem ponto registrado'
   return motivo.trim()
@@ -745,7 +754,7 @@ function PessoaSelect({ people, value, onChange, selectStyle }) {
         {!valueAtual && <option value="">— selecione —</option>}
         {filtrados.map(p => (
           <option key={p._pid} value={p._pid}>
-            {p.nome} · {CARGO[p.funcao_bucket] || p.funcao_bucket}
+            {cleanNome(p.nome)} · {CARGO[p.funcao_bucket] || p.funcao_bucket}
           </option>
         ))}
       </select>
@@ -858,7 +867,7 @@ export default function PerformanceFeedbackPage({ feedbackIndex, weekBundles, on
                 <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: 4 }}>
                   Feedback semanal de bonificação
                 </div>
-                <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', lineHeight: 1, marginBottom: 8 }}>{snap.nome}</div>
+                <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', lineHeight: 1, marginBottom: 8 }}>{cleanNome(snap.nome)}</div>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                   <span style={{ background: 'var(--blue)1a', color: 'var(--blue)', border: '1px solid var(--blue)40', borderRadius: 4, padding: '2px 10px', fontSize: 12, fontWeight: 700 }}>
                     {CARGO[snap.funcao_bucket] || snap.funcao_bucket}

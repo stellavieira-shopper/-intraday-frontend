@@ -7,6 +7,14 @@ import '../feedbacks/feedback-mgr.css'
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+const cleanNome = nome => {
+  if (!nome) return nome
+  return nome
+    .replace(/\s*[\(\[].*/g, '')
+    .replace(/\s*[-\/]\s*(desligar|demitir|afastar|bloq|bloquear|obs|inativo|desativado).*/gi, '')
+    .trim()
+}
+
 const NOMES = {
   'alto de pinheiros': 'Alto de Pinheiros',
   'barra funda':       'Barra Funda',
@@ -219,7 +227,7 @@ function ColabsTable({ colaboradores, storeCode, onOpenIndividual, weekId }) {
             const motivo = motivoZero(c, storeCode)
             return (
               <tr key={i} className={c.valor_final > 0 ? '' : 'perf-row--zero'}>
-                <td className="perf-td--nome">{c.nome}</td>
+                <td className="perf-td--nome">{cleanNome(c.nome)}</td>
                 <td>
                   <span className={`perf-funcao perf-funcao--${c.funcao?.toLowerCase()}`}>
                     {CARGO_LABEL[c.funcao] || c.funcao || '—'}
