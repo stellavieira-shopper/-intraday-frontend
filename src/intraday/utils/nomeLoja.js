@@ -17,6 +17,7 @@ const ALIASES = {
   CAMPINAS:            'Campinas',
   MOEMA:               'Moema',
   'VILA GUILHERME':    'Vila Guilherme',
+  CARANDIRU:           'Vila Guilherme',
   CONSOLACAO:          'Consolação',
   MOOCA:               'Mooca',
   TATUAPE:             'Tatuapé',

@@ -3,8 +3,8 @@ import axios from 'axios'
 
 // ── formatadores ──────────────────────────────────────────────────────────────
 const fmtR = v => `R$ ${Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-const fmtPct = v => v == null ? '—' : `${(Number(v) * 100).toFixed(1)}%`
-const fmtPctRaw = v => v == null ? '—' : `${Number(v).toFixed(1)}%`
+const fmtPct = v => v == null ? '—' : `${(Math.floor(Number(v) * 1000) / 10).toFixed(1)}%`
+const fmtPctRaw = v => v == null ? '—' : `${(Math.floor(Number(v) * 10) / 10).toFixed(1)}%`
 const fmtX = v => `${Number(v || 0).toFixed(1)}×`
 
 const CARGO = { SUPERVISOR: 'Supervisor', TEAM_LIDER: 'Team Leader', OPERADOR: 'Operador' }
@@ -128,8 +128,8 @@ function GateRow({ label, desc, value, passed }) {
 // ── Pré-requisitos ────────────────────────────────────────────────────────────
 function GatesSection({ snap }) {
   const piso   = snap.store_code === 'pamplona' ? 0.80 : 0.85
-  const sepOk  = Number(snap.taxa_separacao_loja || 0) >= 0.80
-  const comOk  = Number(snap.taxa_completo_loja  || 0) >= 0.80
+  const sepOk  = Number(snap.taxa_separacao_loja || 0) >= piso
+  const comOk  = Number(snap.taxa_completo_loja  || 0) >= piso
   // Usa gate_foto_flag do mart — pode ter sido ajustado (ex: desconsiderado manualmente)
   const fotOk  = !snap.gate_foto_flag
   const asdOk  = !snap.assiduidade_any_flag
@@ -148,8 +148,8 @@ function GatesSection({ snap }) {
           <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 8 }}>
             GATE DA LOJA {lojaOk ? '— Aprovada' : '— Zera todos da loja'}
           </div>
-          <GateRow label="Separação"   desc="Taxa de separação da loja · mín. 80%"   value={fmtPct(snap.taxa_separacao_loja)} passed={sepOk} />
-          <GateRow label="Completos"   desc="Pedidos sem ruptura · mín. 80%"                value={fmtPct(snap.taxa_completo_loja)}  passed={comOk} />
+          <GateRow label="Separação"   desc={`Taxa de separação da loja · mín. ${piso * 100}%`}   value={fmtPct(snap.taxa_separacao_loja)} passed={sepOk} />
+          <GateRow label="Completos"   desc={`Pedidos sem ruptura · mín. ${piso * 100}%`}   value={fmtPct(snap.taxa_completo_loja)}  passed={comOk} />
           <GateRow
             label="Foto"
             desc={!snap.gate_foto_flag && Number(snap.taxa_foto_loja || 0) < 0.80
@@ -189,7 +189,7 @@ function GatesSection({ snap }) {
                     : taxaInd >= pisoPct ? `${pisoPct}–90% → faixa base R$${faixaLow}`
                     : `< ${pisoPct}% → faixa R$0 — sem bônus de pedidos`
                   }
-                  value={`${taxaInd.toFixed(1)}%`}
+                  value={`${(Math.floor(taxaInd * 10) / 10).toFixed(1)}%`}
                   passed={sepIndOk}
                 />
               </>
@@ -411,6 +411,7 @@ function CalcPanel({ snap, card }) {
   const notaAbst  = Number(snap.nota_abastecimento_final  || 0)
   const tierAbst  = Number(snap.pct_pagamento_tier_abastecimento || 0)
   const final      = Number(snap.valor_final_bonus || 0)
+  const pctFoto   = Number(snap.pct_desconto_foto || 0)
   const cargo     = snap.funcao_bucket
   const turno     = (snap.turno_bucket || '').toUpperCase()
   const temAbast  = bolsoAbst > 0
@@ -488,21 +489,39 @@ function CalcPanel({ snap, card }) {
     <AbastecimentoPanel snap={snap} notaAbst={notaAbst} tierAbst={tierAbst} bolsoAbst={bolsoAbst} valAbst={valAbst} propAbst={propAbst} />
   )
 
-  if (card === 'final') return (
-    <div>
-      <FormulaBox title="Total efetivamente pago"
-        formula={temAbast ? "Total = ganho pedidos + ganho abastecimento (se gates aprovados)" : "Total = ganho pedidos (se todos os gates aprovados)"}
-        applied={gateAtivo
-          ? `R$0,00 — zerado por gate (${[snap.gate_loja_80_flag && 'SLA', snap.gate_foto_flag && 'Foto', snap.assiduidade_any_flag && 'Assiduidade'].filter(Boolean).join(', ')})`
-          : temAbast
-            ? `${fmtR(valPed)} (pedidos) + ${fmtR(valAbst)} (abastecimento) = ${fmtR(final)}`
-            : `${fmtR(valPed)} = ${fmtR(final)}`} />
-      <CalcRow label="Ganho com pedidos" value={fmtR(valPed)} />
-      {temAbast && <CalcRow label="Ganho com abastecimento" value={fmtR(valAbst)} />}
-      {gateAtivo && <CalcRow label="Gate ativado — bônus zerado" rule={[snap.gate_loja_80_flag && 'Gate da loja: SLA abaixo de 80%', snap.gate_foto_flag && 'Gate de foto: < 80% dos pedidos com foto', snap.assiduidade_any_flag && 'Gate individual: irregularidade de assiduidade'].filter(Boolean).join(' · ')} value="R$ 0,00" negative />}
-      <CalcRow label="Total efetivamente pago" value={fmtR(final)} total />
-    </div>
-  )
+  if (card === 'final') {
+    const subTotal    = valPed + valAbst
+    const fotoDescR   = pctFoto > 0 ? subTotal * pctFoto : 0
+    const fotoFormula = pctFoto > 0
+      ? `− ${(pctFoto * 100).toFixed(0)}% desconto indicador de fotos = − ${fmtR(fotoDescR)}`
+      : null
+    return (
+      <div>
+        <FormulaBox title="Total efetivamente pago"
+          formula={temAbast ? "Total = ganho pedidos + ganho abastecimento (se gates aprovados)" : "Total = ganho pedidos (se todos os gates aprovados)"}
+          applied={gateAtivo
+            ? `R$0,00 — zerado por gate (${[snap.gate_loja_80_flag && 'SLA', snap.gate_foto_flag && 'Foto', snap.assiduidade_any_flag && 'Assiduidade'].filter(Boolean).join(', ')})`
+            : pctFoto > 0 && !gateAtivo
+              ? (temAbast
+                  ? `(${fmtR(valPed)} + ${fmtR(valAbst)}) × ${((1 - pctFoto) * 100).toFixed(0)}% = ${fmtR(final)}`
+                  : `${fmtR(valPed)} × ${((1 - pctFoto) * 100).toFixed(0)}% = ${fmtR(final)}`)
+              : temAbast
+                ? `${fmtR(valPed)} (pedidos) + ${fmtR(valAbst)} (abastecimento) = ${fmtR(final)}`
+                : `${fmtR(valPed)} = ${fmtR(final)}`} />
+        <CalcRow label="Ganho com pedidos" value={fmtR(valPed)} />
+        {temAbast && <CalcRow label="Ganho com abastecimento" value={fmtR(valAbst)} />}
+        {pctFoto > 0 && !gateAtivo && (
+          <CalcRow
+            label="Desconto indicador de fotos"
+            rule={`Indicador de foto abaixo de 90% — desconto de ${(pctFoto * 100).toFixed(0)}% sobre o bônus final`}
+            value={`− ${fmtR(fotoDescR)}`}
+            negative />
+        )}
+        {gateAtivo && <CalcRow label="Gate ativado — bônus zerado" rule={[snap.gate_loja_80_flag && `Gate da loja: separação abaixo de ${piso * 100}%`, snap.gate_foto_flag && 'Gate de foto: < 80% dos pedidos com foto', snap.assiduidade_any_flag && 'Gate individual: irregularidade de assiduidade'].filter(Boolean).join(' · ')} value="R$ 0,00" negative />}
+        <CalcRow label="Total efetivamente pago" value={fmtR(final)} total />
+      </div>
+    )
+  }
 
   return null
 }
@@ -893,6 +912,9 @@ export default function PerformanceFeedbackPage({ feedbackIndex, weekBundles, on
                       : _temAbast
                         ? `Pedidos ${fmtR(_snap.valor_bonus_pedidos_pre_gate)} + Abast. ${fmtR(_valAbst)}`
                         : `Pedidos ${fmtR(_snap.valor_bonus_pedidos_pre_gate)}`}
+                    note={Number(_snap.pct_desconto_foto || 0) > 0
+                      ? `Desconto foto: −${(Number(_snap.pct_desconto_foto) * 100).toFixed(0)}% sobre bônus`
+                      : null}
                     active={activeCard === 'final'} onClick={() => setActiveCard(v => v === 'final' ? null : 'final')} />
                 </div>
               )
@@ -914,9 +936,24 @@ export default function PerformanceFeedbackPage({ feedbackIndex, weekBundles, on
             {/* Pedidos turbo/express */}
             <TurbosTable pedidos={snap.pedidos_turbo || []} />
 
-            {/* Erros de clientes desta pessoa */}
-            <ErrosTable erros={(bundle.erros_por_pessoa || {})[`${snap.store_code}|${snap.nome}`] || []}
-                        totalDescontos={Number(snap.desconto_erros || 0)} />
+            {/* Erros de clientes: OPERADOR=pessoal · TL=turno · SUP=loja inteira */}
+            <ErrosTable
+              erros={(() => {
+                const cargo = snap.funcao_bucket
+                const porPessoa = bundle.erros_por_pessoa || {}
+                const porTurno  = bundle.erros_por_turno  || {}
+                if (cargo === 'SUPERVISOR') {
+                  // todos os erros da loja (todas as chaves store_code|*)
+                  return Object.entries(porTurno)
+                    .filter(([k]) => k.startsWith(`${snap.store_code}|`))
+                    .flatMap(([, v]) => v)
+                } else if (cargo === 'TEAM_LIDER') {
+                  return porTurno[`${snap.store_code}|${snap.turno_bucket}`] || []
+                }
+                return porPessoa[`${snap.store_code}|${snap.nome}`] || []
+              })()}
+              totalDescontos={Number(snap.desconto_erros || 0)}
+            />
 
             {/* Rupturas da loja */}
             <RupturasTable rupturas={(bundle.rupturas_por_loja || {})[snap.store_code] || []} />

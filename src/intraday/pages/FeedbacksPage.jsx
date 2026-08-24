@@ -20,6 +20,7 @@ const NOMES = {
   'brooklin':          'Brooklin',
   'campinas':          'Campinas',
   'moema':             'Moema',
+  'carandiru':         'Vila Guilherme',
   'vila guilherme':    'Vila Guilherme',
   'consolacao':        'Consolação',
   'mooca':             'Mooca',
@@ -40,7 +41,7 @@ function fmtPct(val) {
   if (val == null) return '—'
   const pct = val * 100
   if (pct >= 79.5 && pct < 80) return '80%'
-  return `${pct.toFixed(1)}%`
+  return `${(Math.floor(pct * 10) / 10).toFixed(1)}%`
 }
 function fmtR(val)   { return `R$ ${Number(val).toFixed(2).replace('.', ',')}` }
 function pctClass(val, limites) {
@@ -230,7 +231,9 @@ function ColabsTable({ colaboradores, storeCode, onOpenIndividual, weekId }) {
                   {c.nota_abast != null ? `${c.nota_abast.toFixed(1)}%` : '—'}
                 </td>
                 <td style={{ whiteSpace: 'nowrap' }}>
-                  {c.rupturas > 0 ? <span>{c.rupturas} · −{fmtR(c.desconto_ruptura)}</span> : '0'}
+                  {c.desconto_ruptura > 0
+                    ? <span>{c.rupturas > 0 ? c.rupturas : '—'} · −{fmtR(c.desconto_ruptura)}</span>
+                    : c.rupturas > 0 ? <span>{c.rupturas}</span> : '0'}
                 </td>
                 <td className="perf-td--valor">
                   {motivo

@@ -11,7 +11,7 @@ import './feedback.css'
 const fmtMoneyFeedback = (value) =>
   Number(value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-const fmtPctFeedback = (value) => (value == null ? '—' : `${Number(value).toFixed(1)}%`);
+const fmtPctFeedback = (value) => (value == null ? '—' : `${(Math.floor(Number(value) * 10) / 10).toFixed(1)}%`);
 
 const rateBadge = (value) => {
   if (value == null) return '';

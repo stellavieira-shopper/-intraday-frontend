@@ -110,7 +110,7 @@ export default function MetodologiaPage() {
           <FlowStep num="1" label="SLA individual" desc="Sua taxa pessoal de separação dentro do tempo define em qual faixa salarial você se encaixa. Supervisores usam a taxa da loja; Team Líderes usam a taxa do turno." />
           <FlowStep num="2" label="Faixa salarial" desc="Cada faixa tem um valor base em reais. Quanto maior a taxa, maior o valor da faixa." />
           <FlowStep num="3" label="Multiplicadores da loja" color="red" desc="O valor da faixa é multiplicado pelo desempenho geral da loja (separação e completo). Se a loja vai mal, o multiplicador cai — e o bônus também." />
-          <FlowStep num="4" label="Gate da loja" color="red" desc="Se a loja não atingir 80% de SLA ou 80% de Completo, todos ficam com valor zero. Não há cálculo parcial." />
+          <FlowStep num="4" label="Gate da loja" color="red" desc="Se a loja não atingir 85% de SLA ou 85% de Completo (80% para Pamplona), todos ficam com valor zero. Não há cálculo parcial." />
           <FlowStep num="5" label="Gate de assiduidade" color="red" desc="Qualquer falta no período (injustificada ou com atestado) zera o bônus individualmente. Atrasos registrados como delay não zeram." />
           <FlowStep num="6" label="Descontos" color="red" desc="Rupturas e erros de clientes são descontados do valor calculado." />
           <FlowStep num="7" color="green" label="Valor final" desc="Aplicado o teto máximo por cargo. Esse é o valor que aparece no seu feedback semanal." />
@@ -279,9 +279,9 @@ export default function MetodologiaPage() {
         <SimpleTable
           headers={['Gate', 'Quem afeta', 'Condição', 'Efeito']}
           rows={[
-            [<strong>SLA da loja</strong>, <Tag color="red">Todos na loja</Tag>, 'Separação ou Completo da loja < 80%', 'Zera o bônus de toda a loja'],
+            [<strong>SLA da loja</strong>, <Tag color="red">Todos na loja</Tag>, 'Separação ou Completo da loja < 85% (80% para Pamplona)', 'Zera o bônus de toda a loja'],
             [<strong>Assiduidade</strong>, <Tag color="yellow">Individual</Tag>, 'Falta injustificada ou com atestado no período', 'Zera só o bônus da pessoa'],
-            [<><strong>Foto</strong> <Tag color="gray">Desativado</Tag></>, '—', 'Aguardando melhorias no app', 'Não está sendo aplicado'],
+            [<><strong>Foto</strong> <Tag color="orange">Ativo</Tag></>, <Tag color="red">Todos na loja</Tag>, 'Taxa de foto da loja < 90%', '−40% no bônus de toda a loja'],
           ]}
         />
         <Callout color="gray">
@@ -334,15 +334,19 @@ export default function MetodologiaPage() {
           </div>
           {/* Erros */}
           <div style={{ flex: '1 1 220px' }}>
-            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>Erros de clientes</div>
+            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>Erros de clientes <Tag color="green">Ativo desde W29/2026</Tag></div>
             <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: 12 }}>
-              Vinculados individualmente. Somente erros marcados como "Considerar" entram. O desconto é por pedido (máx. 1 por pedido):
+              Desconto sobre o bônus pela taxa de erros (TEO individual · TEC do turno · TEC da loja). Somente erros marcados como "Considerar" entram:
             </p>
             <SimpleTable
-              headers={['Tipo de erro', 'Desconto']}
+              headers={['Taxa de erros', 'Desconto sobre o bônus']}
               rows={[
-                ['Normal', '−R$ 10,23'],
-                ['Grave',  '−R$ 15,34'],
+                ['> 0% – 0,99%',  '−10%'],
+                ['1% – 2,99%',    '−15%'],
+                ['3% – 3,99%',    '−25%'],
+                ['4% – 4,49%',    '−50%'],
+                ['4,5% – 4,99%',  '−75%'],
+                ['≥ 5%',          'Zera o bônus'],
               ]}
             />
           </div>
@@ -352,12 +356,37 @@ export default function MetodologiaPage() {
 
       {/* Abastecimento */}
       <Card style={{ marginBottom: 20 }}>
-        <SectionTitle icon="📦">Componente de abastecimento <Tag color="gray">Desativado</Tag></SectionTitle>
-        <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0, lineHeight: 1.6 }}>
-          Em melhoria metodológica. Atualmente 100% do bolso é alocado em pedidos para todos os cargos e turnos.
-          Em breve o componente de abastecimento será aplicado primeiro para o turno da <strong>noite</strong>,
-          e caso a metodologia se estenda, passará a valer também para o turno da <strong>manhã</strong>.
+        <SectionTitle icon="📦">Componente de abastecimento <Tag color="green">Ativo desde W29/2026</Tag></SectionTitle>
+        <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 16, lineHeight: 1.6 }}>
+          O bônus é dividido em dois bolsos — <strong>pedidos</strong> e <strong>abastecimento</strong> — conforme o turno e o cargo:
         </p>
+        <SimpleTable headers={['Cargo', 'Turno', 'Bolso pedidos', 'Bolso abastecimento']} rows={[
+          ['Operador / Team Líder', 'Manhã · Tarde', '100%', '0%'],
+          ['Operador / Team Líder', 'Noite', '40%', '60%'],
+          ['Supervisor', 'Todos', '50%', '50%'],
+        ]} />
+        <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 8, marginTop: 16, lineHeight: 1.6 }}>
+          <strong>Como funciona o tempo esperado?</strong> Cada tipo de SKU tem uma velocidade de abastecimento calibrada com base na média histórica de todas as dark stores, levando em conta as realidades operacionais de cada tipo de produto.
+          A partir da quantidade de itens abastecidos por tipo (mercearia, FLV, congelado/refrigerado), calculamos quantas horas
+          aquela carga <em>deveria</em> ter levado — esse é o <strong>tempo esperado</strong>. O tempo real é o que o operador efetivamente levou.
+        </p>
+        <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 16, lineHeight: 1.6 }}>
+          <strong>Score diário — lógica binária:</strong> o resultado de cada indicador é 0 ou 1, não há meio-termo.
+          Se o operador terminou dentro do tempo esperado → <strong>individual = 1</strong>; se não → 0.
+          Se o turno inteiro terminou dentro do tempo esperado → <strong>coletivo = 1</strong>; se não → 0.
+          O score do dia combina os dois: <strong>60% individual + 40% coletivo</strong>.
+        </p>
+        <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 12, lineHeight: 1.6 }}>
+          O <strong>score semanal</strong> é a média dos dias em que a pessoa participou ativamente (gate: abasteceu ≥ 10% dos itens do turno naquele dia).
+          Dias abaixo do gate não entram na média. O score semanal determina o <strong>tier de pagamento</strong> do bolso:
+        </p>
+        <SimpleTable headers={['Score semanal', 'Pagamento do bolso']} rows={[
+          ['< 70%', '0%'],
+          ['70% – 79%', '60%'],
+          ['80% – 89%', '80%'],
+          ['90% – 96%', '95%'],
+          ['≥ 97%', '100%'],
+        ]} />
       </Card>
 
       {/* Teto */}

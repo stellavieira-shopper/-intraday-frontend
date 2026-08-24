@@ -244,7 +244,7 @@ function TemposTab({ lojas, lojaFcId }) {
   )
 }
 
-function AbastecimentoTab({ dataInicio, dataFim, lojaStoreCode }) {
+function AbastecimentoTab({ dataInicio, dataFim, lojaStoreCode, refreshTick = 0 }) {
   const [rows, setRows]       = useState([])
   const [loading, setLoading] = useState(false)
   const [erro, setErro]       = useState(null)
@@ -259,7 +259,7 @@ function AbastecimentoTab({ dataInicio, dataFim, lojaStoreCode }) {
       .then(r => setRows(r.data.registros || []))
       .catch(e => setErro(e.response?.data?.erro || e.message))
       .finally(() => setLoading(false))
-  }, [dataInicio, dataFim])
+  }, [dataInicio, dataFim, refreshTick])
 
   const lojas = [...new Set(rows.map(r => r.store_code).filter(sc => STORE_NOME_ABAST[sc]))].sort((a, b) => STORE_NOME_ABAST[a].localeCompare(STORE_NOME_ABAST[b]))
 
@@ -575,8 +575,8 @@ function ErrosClientesTab({ rows, loading, erro, lojaFcId, lojas = [], lojasLoad
   const filtradoPorLoja = rowsConhecidas.filter(r => selectedSet.size === 0 || selectedSet.has(String(r.fulfillment_center_id)))
   const statusKey = (item) => {
     const value = String(item.considerar || '').toLowerCase()
-    if (value.includes('desconsider')) return 'desconsiderados'
-    if (value.includes('considerar') || value.includes('descontar')) return 'considerados'
+    if (value.includes('desconsider') || value.includes('descontar')) return 'desconsiderados'
+    if (value.includes('considerar')) return 'considerados'
     return 'outros'
   }
   const graveKey = (item) => {
@@ -1160,6 +1160,7 @@ export default function Gerencial({ onLojaClick, onVoltar, user, onLogout }) {
   const [erro, setErro]                 = useState(null)
   const [lastUpdated, setLastUpdated]   = useState(null)
   const [autoRefresh, setAutoRefresh]   = useState(true)
+  const [refreshTick, setRefreshTick]   = useState(0)
   const [sortBy, setSortBy]             = useState('sla')
   const [canal, setCanal]               = useState('todos')
   const [turno, setTurno]               = useState('todos')
@@ -1240,7 +1241,7 @@ const { data: resp } = await axios.get(`${API}/api/intraday/gerencial`, { params
   useEffect(() => {
     if (!autoRefresh) return
     const id = setInterval(() => {
-      if (!refreshing) buscarRef.current()
+      if (!refreshing) { buscarRef.current(); setRefreshTick(t => t + 1) }
     }, 15 * 60_000)
     return () => clearInterval(id)
   }, [autoRefresh, refreshing])
@@ -1378,7 +1379,7 @@ const { data: resp } = await axios.get(`${API}/api/intraday/gerencial`, { params
 
         {aba === 'rupturas'      && <RupturasTab dataInicio={dataInicio} dataFim={dataFim} lojaFcId={lojaFcId} lojasResumo={lojasVisiveis} lojasLoading={loading} />}
         {aba === 'erros'         && <ErrosClientesTab rows={errosPeriodo} loading={errosLoading} erro={errosErro} lojaFcId={lojaFcId} lojas={lojasVisiveis} lojasLoading={loading} dataInicio={dataInicio} dataFim={dataFim} />}
-        {aba === 'abastecimento' && <AbastecimentoTab dataInicio={dataInicio} dataFim={dataFim} lojaStoreCode={lojaStoreCode} />}
+        {aba === 'abastecimento' && <AbastecimentoTab dataInicio={dataInicio} dataFim={dataFim} lojaStoreCode={lojaStoreCode} refreshTick={refreshTick} />}
         {aba === 'tempos'        && <TemposTab lojas={lojas} lojaFcId={lojaFcId} />}
 
         {aba === 'lojas' && <>
