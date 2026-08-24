@@ -344,11 +344,24 @@ function KpiGroup({ stats, size, label, badge }) {
   )
 }
 
+function BannerBonus({ bonus }) {
+  if (!bonus || bonus.assiduidade_ok) return null
+  const motivo = bonus.motivo_falta || 'irregularidade de assiduidade'
+  const msg = `Seu bônus desta semana foi zerado por: ${motivo.charAt(0).toUpperCase() + motivo.slice(1).toLowerCase()}.`
+  return (
+    <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', background: '#FEF2F2', border: '1px solid #FCA5A540', borderLeft: '4px solid #DC2626', borderRadius: 8, padding: '10px 14px', marginBottom: 16 }}>
+      <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>⚠️</span>
+      <span style={{ fontSize: 12, color: '#DC2626', lineHeight: 1.55, fontWeight: 500 }}>{msg}</span>
+    </div>
+  )
+}
+
 function DesempenhoIndividual({ colaborador, onVoltar }) {
   const [periodo, setPeriodo] = useState('semana')
   const [loading, setLoading] = useState(false)
   const [dados, setDados]     = useState(null)
   const [erro, setErro]       = useState(null)
+  const [bonus, setBonus]     = useState(null)
 
   const { inicio, fim } = resolverPeriodo(periodo)
   const escopoTipo = getEscopoTipo(colaborador.cargo)
@@ -376,6 +389,13 @@ function DesempenhoIndividual({ colaborador, onVoltar }) {
   }, [colaborador.nome, colaborador.store_code, colaborador.turno, escopoTipo, inicio, fim])
 
   useEffect(() => { buscar() }, [buscar])
+
+  useEffect(() => {
+    if (periodo !== 'semana') { setBonus(null); return }
+    axios.get(`${API}/api/intraday/performance/meu-bonus`, {
+      params: { nome: colaborador.nome, store_code: colaborador.store_code }
+    }).then(r => setBonus(r.data.bonus || null)).catch(() => setBonus(null))
+  }, [colaborador.nome, colaborador.store_code, periodo])
 
   const escopoBadge = escopoTipo === 'loja'
     ? `Loja: ${fmtLoja(colaborador.store_code)}`
@@ -413,6 +433,8 @@ function DesempenhoIndividual({ colaborador, onVoltar }) {
           {fmtData(inicio)}{inicio !== fim ? ` – ${fmtData(fim)}` : ''}
         </span>
       </div>
+
+      <BannerBonus bonus={bonus} />
 
       {(periodo === 'hoje' || periodo === 'ontem') && (
         <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 8, padding: '10px 14px', marginBottom: 16 }}>
