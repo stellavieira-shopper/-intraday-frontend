@@ -12,9 +12,14 @@ const CARGO = { SUPERVISOR: 'Supervisor', TEAM_LIDER: 'Team Leader', OPERADOR: '
 // Remove anotações do organograma que aparecem junto ao nome (ex: "João Silva (Desligar)")
 const cleanNome = nome => {
   if (!nome) return nome
+  const OBS = /desligar|demitir|afastar|bloq(?:uear)?|inativo|desativado/i
   return nome
-    .replace(/\s*[\(\[].*/g, '')   // remove tudo a partir de ( ou [
-    .replace(/\s*[-\/]\s*(desligar|demitir|afastar|bloq|bloquear|obs|inativo|desativado).*/gi, '')
+    .replace(/\s*[\(\[].*/g, '')                    // remove tudo a partir de ( ou [
+    .replace(/\s*[-\/]\s*\S+.*/g, s =>              // remove sufixo após - ou / se for obs
+      OBS.test(s) ? '' : s)
+    .split(/\s+/)                                    // remove palavras soltas de obs
+    .filter(w => !OBS.test(w))
+    .join(' ')
     .trim()
 }
 

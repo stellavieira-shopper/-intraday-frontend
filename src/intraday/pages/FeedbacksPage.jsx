@@ -9,9 +9,13 @@ const API = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const cleanNome = nome => {
   if (!nome) return nome
+  const OBS = /desligar|demitir|afastar|bloq(?:uear)?|inativo|desativado/i
   return nome
     .replace(/\s*[\(\[].*/g, '')
-    .replace(/\s*[-\/]\s*(desligar|demitir|afastar|bloq|bloquear|obs|inativo|desativado).*/gi, '')
+    .replace(/\s*[-\/]\s*\S+.*/g, s => OBS.test(s) ? '' : s)
+    .split(/\s+/)
+    .filter(w => !OBS.test(w))
+    .join(' ')
     .trim()
 }
 
