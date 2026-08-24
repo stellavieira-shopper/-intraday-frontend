@@ -308,27 +308,29 @@ function DiaAbastCard({ dia }) {
         <span style={{ textAlign: 'right', fontWeight: 600 }}>{fmtHrs(dia.real_hrs)}</span>
         <span style={{ color: 'var(--text-muted)' }}>Esperado</span>
         <span style={{ textAlign: 'right' }}>{fmtHrs(dia.esp_hrs)}</span>
-        <span style={{ color: 'var(--text-muted)' }}>Delta ind.</span>
-        <span style={{ textAlign: 'right', color: hitInd ? 'var(--green)' : 'var(--red)', fontWeight: 700 }}>
-          {deltaSeg > 0 ? '+' : ''}{fmtDeltaMin(deltaSeg)} {hitInd ? '✓' : '✗'}
-        </span>
-        <span style={{ color: 'var(--text-muted)' }}>Turno col.</span>
+        {hitInd != null && <>
+          <span style={{ color: 'var(--text-muted)' }}>Delta ind.</span>
+          <span style={{ textAlign: 'right', color: hitInd ? 'var(--green)' : 'var(--red)', fontWeight: 700 }}>
+            {deltaSeg > 0 ? '+' : ''}{fmtDeltaMin(deltaSeg)} {hitInd ? '✓' : '✗'}
+          </span>
+        </>}
+        <span style={{ color: 'var(--text-muted)' }}>Coletivo</span>
         <span style={{ textAlign: 'right', color: hitCol ? 'var(--green)' : 'var(--red)', fontWeight: 600 }}>
           {hitCol ? 'Adiantado' : 'Atrasado'} {hitCol ? '✓' : '✗'} ({fmtDeltaMin(deltaColSeg)})
         </span>
       </div>
-      {gateOk !== false && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-          <div style={{ background: '#eff6ff', borderRadius: 6, padding: '8px 10px', textAlign: 'center' }}>
-            <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#1d4ed8', marginBottom: 2 }}>Score dia</div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: scoreColor }}>{scorePct != null ? `${scorePct}%` : '—'}</div>
-          </div>
+      <div style={{ display: 'grid', gridTemplateColumns: dia.pct_participacao != null ? '1fr 1fr' : '1fr', gap: 6 }}>
+        <div style={{ background: '#eff6ff', borderRadius: 6, padding: '8px 10px', textAlign: 'center' }}>
+          <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#1d4ed8', marginBottom: 2 }}>Score dia</div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: scoreColor }}>{scorePct != null ? `${scorePct}%` : '—'}</div>
+        </div>
+        {dia.pct_participacao != null && (
           <div style={{ background: '#f0fdf4', borderRadius: 6, padding: '8px 10px', textAlign: 'center' }}>
             <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#15803d', marginBottom: 2 }}>Participação</div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--green)' }}>{dia.pct_participacao != null ? `${(Number(dia.pct_participacao) * 100).toFixed(0)}%` : '—'}</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--green)' }}>{`${(Number(dia.pct_participacao) * 100).toFixed(0)}%`}</div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }
@@ -337,12 +339,17 @@ function AbastecimentoPanel({ snap, notaAbst, tierAbst, bolsoAbst, valAbst, prop
   const [dias, setDias]   = useState(null)
   const [loading, setLoading] = useState(true)
 
+  const isSupervisor = snap.funcao_bucket === 'SUPERVISOR'
+
   useEffect(() => {
-    if (!snap.nome || !snap.store_code || !snap.year_ref || !snap.week_ref) { setLoading(false); return }
-    axios.get(`${API_ABAST}/performance/abastecimento-diario`, { params: { year_ref: snap.year_ref, week_ref: snap.week_ref, nome: snap.nome, store_code: snap.store_code } })
+    if (!snap.store_code || !snap.year_ref || !snap.week_ref) { setLoading(false); return }
+    if (!isSupervisor && !snap.nome) { setLoading(false); return }
+    const params = { year_ref: snap.year_ref, week_ref: snap.week_ref, store_code: snap.store_code }
+    if (!isSupervisor) params.nome = snap.nome
+    axios.get(`${API_ABAST}/performance/abastecimento-diario`, { params })
       .then(r => { setDias(r.data.dias || []); setLoading(false) })
       .catch(e => { console.error('[abast-diario]', e); setLoading(false) })
-  }, [snap.nome, snap.store_code, snap.year_ref, snap.week_ref])
+  }, [snap.nome, snap.store_code, snap.year_ref, snap.week_ref, isSupervisor])
 
   const diasGate = dias ? dias.filter(d => d.gate_ok) : []
   const scoreMedio = diasGate.length > 0
@@ -364,26 +371,18 @@ function AbastecimentoPanel({ snap, notaAbst, tierAbst, bolsoAbst, valAbst, prop
       <CalcRow label="Teto do componente abastecimento" rule={propAbst} value={fmtR(bolsoAbst)} />
       <CalcRow label="Ganho com abastecimento" rule="tier × teto" value={fmtR(valAbst)} total />
 
-      {snap.funcao_bucket === 'SUPERVISOR'
-        ? (
-          <div style={{ marginTop: 16, padding: '12px 16px', background: 'var(--surface)', borderRadius: 8, fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6 }}>
-            O score de abastecimento do supervisor é calculado com base no desempenho coletivo da loja — não há histórico individual por dia.
+      <>
+        <div style={{ marginTop: 20, marginBottom: 8, fontWeight: 700, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>
+          {isSupervisor ? 'Abastecimento da loja por dia' : 'Histórico por dia da semana'}
+        </div>
+        {loading && <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>Carregando...</div>}
+        {!loading && dias && dias.length === 0 && <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>Sem registros de abastecimento para esta semana.</div>}
+        {!loading && dias && dias.length > 0 && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
+            {dias.map(d => <DiaAbastCard key={d.data_ref} dia={d} />)}
           </div>
-        ) : (
-          <>
-            <div style={{ marginTop: 20, marginBottom: 8, fontWeight: 700, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>
-              Histórico por dia da semana
-            </div>
-            {loading && <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>Carregando...</div>}
-            {!loading && dias && dias.length === 0 && <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>Sem registros de abastecimento para esta semana.</div>}
-            {!loading && dias && dias.length > 0 && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
-                {dias.map(d => <DiaAbastCard key={d.data_ref} dia={d} />)}
-              </div>
-            )}
-          </>
-        )
-      }
+        )}
+      </>
     </div>
   )
 }
