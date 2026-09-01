@@ -75,6 +75,10 @@ const FC_NOME = {
   27: 'República (CWB)',
   28: 'Rodovia (CWB)',
   29: 'Stresser (CWB)',
+  30: 'Sia Norte (BSB)',
+  31: 'Águas Claras (BSB)',
+  32: 'Alto da Glória (GYN)',
+  33: 'Setor Bueno (GYN)',
 }
 function nomeLoja(id) { return FC_NOME[id] || (id ? `FC ${id}` : 'Loja desconhecida') }
 
@@ -86,7 +90,9 @@ const STORE_CODE_TO_FC_ID = {
   'brooklin': 16,          'campinas': 18,        'tatuape': 19,
   'sao caetano': 20,       'vila guilherme': 21,  'consolacao': 22,
   'ribeirao preto': 23,    'mooca': 24,
-  'pr - republica': 27,   'pr - rodovia': 28,   'pr - stresser': 29,
+  'pr - republica': 27,    'pr - rodovia': 28,     'pr - stresser': 29,
+  'sia norte': 30,         'aguas claras': 31,
+  'alto da gloria': 32,    'setor bueno': 33,
 }
 
 function fmtTs(v) {
@@ -126,6 +132,13 @@ const STORE_NOME_ABAST = {
   'pr - republica':    'República (CWB)',
   'pr - rodovia':      'Rodovia (CWB)',
   'pr - stresser':     'Stresser (CWB)',
+  'sia norte':         'Sia Norte (BSB)',
+  'aguas claras':      'Águas Claras (BSB)',
+  'alto da gloria':    'Alto da Glória (GYN)',
+  'setor bueno':       'Setor Bueno (GYN)',
+  'agua verde curitiba':   'República (CWB)',
+  'mossungue curitiba':    'Rodovia (CWB)',
+  'juveve curitiba':       'Stresser (CWB)',
 }
 
 function fmtTempo(segundos) {
