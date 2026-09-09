@@ -522,9 +522,9 @@ function CalcPanel({ snap, card }) {
       <div>
         <FormulaBox title="Total efetivamente pago"
           formula={temAbast ? "Total = ganho pedidos + ganho abastecimento (se gates aprovados)" : "Total = ganho pedidos (se todos os gates aprovados)"}
-          applied={gateAtivo
+          applied={gateAtivo && final === 0
             ? `R$0,00 — zerado por gate (${[snap.gate_loja_80_flag && 'SLA', snap.gate_foto_flag && 'Foto', snap.assiduidade_any_flag && 'Assiduidade'].filter(Boolean).join(', ')})`
-            : pctFoto > 0 && !gateAtivo
+            : pctFoto > 0
               ? (temAbast
                   ? `(${fmtR(valPed)} + ${fmtR(valAbst)}) × ${((1 - pctFoto) * 100).toFixed(0)}% = ${fmtR(final)}`
                   : `${fmtR(valPed)} × ${((1 - pctFoto) * 100).toFixed(0)}% = ${fmtR(final)}`)
@@ -533,14 +533,14 @@ function CalcPanel({ snap, card }) {
                 : `${fmtR(valPed)} = ${fmtR(final)}`} />
         <CalcRow label="Ganho com pedidos" value={fmtR(valPed)} />
         {temAbast && <CalcRow label="Ganho com abastecimento" value={fmtR(valAbst)} />}
-        {pctFoto > 0 && !gateAtivo && (
+        {pctFoto > 0 && (
           <CalcRow
             label="Desconto indicador de fotos"
             rule={`Indicador de foto abaixo de 90% — desconto de ${(pctFoto * 100).toFixed(0)}% sobre o bônus final`}
             value={`− ${fmtR(fotoDescR)}`}
             negative />
         )}
-        {gateAtivo && <CalcRow label="Gate ativado — bônus zerado" rule={[snap.gate_loja_80_flag && `Gate da loja: separação abaixo de ${piso * 100}%`, snap.gate_foto_flag && 'Gate de foto: < 80% dos pedidos com foto', snap.assiduidade_any_flag && 'Gate individual: irregularidade de assiduidade'].filter(Boolean).join(' · ')} value="R$ 0,00" negative />}
+        {gateAtivo && final === 0 && <CalcRow label="Gate ativado — bônus zerado" rule={[snap.gate_loja_80_flag && `Gate da loja: separação abaixo de ${piso * 100}%`, snap.gate_foto_flag && 'Gate de foto: < 90% dos pedidos com foto', snap.assiduidade_any_flag && 'Gate individual: irregularidade de assiduidade'].filter(Boolean).join(' · ')} value="R$ 0,00" negative />}
         <CalcRow label="Total efetivamente pago" value={fmtR(final)} total />
       </div>
     )
