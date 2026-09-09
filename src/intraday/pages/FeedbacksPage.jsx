@@ -244,12 +244,19 @@ function ColabsTable({ colaboradores, storeCode, onOpenIndividual, weekId }) {
                 </td>
                 <td style={{ whiteSpace: 'nowrap' }}>
                   {c.desconto_ruptura > 0
-                    ? <span>{c.rupturas > 0 ? c.rupturas : '—'} · −{fmtR(c.desconto_ruptura)}</span>
+                    ? <span>{c.rupturas > 0 ? `${c.rupturas} · ` : ''}{`−${fmtR(c.desconto_ruptura)}`}</span>
                     : c.rupturas > 0 ? <span>{c.rupturas}</span> : '0'}
                 </td>
                 <td className="perf-td--valor">
                   {motivo
-                    ? <span className={`perf-motivo ${motivo.cls}`}>{motivo.label}</span>
+                    ? <>
+                        <span className={`perf-motivo ${motivo.cls}`}>{motivo.label}</span>
+                        {(c.val_ped + c.val_abast) > 0 && (
+                          <span style={{ marginLeft: 6, fontSize: 12, color: 'var(--text-muted)', textDecoration: 'line-through' }}>
+                            {fmtR(c.val_ped + c.val_abast)}
+                          </span>
+                        )}
+                      </>
                     : <strong>{fmtR(c.valor_final)}</strong>}
                 </td>
                 {onOpenIndividual && (
