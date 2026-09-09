@@ -84,15 +84,13 @@ function traduzMotivo(motivo) {
     .replace(/\s*\|\s*/g,             ' · ')
 }
 function motivoZero(c, storeCode) {
+  if (c.valor_final > 0) return null
   if (!c.assiduidade_ok) return { label: 'Gate Assiduidade', cls: 'perf-motivo--assiduidade' }
   if (c.gate_loja)       return { label: 'Gate SLA',    cls: 'perf-motivo--gate' }
   if (c.gate_foto)       return { label: 'Gate Foto',   cls: 'perf-motivo--gate' }
-  if (c.valor_final === 0) {
-    if ((c.faixa_salario || 0) === 0)                               return { label: `Taxa < ${storeCode === 'pamplona' ? 80 : 85}%`, cls: 'perf-motivo--taxa' }
-    if ((c.erros_normais || 0) + (c.erros_graves || 0) > 0)        return { label: 'Erros de clientes', cls: 'perf-motivo--taxa' }
-    return { label: 'Ganho zero (loja)', cls: 'perf-motivo--taxa' }
-  }
-  return null
+  if ((c.faixa_salario || 0) === 0)                               return { label: `Taxa < ${storeCode === 'pamplona' ? 80 : 85}%`, cls: 'perf-motivo--taxa' }
+  if ((c.erros_normais || 0) + (c.erros_graves || 0) > 0)        return { label: 'Erros de clientes', cls: 'perf-motivo--taxa' }
+  return { label: 'Ganho zero (loja)', cls: 'perf-motivo--taxa' }
 }
 // Semanas com período diferente do padrão ISO (seg-dom)
 const PERIODOS_ESPECIAIS_FRONT = {
@@ -257,7 +255,13 @@ function ColabsTable({ colaboradores, storeCode, onOpenIndividual, weekId }) {
                           </span>
                         )}
                       </>
-                    : <strong>{fmtR(c.valor_final)}</strong>}
+                    : <>
+                        <strong>{fmtR(c.valor_final)}</strong>
+                        {c.gate_foto && (
+                          <span className="perf-motivo perf-motivo--gate" style={{ marginLeft: 6, fontSize: 10 }}>Gate Foto</span>
+                        )}
+                      </>
+                  }
                 </td>
                 {onOpenIndividual && (
                   <td>
