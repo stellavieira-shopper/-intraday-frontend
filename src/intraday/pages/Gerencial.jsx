@@ -1209,7 +1209,6 @@ export default function Gerencial({ onLojaClick, onVoltar, user, onLogout }) {
       // resposta antiga de browser/CDN.
       const { data: resp } = await axios.get(`${API}/api/intraday/erros-clientes`, {
         params: { _atualizado_em: Date.now() },
-        headers: { 'Cache-Control': 'no-cache' },
       })
       setErros(resp.erros || [])
     } catch (e) {
