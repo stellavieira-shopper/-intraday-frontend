@@ -18,7 +18,7 @@ const cleanNome = nome => {
     .replace(/\s*[-\/]\s*\S+.*/g, s =>              // remove sufixo após - ou / se for obs
       OBS.test(s) ? '' : s)
     .split(/\s+/)                                    // remove palavras soltas de obs
-    .filter(w => !OBS.test(w))
+    .filter(w => !OBS.test(w) && !/^[-\/]$/.test(w))
     .join(' ')
     .trim()
 }
@@ -166,9 +166,9 @@ function GatesSection({ snap }) {
           <GateRow label="Completos"   desc={`Pedidos sem ruptura · mín. ${piso * 100}%`}   value={fmtPct(snap.taxa_completo_loja)}  passed={comOk} />
           <GateRow
             label="Foto"
-            desc={!snap.gate_foto_flag && Number(snap.taxa_foto_loja || 0) < 0.80
+            desc={!snap.gate_foto_flag && Number(snap.taxa_foto_loja || 0) < 0.90
               ? 'Pedidos com foto na expedição · gate desconsiderado esta semana'
-              : 'Pedidos com foto na expedição · mín. 80%'}
+              : 'Pedidos com foto na expedição · mín. 90%'}
             value={snap.taxa_foto_loja > 0 ? fmtPct(snap.taxa_foto_loja) : '—'}
             passed={fotOk}
           />
@@ -729,6 +729,74 @@ function RupturasTable({ rupturas }) {
   )
 }
 
+// ── Saldo Carteira (W33 pago como W34 — correção pendente) ────────────────────
+function SaldoCarteiraPanel({ storeCode }) {
+  const [rows, setRows]   = useState(null)
+  const [erro, setErro]   = useState(null)
+
+  useEffect(() => {
+    if (!storeCode) return
+    setRows(null); setErro(null)
+    fetch(`${API_ABAST}/performance/saldo-carteira?store_code=${encodeURIComponent(storeCode)}`)
+      .then(r => r.json())
+      .then(d => { if (d.sucesso) setRows(d.saldo); else setErro(d.erro || 'Erro') })
+      .catch(e => setErro(e.message))
+  }, [storeCode])
+
+  const total = (rows || []).reduce((s, r) => s + Number(r.saldo_carteira), 0)
+
+  return (
+    <Card>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+        <SectionTitle style={{ margin: 0 }}>Saldo Carteira — correção W33→W34</SectionTitle>
+        {rows && rows.length > 0 && (
+          <span style={{ fontSize: 12, color: total >= 0 ? 'var(--green)' : 'var(--red)', fontWeight: 700 }}>
+            Saldo líquido da loja: {total >= 0 ? '+' : ''}{fmtR(total)}
+          </span>
+        )}
+      </div>
+      <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 10 }}>
+        W33 foi pago como W34. Positivo = empresa deve ao colaborador (complementar). Negativo = desconto no próximo pagamento.
+      </div>
+      {erro && <div style={{ color: 'var(--red)', fontSize: 13 }}>{erro}</div>}
+      {!erro && !rows && <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>Carregando…</div>}
+      {rows && rows.length === 0 && <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>Nenhuma divergência encontrada para esta loja.</div>}
+      {rows && rows.length > 0 && (
+        <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: 400, borderRadius: 6, border: '1px solid var(--border)' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+            <thead>
+              <tr style={{ borderBottom: '2px solid var(--border)' }}>
+                {['Nome', 'Cargo', 'Matrícula', 'Saldo'].map(h => (
+                  <th key={h} style={{ padding: '6px 10px', textAlign: h === 'Saldo' ? 'right' : 'left', color: 'var(--text-muted)', fontWeight: 700, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', position: 'sticky', top: 0, background: '#fff', zIndex: 1 }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, i) => {
+                const saldo = Number(r.saldo_carteira)
+                const cor = saldo > 0 ? 'var(--green)' : 'var(--red)'
+                return (
+                  <tr key={i} style={{ borderBottom: '1px solid var(--border-light)', background: i % 2 === 0 ? 'transparent' : '#fafbfc' }}>
+                    <td style={{ padding: '7px 10px', color: 'var(--text)', fontWeight: 500 }}>{r.nome}</td>
+                    <td style={{ padding: '7px 10px', color: 'var(--text-muted)' }}>{CARGO[r.funcao_bucket] || r.funcao_bucket}</td>
+                    <td style={{ padding: '7px 10px', fontFamily: 'monospace', fontSize: 11, color: 'var(--text-muted)' }}>{r.mat || '—'}</td>
+                    <td style={{ padding: '7px 10px', textAlign: 'right', fontWeight: 700, color: cor, fontVariantNumeric: 'tabular-nums' }}>
+                      {saldo > 0 ? '+' : ''}{fmtR(saldo)}
+                      <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 400, color: 'var(--text-muted)' }}>
+                        {saldo > 0 ? 'complementar' : 'descontar'}
+                      </span>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Card>
+  )
+}
+
 // ── Seletor de pessoa com busca por texto ─────────────────────────────────────
 function PessoaSelect({ people, value, onChange, selectStyle }) {
   const [busca, setBusca] = useState('')
@@ -768,7 +836,7 @@ function PessoaSelect({ people, value, onChange, selectStyle }) {
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
-export default function PerformanceFeedbackPage({ feedbackIndex, weekBundles, onWeekLoad, onBack, initialPersonId, initialWeekId }) {
+export default function PerformanceFeedbackPage({ feedbackIndex, weekBundles, onWeekLoad, onBack, onSaldoCarteira, initialPersonId, initialWeekId }) {
   const weeks = useMemo(() => (feedbackIndex || []).map(e => {
     const info = isoWeekDates(e.week_id)
     return { id: e.week_id, ...info }
@@ -826,6 +894,15 @@ export default function PerformanceFeedbackPage({ feedbackIndex, weekBundles, on
             color: 'var(--text)', cursor: 'pointer', whiteSpace: 'nowrap'
           }}>
             ‹ Voltar
+          </button>
+        )}
+        {onSaldoCarteira && snap?.funcao_bucket === 'SUPERVISOR' && (
+          <button onClick={onSaldoCarteira} style={{
+            padding: '6px 12px', borderRadius: 6, fontSize: 13, fontWeight: 600,
+            background: 'var(--shopper-red)', border: 'none',
+            color: '#fff', cursor: 'pointer', whiteSpace: 'nowrap'
+          }}>
+            Saldo Carteira
           </button>
         )}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -980,6 +1057,8 @@ export default function PerformanceFeedbackPage({ feedbackIndex, weekBundles, on
 
             {/* Rupturas da loja */}
             <RupturasTable rupturas={(bundle.rupturas_por_loja || {})[snap.store_code] || []} />
+
+
           </>
         )}
       </div>

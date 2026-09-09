@@ -14,7 +14,7 @@ const cleanNome = nome => {
     .replace(/\s*[\(\[].*/g, '')
     .replace(/\s*[-\/]\s*\S+.*/g, s => OBS.test(s) ? '' : s)
     .split(/\s+/)
-    .filter(w => !OBS.test(w))
+    .filter(w => !OBS.test(w) && !/^[-\/]$/.test(w))
     .join(' ')
     .trim()
 }
@@ -377,7 +377,7 @@ function StoreDetail({ loja, onBack, onOpenIndividual, weekId, hideBack }) {
           <div className="perf-store-card__kpis">
             <KpiBar label="Separação" val={loja.taxa_separacao_loja} limites={{ critico: 80, atencao: 95 }} />
             <KpiBar label="Completo"  val={loja.taxa_completo_loja}  limites={{ critico: 80, atencao: 98 }} />
-            <KpiBar label="Foto"      val={loja.taxa_foto_loja}      limites={{ critico: 80, atencao: 90 }} />
+            <KpiBar label="Foto"      val={loja.taxa_foto_loja}      limites={{ critico: 90, atencao: 95 }} />
           </div>
           <div className="perf-store-card__bonus">
             <div className="perf-bonus-stat">
@@ -424,7 +424,7 @@ function PerfStoreCard({ loja, onOpenStore }) {
       <div className="perf-store-card__kpis">
         <KpiBar label="Separação" val={loja.taxa_separacao_loja} limites={{ critico: 80, atencao: 95 }} />
         <KpiBar label="Completo"  val={loja.taxa_completo_loja}  limites={{ critico: 80, atencao: 98 }} />
-        <KpiBar label="Foto"      val={loja.taxa_foto_loja}      limites={{ critico: 80, atencao: 90 }} />
+        <KpiBar label="Foto"      val={loja.taxa_foto_loja}      limites={{ critico: 90, atencao: 95 }} />
       </div>
       <div className="perf-store-card__bonus">
         <div className="perf-bonus-stat">
@@ -565,7 +565,7 @@ function VisaoGeralContent({ semanas, onOpenIndividual, initialStoreCode, onStor
           <span className="perf-legend__title">Gates:</span>
           <span className="perf-legend__item">SLA &lt; 80% ou Completo &lt; 80% → zera loja</span>
           <span className="perf-legend__sep">·</span>
-          <span className="perf-legend__item">Foto &lt; 80% → zera loja</span>
+          <span className="perf-legend__item">Foto &lt; 90% → zera loja</span>
           <span className="perf-legend__sep">·</span>
           <span className="perf-legend__item">Assiduidade → zera individualmente</span>
         </div>
@@ -614,6 +614,121 @@ function parseWeekId(weekId) {
   return { year_ref: parseInt(year, 10), week_ref: parseInt(wPart, 10) }
 }
 
+// ── Saldo Carteira Tab ────────────────────────────────────────────────────────
+const CARGO = { OPERADOR: 'Operador', TEAM_LIDER: 'Team Líder', SUPERVISOR: 'Supervisor' }
+const NOMES_STORE = {
+  'alto de pinheiros': 'Alto de Pinheiros', 'barra funda': 'Barra Funda',
+  'pamplona': 'Jardins', 'higienopolis': 'Higienópolis', 'sao caetano': 'São Caetano',
+  'vila olimpia': 'Vila Olímpia', 'vila mariana': 'Vila Mariana', 'morumbi': 'Morumbi',
+  'pinheiros': 'Pinheiros', 'brooklin': 'Brooklin', 'campinas': 'Campinas',
+  'moema': 'Moema', 'carandiru': 'Vila Guilherme', 'vila guilherme': 'Vila Guilherme',
+  'consolacao': 'Consolação', 'mooca': 'Mooca', 'tatuape': 'Tatuapé',
+  'ribeirao preto': 'Ribeirão Preto', 'agua verde curitiba': 'República (CWB)',
+  'mossungue curitiba': 'Rodovia (CWB)', 'juveve curitiba': 'Stresser (CWB)',
+}
+function nomeStoreSaldo(code) {
+  if (!code) return code
+  return NOMES_STORE[code.toLowerCase()] || code.split(' ').map(w => w[0].toUpperCase() + w.slice(1)).join(' ')
+}
+
+function SaldoCarteiraTab({ user }) {
+  const isStoreEmail = !!(user?.store_code && !user?.nome)
+  const [storeCode, setStoreCode] = useState(user?.store_code || '')
+  const [rows, setRows] = useState(null)
+  const [erro, setErro] = useState(null)
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (!storeCode) return
+    setRows(null); setErro(null); setLoading(true)
+    axios.get(`${API}/api/intraday/performance/saldo-carteira`, { params: { store_code: storeCode } })
+      .then(r => { if (r.data.sucesso) setRows(r.data.saldo); else setErro(r.data.erro || 'Erro') })
+      .catch(e => setErro(e.response?.data?.erro || e.message))
+      .finally(() => setLoading(false))
+  }, [storeCode])
+
+  if (isStoreEmail) return (
+    <div style={{ padding: '40px 32px', color: 'var(--text-muted)', fontSize: 14 }}>
+      Acesso não disponível para este perfil.
+    </div>
+  )
+
+  const hasSelector = !user?.store_code
+  const total = (rows || []).reduce((s, r) => s + Number(r.saldo_carteira), 0)
+  const selectStyle = { padding: '6px 10px', border: '1px solid var(--border)', borderRadius: 6, background: '#fff', fontSize: 13, color: 'var(--text)', minWidth: 200 }
+
+  const LOJAS_LISTA = Object.keys(NOMES_STORE).sort()
+
+  return (
+    <div className="intraday-content">
+      <div style={{ background: '#fff', borderRadius: 8, border: '1px solid var(--border)', padding: '20px 24px', marginBottom: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)', marginBottom: 4 }}>Saldo Carteira — Correção W33→W34</div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.6 }}>
+              A semana 33 foi paga indevidamente no lugar da semana 34. Os valores abaixo mostram a diferença por colaborador.<br />
+              <strong style={{ color: 'var(--green)' }}>Empresa deve:</strong> a Shopper vai pagar a diferença no próximo pagamento para zerar o saldo.{' '}
+              <strong style={{ color: 'var(--red)' }}>Colaborador deve:</strong> o valor será descontado nos próximos pagamentos até zerar o saldo.
+            </div>
+          </div>
+          {rows && rows.length > 0 && (
+            <span style={{ fontSize: 14, fontWeight: 700, color: total >= 0 ? 'var(--green)' : 'var(--red)', flexShrink: 0, marginLeft: 24 }}>
+              Saldo líquido: {total >= 0 ? '+' : ''}{fmtR(total)}
+            </span>
+          )}
+        </div>
+
+        {hasSelector && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>Loja</span>
+            <select style={selectStyle} value={storeCode} onChange={e => setStoreCode(e.target.value)}>
+              <option value="">— selecione —</option>
+              {LOJAS_LISTA.map(k => <option key={k} value={k}>{NOMES_STORE[k]}</option>)}
+            </select>
+          </div>
+        )}
+      </div>
+
+      {!storeCode && <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>Selecione uma loja para ver o saldo.</div>}
+      {loading && <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>Carregando…</div>}
+      {erro && <div style={{ color: 'var(--red)', fontSize: 13 }}>{erro}</div>}
+      {rows && rows.length === 0 && <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>Nenhuma divergência para esta loja.</div>}
+      {rows && rows.length > 0 && (
+        <div style={{ overflowX: 'auto', borderRadius: 8, border: '1px solid var(--border)', background: '#fff' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <thead>
+              <tr style={{ borderBottom: '2px solid var(--border)' }}>
+                {['Nome', 'Cargo', 'Matrícula', 'Saldo'].map(h => (
+                  <th key={h} style={{ padding: '8px 12px', textAlign: h === 'Saldo' ? 'right' : 'left', color: 'var(--text-muted)', fontWeight: 700, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', position: 'sticky', top: 0, background: '#fff', zIndex: 1 }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, i) => {
+                const saldo = Number(r.saldo_carteira)
+                const cor = saldo > 0 ? 'var(--green)' : 'var(--red)'
+                return (
+                  <tr key={i} style={{ borderBottom: '1px solid var(--border-light)', background: i % 2 === 0 ? 'transparent' : '#fafbfc' }}>
+                    <td style={{ padding: '8px 12px', fontWeight: 600, color: 'var(--text)' }}>{cleanNome(r.nome)}</td>
+                    <td style={{ padding: '8px 12px', color: 'var(--text-muted)' }}>{CARGO[r.funcao_bucket] || r.funcao_bucket}</td>
+                    <td style={{ padding: '8px 12px', fontFamily: 'monospace', fontSize: 12, color: 'var(--text-muted)' }}>{r.mat || '—'}</td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 700, color: cor, fontVariantNumeric: 'tabular-nums' }}>
+                      {fmtR(Math.abs(saldo))}
+                      <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 600, color: cor }}>
+                        {saldo > 0 ? '← empresa deve' : '← colaborador deve'}
+                      </span>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── FeedbacksPage ─────────────────────────────────────────────────────────────
 export default function FeedbacksPage({ onVoltar, user, onLogout }) {
   const [semanas, setSemanas]           = useState([])
@@ -626,6 +741,7 @@ export default function FeedbacksPage({ onVoltar, user, onLogout }) {
   const [backToStore, setBackToStore]   = useState(null)
   const firstName = user?.name?.split(' ')[0] || ''
   const lojaStoreCode = user?.store_code ?? null
+  const isStoreEmail = !!(user?.store_code && !user?.nome)
 
   useEffect(() => {
     async function fetchSemanas() {
@@ -703,6 +819,14 @@ export default function FeedbacksPage({ onVoltar, user, onLogout }) {
           >
             Como funciona
           </button>
+          {!isStoreEmail && (
+            <button
+              className={`feedback-tab${activeTab === 'saldo' ? ' feedback-tab--active' : ''}`}
+              onClick={() => setActiveTab('saldo')}
+            >
+              Saldo Carteira
+            </button>
+          )}
         </div>
 
         <div className="intraday-topbar__right">
@@ -736,11 +860,13 @@ export default function FeedbacksPage({ onVoltar, user, onLogout }) {
             setActiveTab('geral')
             setDrillPerson(null)
           }}
+          onSaldoCarteira={!isStoreEmail ? () => setActiveTab('saldo') : undefined}
           initialPersonId={drillPerson?.personId}
           initialWeekId={drillPerson?.weekId}
         />
       )}
       {activeTab === 'metodologia' && <MetodologiaPage />}
+      {activeTab === 'saldo' && !isStoreEmail && <SaldoCarteiraTab user={user} />}
     </div>
   )
 }
