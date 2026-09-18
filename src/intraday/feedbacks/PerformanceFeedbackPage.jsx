@@ -978,6 +978,27 @@ export default function PerformanceFeedbackPage({ feedbackIndex, weekBundles, on
             {/* Pré-requisitos */}
             <GatesSection snap={snap} />
 
+            {/* Aviso gerencial W38 — Água Verde manhã + supervisor Jackson */}
+            {snap.store_code === 'agua verde curitiba' && snap.week_ref === 38 &&
+              (snap.turno_bucket === 'MANHA' || snap.nome === 'JACKSON DE OLIVEIRA VICENTE') && (
+              <div style={{
+                background: '#fff7ed', border: '1px solid #f97316', borderRadius: 8,
+                padding: '12px 16px', display: 'flex', gap: 10, alignItems: 'flex-start'
+              }}>
+                <span style={{ fontSize: 18, flexShrink: 0 }}>⚠️</span>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 13, color: '#9a3412', marginBottom: 4 }}>
+                    Bônus zerado por decisão gerencial — Semana 38
+                  </div>
+                  <div style={{ fontSize: 12, color: '#c2410c', lineHeight: 1.5 }}>
+                    Esta semana o bônus do turno manhã e do supervisor da Água Verde foi zerado por determinação da gestão
+                    devido a lançamentos incorretos de perdas que geraram prejuízo operacional.
+                    Em caso de dúvidas, fale com seu supervisor ou com o RH.
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Cards de cálculo */}
             {(() => {
               const _snap = snap
