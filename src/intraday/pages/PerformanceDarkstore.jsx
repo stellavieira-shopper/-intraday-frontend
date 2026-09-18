@@ -72,7 +72,6 @@ function motivoZero(c, storeCode) {
     return { label, cls: 'perf-motivo--assiduidade' }
   }
   if (c.gate_loja)         return { label: 'Gate SLA',    cls: 'perf-motivo--gate' }
-  if (c.gate_foto)         return { label: 'Gate Foto',   cls: 'perf-motivo--gate' }
   if (c.valor_final === 0) return { label: `Taxa < ${storeCode === 'pamplona' ? 80 : 85}%`, cls: 'perf-motivo--taxa' }
   return null
 }
