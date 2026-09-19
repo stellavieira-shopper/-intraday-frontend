@@ -979,25 +979,45 @@ export default function PerformanceFeedbackPage({ feedbackIndex, weekBundles, on
             <GatesSection snap={snap} />
 
             {/* Aviso gerencial W38 — Água Verde manhã + supervisor Jackson */}
-            {snap.store_code === 'agua verde curitiba' && snap.week_ref === 38 &&
-              (snap.turno_bucket === 'MANHA' || snap.nome === 'JACKSON DE OLIVEIRA VICENTE') && (
-              <div style={{
-                background: '#fff7ed', border: '1px solid #f97316', borderRadius: 8,
-                padding: '12px 16px', display: 'flex', gap: 10, alignItems: 'flex-start'
-              }}>
-                <span style={{ fontSize: 18, flexShrink: 0 }}>⚠️</span>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: 13, color: '#9a3412', marginBottom: 4 }}>
-                    Bônus zerado por decisão gerencial — Semana 38
-                  </div>
-                  <div style={{ fontSize: 12, color: '#c2410c', lineHeight: 1.5 }}>
-                    Esta semana o bônus do turno manhã e do supervisor da Água Verde foi zerado por determinação da gestão
-                    devido a lançamentos incorretos de perdas que geraram prejuízo operacional.
-                    Em caso de dúvidas, fale com o time de Performance ou com as lideranças responsáveis.
+            {(() => {
+              if (!(snap.store_code === 'agua verde curitiba' && snap.week_ref === 38 &&
+                (snap.turno_bucket === 'MANHA' || snap.nome === 'JACKSON DE OLIVEIRA VICENTE'))) return null
+              // Busca o que a pessoa ganhou na W37 no bundle já carregado
+              const w37id = Object.keys(weekBundles).find(id => {
+                const b = weekBundles[id]
+                return b?.snapshots?.some(s => s.week_ref === 37 || s.week_ref === '37')
+              })
+              const w37snap = w37id
+                ? (weekBundles[w37id]?.snapshots || []).find(s =>
+                    s.store_code === snap.store_code && s.nome === snap.nome)
+                : null
+              const perdido = w37snap ? Number(w37snap.valor_final_bonus || 0) : null
+              return (
+                <div style={{
+                  background: '#fff7ed', border: '1px solid #f97316', borderRadius: 8,
+                  padding: '12px 16px', display: 'flex', gap: 10, alignItems: 'flex-start'
+                }}>
+                  <span style={{ fontSize: 18, flexShrink: 0 }}>⚠️</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, fontSize: 13, color: '#9a3412', marginBottom: 4 }}>
+                      Bônus zerado por decisão gerencial — Semana 38
+                    </div>
+                    <div style={{ fontSize: 12, color: '#c2410c', lineHeight: 1.5 }}>
+                      Esta semana o bônus do turno manhã e do supervisor da Água Verde foi zerado por determinação da gestão
+                      devido a lançamentos incorretos de perdas que geraram prejuízo operacional.
+                      Em caso de dúvidas, fale com o time de Performance ou com as lideranças responsáveis.
+                    </div>
+                    {perdido != null && (
+                      <div style={{ marginTop: 10, display: 'inline-flex', alignItems: 'center', gap: 8,
+                        background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: 6, padding: '6px 12px' }}>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: '#991b1b' }}>Bônus da semana anterior (W37)</span>
+                        <span style={{ fontSize: 14, fontWeight: 800, color: '#b91c1c' }}>− {fmtR(perdido)}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
-              </div>
-            )}
+              )
+            })()}
 
             {/* Cards de cálculo */}
             {(() => {
