@@ -993,7 +993,7 @@ export default function PerformanceFeedbackPage({ feedbackIndex, weekBundles, on
                   <div style={{ fontSize: 12, color: '#c2410c', lineHeight: 1.5 }}>
                     Esta semana o bônus do turno manhã e do supervisor da Água Verde foi zerado por determinação da gestão
                     devido a lançamentos incorretos de perdas que geraram prejuízo operacional.
-                    Em caso de dúvidas, fale com seu supervisor ou com o RH.
+                    Em caso de dúvidas, fale com o time de Performance ou com as lideranças responsáveis.
                   </div>
                 </div>
               </div>
