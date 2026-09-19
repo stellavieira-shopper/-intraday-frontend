@@ -1004,7 +1004,7 @@ export default function PerformanceFeedbackPage({ feedbackIndex, weekBundles, on
                     </div>
                     <div style={{ fontSize: 12, color: '#c2410c', lineHeight: 1.5 }}>
                       Esta semana o bônus do turno manhã e do supervisor da Água Verde foi zerado por determinação da gestão
-                      devido a recebimentos realizados de forma incorreta — produtos foram colocados na gôndola sem o devido lançamento no sistema.
+                      devido a abastecimento realizado de forma incorreta — produtos foram colocados na gôndola sem o devido lançamento no sistema.
                       O valor da bonificação da semana 37 será lançado como saldo negativo na carteira e descontado nos próximos pagamentos.
                       Em caso de dúvidas, fale com o time de Performance ou com as lideranças responsáveis.
                     </div>
