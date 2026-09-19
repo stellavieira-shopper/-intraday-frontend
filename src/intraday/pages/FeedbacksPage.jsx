@@ -40,8 +40,11 @@ const NOMES = {
   'ribeirao preto':    'Ribeirão Preto',
   'curitiba':          'Curitiba',
   'pr - republica':    'República (CWB)',
-  'pr - rodovia':      'Rodovia (CWB)',
-  'pr - stresser':     'Stresser (CWB)',
+  'pr - rodovia':         'Rodovia (CWB)',
+  'pr - stresser':        'Stresser (CWB)',
+  'agua verde curitiba':  'Água Verde (CWB)',
+  'mossungue curitiba':   'Mossungue (CWB)',
+  'juveve curitiba':      'Juvevê (CWB)',
 }
 function nomeStore(code) {
   if (!code) return ''
@@ -633,8 +636,8 @@ const NOMES_STORE = {
   'pinheiros': 'Pinheiros', 'brooklin': 'Brooklin', 'campinas': 'Campinas',
   'moema': 'Moema', 'carandiru': 'Vila Guilherme', 'vila guilherme': 'Vila Guilherme',
   'consolacao': 'Consolação', 'mooca': 'Mooca', 'tatuape': 'Tatuapé',
-  'ribeirao preto': 'Ribeirão Preto', 'agua verde curitiba': 'República (CWB)',
-  'mossungue curitiba': 'Rodovia (CWB)', 'juveve curitiba': 'Stresser (CWB)',
+  'ribeirao preto': 'Ribeirão Preto', 'agua verde curitiba': 'Água Verde (CWB)',
+  'mossungue curitiba': 'Mossungue (CWB)', 'juveve curitiba': 'Juvevê (CWB)',
 }
 function nomeStoreSaldo(code) {
   if (!code) return code
