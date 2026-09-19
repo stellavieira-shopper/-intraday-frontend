@@ -674,9 +674,8 @@ function SaldoCarteiraTab({ user }) {
       <div style={{ background: '#fff', borderRadius: 8, border: '1px solid var(--border)', padding: '20px 24px', marginBottom: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)', marginBottom: 4 }}>Saldo Carteira — Correção W33→W34</div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)', marginBottom: 4 }}>Saldo Carteira</div>
             <div style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.6 }}>
-              A semana 33 foi paga indevidamente no lugar da semana 34. Os valores abaixo mostram a diferença por colaborador.<br />
               <strong style={{ color: 'var(--green)' }}>Empresa deve:</strong> a Shopper vai pagar a diferença no próximo pagamento para zerar o saldo.{' '}
               <strong style={{ color: 'var(--red)' }}>Colaborador deve:</strong> o valor será descontado nos próximos pagamentos até zerar o saldo.
             </div>
