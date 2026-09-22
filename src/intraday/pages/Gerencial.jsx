@@ -79,6 +79,8 @@ const FC_NOME = {
   31: 'Águas Claras (BSB)',
   32: 'Alto da Glória (GYN)',
   33: 'Setor Bueno (GYN)',
+  34: 'Asa Sul (BSB)',
+  35: 'Asa Norte (BSB)',
 }
 function nomeLoja(id) { return FC_NOME[id] || (id ? `FC ${id}` : 'Loja desconhecida') }
 
@@ -93,6 +95,7 @@ const STORE_CODE_TO_FC_ID = {
   'pr - republica': 27,    'pr - rodovia': 28,     'pr - stresser': 29,
   'sia norte': 30,         'aguas claras': 31,
   'alto da gloria': 32,    'setor bueno': 33,
+  'asa sul': 34,           'asa norte': 35,
 }
 
 function fmtTs(v) {
@@ -136,6 +139,8 @@ const STORE_NOME_ABAST = {
   'aguas claras':      'Águas Claras (BSB)',
   'alto da gloria':    'Alto da Glória (GYN)',
   'setor bueno':       'Setor Bueno (GYN)',
+  'asa sul':           'Asa Sul (BSB)',
+  'asa norte':         'Asa Norte (BSB)',
   'agua verde curitiba':   'República (CWB)',
   'mossungue curitiba':    'Rodovia (CWB)',
   'juveve curitiba':       'Stresser (CWB)',
