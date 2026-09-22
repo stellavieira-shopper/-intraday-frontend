@@ -1209,7 +1209,12 @@ export default function Gerencial({ onLojaClick, onVoltar, user, onLogout }) {
     setErrosLoading(true)
     setErrosErro(null)
     try {
-      const { data: resp } = await axios.get(`${API}/api/intraday/erros-clientes`)
+      // A fonte de erros é independente da consulta gerencial. Incluímos um
+      // cache-buster para que uma atualização manual nunca reutilize uma
+      // resposta antiga de browser/CDN.
+      const { data: resp } = await axios.get(`${API}/api/intraday/erros-clientes`, {
+        params: { _atualizado_em: Date.now() },
+      })
       setErros(resp.erros || [])
     } catch (e) {
       setErrosErro(e.response?.data?.erro || e.message)
@@ -1242,7 +1247,10 @@ const { data: resp } = await axios.get(`${API}/api/intraday/gerencial`, { params
     setErro(null)
     try {
       await axios.post(`${API}/api/intraday/refresh`)
-      await buscar()
+      // O refresh do dashboard atualiza a base operacional. Recarregue também
+      // a fonte que alimenta a aba de erros, que antes ficava presa ao payload
+      // carregado quando a página abriu.
+      await Promise.all([buscar(), buscarErros()])
     } catch (e) {
       setErro(e.response?.data?.erro || e.message || 'Erro ao atualizar tabela.')
     } finally {
