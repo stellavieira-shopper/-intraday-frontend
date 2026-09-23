@@ -333,20 +333,19 @@ export default function MetodologiaPage() {
             </Callout>
           </div>
           {/* Erros */}
-          <div style={{ flex: '1 1 220px' }}>
+          <div style={{ flex: '1 1 280px' }}>
             <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>Erros de clientes <Tag color="green">Ativo desde W29/2026</Tag></div>
             <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: 12 }}>
-              Desconto sobre o bônus pela taxa de erros (TEO individual · TEC do turno · TEC da loja). Somente erros marcados como "Considerar" entram:
+              Desconto sobre o bônus pela taxa de erros. Somente erros marcados como "Considerar" entram. Escopo: <strong>TEO individual</strong> (Operador) · <strong>TEC do turno</strong> (TL) · <strong>TEC da loja</strong> (Supervisor). Faixas diferenciadas a partir de W39/2026:
             </p>
             <SimpleTable
-              headers={['Taxa de erros', 'Desconto sobre o bônus']}
+              headers={['Desconto', 'Operador', 'TL', 'Supervisor']}
               rows={[
-                ['> 0% – 0,99%',  '−10%'],
-                ['1% – 2,99%',    '−15%'],
-                ['3% – 3,99%',    '−25%'],
-                ['4% – 4,49%',    '−50%'],
-                ['4,5% – 4,99%',  '−75%'],
-                ['≥ 5%',          'Zera o bônus'],
+                ['−15%',        '> 0% – 0,99%', '> 0% – 0,49%', '> 0% – 0,49%'],
+                ['−25%',        '1% – 1,99%',   '0,5% – 0,99%', '0,5% – 0,99%'],
+                ['−50%',        '2% – 2,99%',   '1% – 1,99%',   '1% – 1,99%'],
+                ['−75%',        '3% – 3,99%',   '2% – 2,99%',   '2% – 2,99%'],
+                ['Zera o bônus','≥ 4%',          '≥ 3%',          '≥ 3%'],
               ]}
             />
           </div>
@@ -387,6 +386,56 @@ export default function MetodologiaPage() {
           ['90% – 96%', '95%'],
           ['≥ 97%', '100%'],
         ]} />
+      </Card>
+
+      {/* Detratores — Perdas */}
+      <Card style={{ marginBottom: 20 }}>
+        <SectionTitle icon="📦">Detratores — Perdas <Tag color="blue">A partir de W39/2026</Tag></SectionTitle>
+        <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: 16 }}>
+          Perdas e ajustes lançados incorretamente no sistema geram desconto sobre a bonificação.
+          O desconto é calculado cruzando a <strong>taxa de erro</strong> com o <strong>volume total de lançamentos</strong> do ciclo — porque um volume alto de falhas absolutas causa impacto operacional maior mesmo quando a taxa percentual parece baixa.
+          Operadores e Team Líderes respondem pelos <strong>próprios lançamentos individualmente</strong>. O Supervisor responde pelos lançamentos da <strong>loja como um todo</strong>.
+        </p>
+        {/* Matriz */}
+        <div style={{ overflowX: 'auto', borderRadius: 8, border: '1px solid var(--border)', marginBottom: 14 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+            <thead>
+              <tr style={{ background: 'var(--surface)' }}>
+                <th style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 700, color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}>Taxa de erro</th>
+                <th style={{ padding: '8px 12px', textAlign: 'center', fontWeight: 700, color: 'var(--text-muted)', borderBottom: '1px solid var(--border)', whiteSpace: 'nowrap' }}>Até 10<br /><span style={{ fontWeight: 400, fontSize: 10, fontStyle: 'italic' }}>Baixo volume</span></th>
+                <th style={{ padding: '8px 12px', textAlign: 'center', fontWeight: 700, color: 'var(--text-muted)', borderBottom: '1px solid var(--border)', whiteSpace: 'nowrap' }}>11 – 30<br /><span style={{ fontWeight: 400, fontSize: 10, fontStyle: 'italic' }}>Volume médio</span></th>
+                <th style={{ padding: '8px 12px', textAlign: 'center', fontWeight: 700, color: 'var(--text-muted)', borderBottom: '1px solid var(--border)', whiteSpace: 'nowrap' }}>31 – 100<br /><span style={{ fontWeight: 400, fontSize: 10, fontStyle: 'italic' }}>Alto volume</span></th>
+                <th style={{ padding: '8px 12px', textAlign: 'center', fontWeight: 700, color: 'var(--text-muted)', borderBottom: '1px solid var(--border)', whiteSpace: 'nowrap' }}>Acima de 100<br /><span style={{ fontWeight: 400, fontSize: 10, fontStyle: 'italic' }}>Volume extremo</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                ['< 3%',      '0%',             '0%',  '0%',  '0%'],
+                ['3% – 10%',  '0% (isento)',    '10%', '20%', '35%'],
+                ['11% – 30%', '10%',            '20%', '35%', '55%'],
+                ['31% – 50%', '20%',            '35%', '55%', '75%'],
+                ['> 50%',     '30%',            '55%', '75%', '75%'],
+              ].map(([taxa, ...vals], i) => (
+                <tr key={i} style={{ borderBottom: i < 4 ? '1px solid var(--border)' : 'none', background: i % 2 === 0 ? '#fff' : 'var(--surface)' }}>
+                  <td style={{ padding: '9px 12px', fontWeight: 600 }}>{taxa}</td>
+                  {vals.map((v, j) => {
+                    const isIsento = v === '0% (isento)'
+                    const isZero = v === '0%'
+                    const color = isZero || isIsento ? 'var(--text-muted)' : v === '75%' ? '#b91c1c' : v === '55%' ? '#c2410c' : '#92400e'
+                    return (
+                      <td key={j} style={{ padding: '9px 12px', textAlign: 'center', fontWeight: isZero || isIsento ? 400 : 700, color }}>
+                        {isIsento ? <Tag color="green">isento</Tag> : `−${v}`}
+                      </td>
+                    )
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div style={{ background: '#fef9c3', border: '1px solid #fde68a', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#92400e', lineHeight: 1.6 }}>
+          <strong>Trava de volume absoluto:</strong> quem cometer <strong>10 ou mais erros</strong> no ciclo perde a isenção de 0% e recebe desconto mínimo de <strong>10%</strong>, mesmo que a taxa percentual seja inferior a 3%.
+        </div>
       </Card>
 
       {/* Teto */}
