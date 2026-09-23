@@ -416,16 +416,24 @@ function CalcPanel({ snap, card }) {
   const errosNorm  = Number(snap.erros_normais || 0)
   const errosGrav  = Number(snap.erros_graves  || 0)
   const descErros  = Number(snap.desconto_erros || 0)
-  const errosTotal = errosNorm + errosGrav
+  // TL usa escopo do turno, SUP usa escopo da loja
+  const errosTotal = snap.funcao_bucket === 'TEAM_LIDER'
+    ? Number(snap.erros_turno_sum || 0)
+    : snap.funcao_bucket === 'SUPERVISOR'
+      ? Number(snap.erros_loja_sum || 0)
+      : errosNorm + errosGrav
+  const errosScopeLabel = snap.funcao_bucket === 'TEAM_LIDER' ? 'do turno'
+    : snap.funcao_bucket === 'SUPERVISOR' ? 'da loja' : 'pessoal'
   const valorObtido = Number(snap.valor_obtido || 0)
   const erroRatio  = valorObtido > 0 ? descErros / valorObtido : 0
+  // Faixas atualizadas (W39/2026): OPERADOR zera em ≥4%, TL/SUP zeram em ≥3%
+  const isOp = snap.funcao_bucket === 'OPERADOR'
   const errosFaixa = errosTotal === 0 ? null
-    : erroRatio >= 0.99 ? 'Grave (≥5% dos pedidos) — zera bônus'
-    : erroRatio >= 0.74 ? 'Alto (4,5–5% dos pedidos) − 75%'
-    : erroRatio >= 0.49 ? 'Alto (4–4,5% dos pedidos) − 50%'
-    : erroRatio >= 0.24 ? 'Leve (3–4% dos pedidos) − 25%'
-    : erroRatio >= 0.14 ? 'Moderado (1–3% dos pedidos) − 15%'
-    : 'Baixo (<1% dos pedidos) − 10%'
+    : erroRatio >= 0.99 ? (isOp ? 'Grave (≥4% dos pedidos) — zera bônus' : 'Grave (≥3% dos pedidos) — zera bônus')
+    : erroRatio >= 0.74 ? (isOp ? 'Alto (3–4% dos pedidos) − 75%'        : 'Alto (2–3% dos pedidos) − 75%')
+    : erroRatio >= 0.49 ? (isOp ? 'Moderado (2–3% dos pedidos) − 50%'    : 'Moderado (1–2% dos pedidos) − 50%')
+    : erroRatio >= 0.24 ? (isOp ? 'Leve (1–2% dos pedidos) − 25%'        : 'Leve (0,5–1% dos pedidos) − 25%')
+    : 'Baixo (< limiar mínimo) − 15%'
   const preGate   = Math.max(bruto - ruptDesc - descErros, 0)
   const bolsoPed  = Number(snap.bolso_pedidos             || 0)
   const bolsoAbst = Number(snap.bolso_abastecimento       || 0)
@@ -498,10 +506,12 @@ function CalcPanel({ snap, card }) {
       <CalcRow label="Rupturas da loja" rule="Todos da loja têm mesmo desconto (por faixa de completos)" value={`${ruptQtd} item(ns)`} highlight negative={ruptQtd > 0} />
       <CalcRow label="Faixa de completos da loja" rule="<95%: zero · 95–96%: OP50/TL75/SUP100 · 96–97%: OP40/TL60/SUP80 · 97–98%: OP30/TL45/SUP60 · 98–99%: OP20/TL30/SUP40 · ≥99%: zero" value={ruptFaixa} highlight />
       <CalcRow label="Desconto rupturas" value={fmtR(ruptDesc)} negative={ruptDesc > 0} />
-      <div style={{ fontWeight: 700, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', margin: '10px 0 4px' }}>Erros de clientes (escopo individual)</div>
-      <CalcRow label="Erros desta pessoa" rule="Normais + graves considerados" value={`${errosTotal} erro(s)`} highlight negative={errosTotal > 0} />
+      <div style={{ fontWeight: 700, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', margin: '10px 0 4px' }}>Erros de clientes (escopo {errosScopeLabel})</div>
+      <CalcRow label={`Erros ${errosScopeLabel}`} rule="Normais + graves considerados" value={`${errosTotal} erro(s)`} highlight negative={errosTotal > 0} />
       <CalcRow label="Faixa de desconto"
-        rule="<1%→−10% · 1–3%→−15% · 3–4%→−25% · 4–4,5%→−50% · 4,5–5%→−75% · ≥5%→zera"
+        rule={isOp
+          ? '<1%→−15% · 1–2%→−25% · 2–3%→−50% · 3–4%→−75% · ≥4%→zera'
+          : '<0,5%→−15% · 0,5–1%→−25% · 1–2%→−50% · 2–3%→−75% · ≥3%→zera'}
         value={errosTotal === 0 ? 'Sem erros' : errosFaixa} highlight negative={errosTotal > 0} />
       <CalcRow label="Desconto erros" value={fmtR(descErros)} negative={descErros > 0} />
       <CalcRow label="Total em descontos" value={fmtR(ruptDesc + descErros)} total negative={(ruptDesc + descErros) > 0} />
@@ -1046,7 +1056,13 @@ export default function PerformanceFeedbackPage({ feedbackIndex, weekBundles, on
                   )}
                   <SummaryCard title="Descontos totais" value={(Number(_snap.desconto_ruptura||0)+Number(_snap.desconto_erros||0))} prefix="−R$" color="var(--red)"
                     subtitle={`Rupturas ${fmtR(_snap.desconto_ruptura||0)} + Erros ${fmtR(_snap.desconto_erros||0)}`}
-                    note={`${_snap.rupturas_count||0} rupt. (loja) · ${(_snap.erros_normais||0)+(_snap.erros_graves||0)} erros (pessoal)`}
+                    note={`${_snap.rupturas_count||0} rupt. (loja) · ${
+                      _snap.funcao_bucket === 'TEAM_LIDER'
+                        ? `${_snap.erros_turno_sum||0} erros (turno)`
+                        : _snap.funcao_bucket === 'SUPERVISOR'
+                          ? `${_snap.erros_loja_sum||0} erros (loja)`
+                          : `${(_snap.erros_normais||0)+(_snap.erros_graves||0)} erros (pessoal)`
+                    }`}
                     active={activeCard === 'descontos'} onClick={() => setActiveCard(v => v === 'descontos' ? null : 'descontos')} />
                   <SummaryCard title="Total pago" value={_snap.valor_final_bonus}
                     subtitle={_snap.gate_loja_80_flag || _snap.gate_foto_flag || _snap.assiduidade_any_flag
