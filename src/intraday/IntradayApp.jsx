@@ -41,7 +41,7 @@ export default function IntradayApp() {
 
   function handleLogin(data) {
     axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`
-    const userData = { name: data.name, email: data.email, picture: data.picture, store_code: data.store_code ?? null, nome: data.nome ?? null, fun_o: data.fun_o ?? null }
+    const userData = { name: data.name, email: data.email, picture: data.picture, store_code: data.store_code ?? null, nome: data.nome ?? null, fun_o: data.fun_o ?? null, is_admin: data.is_admin ?? false }
     localStorage.setItem('intraday_user', JSON.stringify(userData))
     setUser(userData)
     setNav({ pagina: 'hub' })

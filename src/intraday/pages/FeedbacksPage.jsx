@@ -754,6 +754,7 @@ export default function FeedbacksPage({ onVoltar, user, onLogout }) {
   const firstName = user?.name?.split(' ')[0] || ''
   const lojaStoreCode = user?.store_code ?? null
   const isStoreEmail = !!(user?.store_code && !user?.nome)
+  const isAdmin = !!user?.is_admin
 
   useEffect(() => {
     async function fetchSemanas() {
@@ -825,12 +826,14 @@ export default function FeedbacksPage({ onVoltar, user, onLogout }) {
           >
             Feedbacks Individuais
           </button>
-          <button
-            className={`feedback-tab${activeTab === 'metodologia' ? ' feedback-tab--active' : ''}`}
-            onClick={() => setActiveTab('metodologia')}
-          >
-            Como funciona
-          </button>
+          {isAdmin && (
+            <button
+              className={`feedback-tab${activeTab === 'metodologia' ? ' feedback-tab--active' : ''}`}
+              onClick={() => setActiveTab('metodologia')}
+            >
+              Como funciona
+            </button>
+          )}
           {!isStoreEmail && (
             <button
               className={`feedback-tab${activeTab === 'saldo' ? ' feedback-tab--active' : ''}`}
@@ -877,7 +880,7 @@ export default function FeedbacksPage({ onVoltar, user, onLogout }) {
           initialWeekId={drillPerson?.weekId}
         />
       )}
-      {activeTab === 'metodologia' && <MetodologiaPage />}
+      {activeTab === 'metodologia' && isAdmin && <MetodologiaPage />}
       {activeTab === 'saldo' && !isStoreEmail && <SaldoCarteiraTab user={user} />}
     </div>
   )
