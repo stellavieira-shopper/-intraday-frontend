@@ -524,8 +524,8 @@ function CalcPanel({ snap, card }) {
           value={errosTotal === 0 ? 'Sem erros' : errosFaixa} highlight negative={errosTotal > 0} />
         <CalcRow label="Desconto erros" value={fmtR(descErros)} negative={descErros > 0} />
         <div style={{ fontWeight: 700, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', margin: '10px 0 4px' }}>Erros de lançamentos de perdas (escopo individual)</div>
-        <CalcRow label="Lançamentos no ciclo" rule="Total lançado no sistema de perdas" value={totalPerdas === 0 ? 'Sem lançamentos' : `${totalPerdas} lançamento(s)`} highlight />
-        {totalPerdas > 0 && <CalcRow label="Lançamentos errados" rule="Erros identificados no RC de Perdas" value={`${errosPerdas} erro(s)`} highlight negative={errosPerdas > 0} />}
+        <CalcRow label="Lançamentos no ciclo" rule="Total lançado no Alakazam (sistema de perdas)" value={totalPerdas === 0 ? 'Sem lançamentos' : `${totalPerdas} lançamento(s)`} highlight />
+        {totalPerdas > 0 && <CalcRow label="Lançamentos errados" rule="Erros identificados no Alakazam" value={`${errosPerdas} erro(s)`} highlight negative={errosPerdas > 0} />}
         {totalPerdas > 0 && <CalcRow label="Taxa de erros" rule="erros ÷ total de lançamentos" value={`${(taxaPerdas * 100).toFixed(1).replace('.', ',')}%`} highlight negative={errosPerdas > 0} />}
         {perdasFaixaVolume && <CalcRow label="Faixa de volume" rule="Desconto varia por volume × taxa — ver Como Funciona" value={perdasFaixaVolume} highlight />}
         {perdasPctDesconto && <CalcRow label="% de desconto aplicado" rule="Calculado sobre o valor_obtido" value={`−${perdasPctDesconto}%`} highlight negative />}
