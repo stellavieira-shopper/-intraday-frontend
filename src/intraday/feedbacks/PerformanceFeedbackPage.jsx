@@ -1071,15 +1071,15 @@ export default function PerformanceFeedbackPage({ feedbackIndex, weekBundles, on
                       note={`Teto abast. ${fmtR(_snap.bolso_abastecimento)}`}
                       active={activeCard === 'abastecimento'} onClick={() => setActiveCard(v => v === 'abastecimento' ? null : 'abastecimento')} />
                   )}
-                  <SummaryCard title="Descontos totais" value={(Number(_snap.desconto_ruptura||0)+Number(_snap.desconto_erros||0))} prefix="−R$" color="var(--red)"
-                    subtitle={`Rupturas ${fmtR(_snap.desconto_ruptura||0)} + Erros ${fmtR(_snap.desconto_erros||0)}`}
+                  <SummaryCard title="Descontos totais" value={(Number(_snap.desconto_ruptura||0)+Number(_snap.desconto_erros||0)+Number(_snap.desconto_perdas||0))} prefix="−R$" color="var(--red)"
+                    subtitle={`Rupt. ${fmtR(_snap.desconto_ruptura||0)} + Erros ${fmtR(_snap.desconto_erros||0)}${Number(_snap.desconto_perdas||0) > 0 ? ` + Perdas ${fmtR(_snap.desconto_perdas||0)}` : ''}`}
                     note={`${_snap.rupturas_count||0} rupt. (loja) · ${
                       _snap.funcao_bucket === 'TEAM_LIDER'
                         ? `${_snap.erros_turno_sum||0} erros (turno)`
                         : _snap.funcao_bucket === 'SUPERVISOR'
                           ? `${_snap.erros_loja_sum||0} erros (loja)`
                           : `${(_snap.erros_normais||0)+(_snap.erros_graves||0)} erros (pessoal)`
-                    }`}
+                    }${Number(_snap.erros_perdas||0) > 0 ? ` · ${_snap.erros_perdas}/${_snap.total_perdas} lanç. perdas` : ''}`}
                     active={activeCard === 'descontos'} onClick={() => setActiveCard(v => v === 'descontos' ? null : 'descontos')} />
                   <SummaryCard title="Total pago" value={_snap.valor_final_bonus}
                     subtitle={_snap.gate_loja_80_flag || _snap.gate_foto_flag || _snap.assiduidade_any_flag
