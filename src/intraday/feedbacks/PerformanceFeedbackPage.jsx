@@ -497,26 +497,44 @@ function CalcPanel({ snap, card }) {
     </div>
   )
 
-  if (card === 'descontos') return (
-    <div>
-      <FormulaBox title="Descontos aplicados"
-        formula="Total = desconto rupturas + desconto erros de clientes"
-        applied={`${fmtR(ruptDesc)} (rupturas) + ${fmtR(descErros)} (erros) = ${fmtR(ruptDesc + descErros)}`} />
-      <div style={{ fontWeight: 700, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', margin: '10px 0 4px' }}>Rupturas (escopo da loja)</div>
-      <CalcRow label="Rupturas da loja" rule="Todos da loja têm mesmo desconto (por faixa de completos)" value={`${ruptQtd} item(ns)`} highlight negative={ruptQtd > 0} />
-      <CalcRow label="Faixa de completos da loja" rule="<95%: zero · 95–96%: OP50/TL75/SUP100 · 96–97%: OP40/TL60/SUP80 · 97–98%: OP30/TL45/SUP60 · 98–99%: OP20/TL30/SUP40 · ≥99%: zero" value={ruptFaixa} highlight />
-      <CalcRow label="Desconto rupturas" value={fmtR(ruptDesc)} negative={ruptDesc > 0} />
-      <div style={{ fontWeight: 700, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', margin: '10px 0 4px' }}>Erros de clientes (escopo {errosScopeLabel})</div>
-      <CalcRow label={`Erros ${errosScopeLabel}`} rule="Normais + graves considerados" value={`${errosTotal} erro(s)`} highlight negative={errosTotal > 0} />
-      <CalcRow label="Faixa de desconto"
-        rule={isOp
-          ? '<1%→−15% · 1–2%→−25% · 2–3%→−50% · 3–4%→−75% · ≥4%→zera'
-          : '<0,5%→−15% · 0,5–1%→−25% · 1–2%→−50% · 2–3%→−75% · ≥3%→zera'}
-        value={errosTotal === 0 ? 'Sem erros' : errosFaixa} highlight negative={errosTotal > 0} />
-      <CalcRow label="Desconto erros" value={fmtR(descErros)} negative={descErros > 0} />
-      <CalcRow label="Total em descontos" value={fmtR(ruptDesc + descErros)} total negative={(ruptDesc + descErros) > 0} />
-    </div>
-  )
+  if (card === 'descontos') {
+    const errosPerdas  = Number(snap.erros_perdas  || 0)
+    const totalPerdas  = Number(snap.total_perdas  || 0)
+    const descPerdas   = Number(snap.desconto_perdas || 0)
+    const taxaPerdas   = totalPerdas > 0 ? errosPerdas / totalPerdas : 0
+    // Faixa depende de volume (≤10/≤30/≤100/>100) × taxa (<3%/<10%/<30%/<50%/≥50%)
+    const perdasFaixaVolume = totalPerdas <= 10 ? '≤10 lanç.' : totalPerdas <= 30 ? '≤30 lanç.' : totalPerdas <= 100 ? '≤100 lanç.' : '>100 lanç.'
+    const perdasFaixaTaxa = taxaPerdas < 0.03 ? 'Isento (<3%)' : taxaPerdas < 0.10 ? 'Leve (3–10%)' : taxaPerdas < 0.30 ? 'Moderado (10–30%)' : taxaPerdas < 0.50 ? 'Alto (30–50%)' : 'Grave (≥50%)'
+    const totalDesc = ruptDesc + descErros + descPerdas
+    return (
+      <div>
+        <FormulaBox title="Descontos aplicados"
+          formula="Total = desconto rupturas + desconto erros de clientes + desconto perdas"
+          applied={`${fmtR(ruptDesc)} (rupt.) + ${fmtR(descErros)} (erros) + ${fmtR(descPerdas)} (perdas) = ${fmtR(totalDesc)}`} />
+        <div style={{ fontWeight: 700, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', margin: '10px 0 4px' }}>Rupturas (escopo da loja)</div>
+        <CalcRow label="Rupturas da loja" rule="Todos da loja têm mesmo desconto (por faixa de completos)" value={`${ruptQtd} item(ns)`} highlight negative={ruptQtd > 0} />
+        <CalcRow label="Faixa de completos da loja" rule="<95%: zero · 95–96%: OP50/TL75/SUP100 · 96–97%: OP40/TL60/SUP80 · 97–98%: OP30/TL45/SUP60 · 98–99%: OP20/TL30/SUP40 · ≥99%: zero" value={ruptFaixa} highlight />
+        <CalcRow label="Desconto rupturas" value={fmtR(ruptDesc)} negative={ruptDesc > 0} />
+        <div style={{ fontWeight: 700, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', margin: '10px 0 4px' }}>Erros de clientes (escopo {errosScopeLabel})</div>
+        <CalcRow label={`Erros ${errosScopeLabel}`} rule="Normais + graves considerados" value={`${errosTotal} erro(s)`} highlight negative={errosTotal > 0} />
+        <CalcRow label="Faixa de desconto"
+          rule={isOp
+            ? '<1%→−15% · 1–2%→−25% · 2–3%→−50% · 3–4%→−75% · ≥4%→zera'
+            : '<0,5%→−15% · 0,5–1%→−25% · 1–2%→−50% · 2–3%→−75% · ≥3%→zera'}
+          value={errosTotal === 0 ? 'Sem erros' : errosFaixa} highlight negative={errosTotal > 0} />
+        <CalcRow label="Desconto erros" value={fmtR(descErros)} negative={descErros > 0} />
+        <div style={{ fontWeight: 700, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', margin: '10px 0 4px' }}>Erros de lançamentos de perdas (escopo individual)</div>
+        <CalcRow label="Lançamentos" rule="Erros ÷ total lançados no RC de Perdas" value={totalPerdas === 0 ? 'Sem lançamentos' : `${errosPerdas} errado(s) / ${totalPerdas} total`} highlight negative={errosPerdas > 0} />
+        {totalPerdas > 0 && <CalcRow label="Taxa de erros" rule="erros ÷ total de lançamentos" value={`${(taxaPerdas * 100).toFixed(1).replace('.', ',')}%`} highlight negative={errosPerdas > 0} />}
+        {totalPerdas > 0 && <CalcRow label="Faixa de volume" rule="≤10 / ≤30 / ≤100 / >100 lançamentos" value={perdasFaixaVolume} highlight />}
+        <CalcRow label="Faixa de taxa"
+          rule="<3%→isento · 3–10%→leve · 10–30%→moderado · 30–50%→alto · ≥50%→grave"
+          value={totalPerdas === 0 ? 'Sem lançamentos' : perdasFaixaTaxa} highlight negative={errosPerdas > 0} />
+        <CalcRow label="Desconto perdas" value={fmtR(descPerdas)} negative={descPerdas > 0} />
+        <CalcRow label="Total em descontos" value={fmtR(totalDesc)} total negative={totalDesc > 0} />
+      </div>
+    )
+  }
 
   if (card === 'abastecimento') return (
     <AbastecimentoPanel snap={snap} notaAbst={notaAbst} tierAbst={tierAbst} bolsoAbst={bolsoAbst} valAbst={valAbst} propAbst={propAbst} />
