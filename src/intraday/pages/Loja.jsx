@@ -144,9 +144,6 @@ const CANAIS = [
 
 const ABAS = [
   { id: 'geral',     label: 'Visão Geral' },
-  { id: 'esteira',   label: 'Esteira de Pedidos' },
-  { id: 'fotos',     label: 'Divergências Fotos' },
-  { id: 'cancelados', label: 'Cancelados' },
 ]
 
 // ─── Componente Esteira ───────────────────────────────────────────────────────
@@ -767,20 +764,6 @@ export default function Loja({ loja, dataInicio: dataInicioInit, dataFim: dataFi
           </>
         )}
 
-        {/* ABA: Esteira de Pedidos */}
-        {abaAtiva === 'esteira' && (
-          <TabEsteira loja={loja} dataInicio={dataInicio} dataFim={dataFim} />
-        )}
-
-        {/* ABA: Divergências Fotos */}
-        {abaAtiva === 'fotos' && (
-          <TabDivergenciasFotos loja={loja} dataInicio={dataInicio} dataFim={dataFim} />
-        )}
-
-        {/* ABA: Cancelados */}
-        {abaAtiva === 'cancelados' && (
-          <TabCancelados loja={loja} dataInicio={dataInicio} dataFim={dataFim} />
-        )}
       </div>
     </div>
   )
