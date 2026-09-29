@@ -54,6 +54,7 @@ export default function IntradayApp() {
       <HubPage
         user={user}
         onIntraday={() => setNav({ pagina: 'gerencial' })}
+
         onFeedbacks={() => setNav({ pagina: 'feedbacks' })}
         onMeuDesempenho={() => setNav({ pagina: 'meu-desempenho' })}
         onAdmin={() => setNav({ pagina: 'admin' })}

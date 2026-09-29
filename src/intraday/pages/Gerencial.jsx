@@ -141,6 +141,12 @@ const STORE_NOME_ABAST = {
   'setor bueno':       'Setor Bueno (GYN)',
   'asa sul':           'Asa Sul (BSB)',
   'asa norte':         'Asa Norte (BSB)',
+  'df - sia norte':    'Sia Norte (BSB)',
+  'df - aguas claras': 'Águas Claras (BSB)',
+  'go - alto da gloria': 'Alto da Glória (GYN)',
+  'go - setor bueno':  'Setor Bueno (GYN)',
+  'df - asa sul':      'Asa Sul (BSB)',
+  'df - asa norte':    'Asa Norte (BSB)',
   'agua verde curitiba':   'República (CWB)',
   'mossungue curitiba':    'Rodovia (CWB)',
   'juveve curitiba':       'Stresser (CWB)',
@@ -1161,6 +1167,284 @@ function RupturasTab({ dataInicio, dataFim, lojaFcId, lojasResumo = [], lojasLoa
             </table>
           </div>
         </>
+      )}
+    </div>
+  )
+}
+
+// ─── Mapeamento de stages da esteira ─────────────────────────────────────────
+const STAGE_MAP_G = {
+  '0':'Aguardando','1':'Picking','2':'Separação','3':'Verificação','4':'Embalagem Dry',
+  '5':'Embalagem Frio','6':'Consolidação','7':'Pesagem','8':'Faturamento','9':'Envio Courier',
+  '10':'Checkout','11':'Aguarda Retirada','12':'Retirado','13':'Em Rota','14':'Entregue Parcial',
+  '15':'Entregue','16':'Packing Geral','17':'Pronto','18':'Finalizado','20':'Fresh — Pesagem',
+  '21':'Fresh — Embalagem','22':'Fresh — Etiquetagem','23':'Fresh — Checagem','24':'Fresh — Consolidação',
+  '25':'Fresh — Pronto','26':'Fresh — Retirado','27':'Fresh — Enviado','28':'Fresh — Conferência',
+  '29':'Fresh — Concluído','30':'Hospital','31':'Divergência','32':'Packing C2','33':'Fresh C2',
+  '34':'Checkin','99':'Cancelado',
+}
+function stageGroupG(code) {
+  const c = Number(code)
+  if (c === 0)  return 'aguardando'
+  if (c === 1)  return 'picking'
+  if (c === 18) return 'finalizado'
+  if (c === 99) return 'cancelado'
+  if (c >= 30 && c <= 42) return 'hospital'
+  if ((c >= 20 && c <= 29) || c === 33 || c === 43 || c === 47 || c === 49 || c === 51) return 'fresh'
+  return 'packing'
+}
+const STAGE_GROUP_COLOR = {
+  aguardando: '#854d0e', picking: '#1e40af', packing: '#166534',
+  fresh: '#065f46', hospital: '#991b1b', finalizado: '#475569', cancelado: '#64748b',
+}
+
+function StageBadgeG({ code }) {
+  const group = stageGroupG(code)
+  const label = STAGE_MAP_G[String(code)] || `Stage ${code}`
+  const color = STAGE_GROUP_COLOR[group] || '#555'
+  return <span style={{ fontSize: 11, fontWeight: 700, color }}>{label}</span>
+}
+
+function EsteiraGeralTab({ dataInicio, dataFim, lojaFcId, lojasResumo = [] }) {
+  const [loja, setLoja]           = useState('')
+  const [pedidos, setPedidos]     = useState(null)
+  const [loading, setLoading]     = useState(false)
+  const [erro, setErro]           = useState(null)
+  const [busca, setBusca]         = useState('')
+  const [filtroGrupo, setFiltroGrupo] = useState('todos')
+
+  // Pré-seleciona loja se o user só tem uma
+  useEffect(() => {
+    if (lojaFcId && lojasResumo.length > 0) {
+      const l = lojasResumo.find(x => x.id_fulfillment_center === lojaFcId)
+      if (l?.loja) setLoja(l.loja)
+    }
+  }, [lojaFcId, lojasResumo])
+
+  function buscarEsteira(lojaVal) {
+    if (!lojaVal) return
+    setLoading(true)
+    setErro(null)
+    setPedidos(null)
+    axios.get(`${API}/api/intraday/loja/${encodeURIComponent(lojaVal)}/esteira`, {
+      params: { data_inicio: dataInicio, data_fim: dataFim },
+    })
+      .then(r => setPedidos(r.data.pedidos || []))
+      .catch(e => setErro(e.response?.data?.erro || e.message))
+      .finally(() => setLoading(false))
+  }
+
+  const lojasSel = lojasResumo.filter(l => FC_NOME[l.id_fulfillment_center])
+
+  const GRUPOS = ['todos','aguardando','picking','packing','fresh','hospital','finalizado','cancelado']
+  const GROUP_LABEL_G = { todos:'Todos', aguardando:'Aguardando', picking:'Picking', packing:'Packing Merc.', fresh:'Fresh', hospital:'Hospital', finalizado:'Finalizado', cancelado:'Cancelado' }
+
+  const filtrados = (pedidos || []).filter(p =>
+    (filtroGrupo === 'todos' || stageGroupG(p.status_pedido) === filtroGrupo) &&
+    (!busca || (p.operador || '').toLowerCase().includes(busca.toLowerCase()) || (p.cod_pedido || '').toLowerCase().includes(busca.toLowerCase()))
+  )
+
+  const thS = { padding:'6px 10px', fontSize:10, fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.05em', whiteSpace:'nowrap', textAlign:'left' }
+  const tdS = { padding:'7px 10px', fontSize:12, borderBottom:'1px solid var(--border-light)' }
+
+  return (
+    <div>
+      <div style={{ display:'flex', gap:10, marginBottom:16, flexWrap:'wrap', alignItems:'center' }}>
+        <select
+          value={loja}
+          onChange={e => { setLoja(e.target.value); buscarEsteira(e.target.value) }}
+          style={{ padding:'6px 12px', borderRadius:8, border:'1px solid var(--border)', fontSize:13, background:'var(--surface)', color:'var(--text)', minWidth:200 }}
+        >
+          <option value="">— Selecione uma loja —</option>
+          {lojasSel.map(l => (
+            <option key={l.loja} value={l.loja}>{FC_NOME[l.id_fulfillment_center] || l.loja}</option>
+          ))}
+        </select>
+        {loja && <button onClick={() => buscarEsteira(loja)} style={{ padding:'6px 14px', borderRadius:8, border:'1px solid var(--border)', background:'var(--surface)', color:'var(--text)', cursor:'pointer', fontSize:12 }}>↺ Atualizar</button>}
+        {pedidos && (
+          <>
+            <div style={{ display:'flex', gap:4, flexWrap:'wrap' }}>
+              {GRUPOS.map(g => {
+                const cnt = g === 'todos' ? pedidos.length : pedidos.filter(p => stageGroupG(p.status_pedido) === g).length
+                return cnt > 0 || g === 'todos' ? (
+                  <button key={g} onClick={() => setFiltroGrupo(g)} style={{
+                    padding:'4px 10px', borderRadius:16, border: filtroGrupo===g ? 'none' : '1px solid var(--border)',
+                    background: filtroGrupo===g ? '#334155' : 'var(--surface)', color: filtroGrupo===g ? '#fff' : 'var(--text-muted)',
+                    fontWeight: filtroGrupo===g ? 700 : 400, fontSize:11, cursor:'pointer',
+                  }}>{GROUP_LABEL_G[g]}{g!=='todos' && cnt > 0 ? ` (${cnt})` : g==='todos' ? ` (${cnt})` : ''}</button>
+                ) : null
+              })}
+            </div>
+            <input placeholder="Buscar operador ou pedido..." value={busca} onChange={e => setBusca(e.target.value)}
+              style={{ padding:'5px 10px', borderRadius:8, border:'1px solid var(--border)', fontSize:12, flex:1, minWidth:140, background:'var(--surface)', color:'var(--text)' }} />
+          </>
+        )}
+      </div>
+
+      {!loja && <div style={{ textAlign:'center', padding:40, color:'var(--text-muted)' }}>Selecione uma loja para ver a esteira de pedidos.</div>}
+      {loading && <div className="loading-state"><div className="spinner" /><span>Carregando esteira...</span></div>}
+      {erro && <div className="error-banner">⚠ {erro}</div>}
+
+      {pedidos && !loading && (
+        filtrados.length === 0
+          ? <div style={{ textAlign:'center', padding:40, color:'var(--text-muted)' }}>Nenhum pedido encontrado.</div>
+          : <div style={{ overflowX:'auto' }}>
+              <div style={{ fontSize:12, color:'var(--text-muted)', marginBottom:8 }}>{filtrados.length} pedidos</div>
+              <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
+                <thead>
+                  <tr style={{ borderBottom:'1px solid var(--border)', background:'var(--bg)' }}>
+                    {['Pedido','Etapa Esteira','Canal','Picking','Entrada','Início Pick.','Fim Pick.','Fim Pack.','SLA','Operador','Turno','Foto'].map(h => (
+                      <th key={h} style={thS}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtrados.map((p, i) => {
+                    const fmtH = h => { if (!h) return '—'; const v = (h && typeof h==='object' && h.value) ? h.value : h; return String(v).slice(0,5) }
+                    const fmtM = s => { if (s==null) return '—'; const m=Math.floor(s/60),sc=s%60; return `${m}:${String(sc).padStart(2,'0')}` }
+                    const slaOk = p.sla_ok
+                    const slaC = slaOk===true ? 'var(--green)' : slaOk===false ? 'var(--red)' : 'var(--text-dim)'
+                    const pkCfg = { 'EM_ANDAMENTO':{ c:'#1e40af', l:'Em andamento' }, 'FINALIZADO':{ c:'#065f46', l:'Finalizado' }, 'NAO_INICIADO':{ c:'#64748b', l:'Não iniciado' } }
+                    const pk = pkCfg[p.status_picking] || { c:'#64748b', l: p.status_picking || '—' }
+                    return (
+                      <tr key={p.cod_pedido||i} style={{ background: i%2===0 ? 'transparent' : '#fafbfc' }}>
+                        <td style={{ ...tdS, fontFamily:'monospace', fontSize:10, color:'var(--text-muted)' }}>{p.cod_pedido}</td>
+                        <td style={tdS}><StageBadgeG code={p.status_pedido} /></td>
+                        <td style={{ ...tdS, fontSize:11 }}>{p.canal_label||'—'}</td>
+                        <td style={{ ...tdS, fontSize:11, fontWeight:600, color:pk.c }}>{pk.l}</td>
+                        <td style={{ ...tdS, fontVariantNumeric:'tabular-nums' }}>{fmtH(p.entrada_pedido_sistema_hora)}</td>
+                        <td style={{ ...tdS, fontVariantNumeric:'tabular-nums' }}>{fmtH(p.inicio_picking_hora)}</td>
+                        <td style={{ ...tdS, fontVariantNumeric:'tabular-nums' }}>{fmtH(p.fim_picking_hora)}</td>
+                        <td style={{ ...tdS, fontVariantNumeric:'tabular-nums' }}>{fmtH(p.fim_packing_hora)}</td>
+                        <td style={{ ...tdS, fontWeight:700, color:slaC }}>{fmtM(p.sla_seconds)}</td>
+                        <td style={{ ...tdS, fontSize:11 }}>{p.operador||'—'}</td>
+                        <td style={{ ...tdS, fontSize:11, color:'var(--text-muted)' }}>{p.turno||'—'}</td>
+                        <td style={tdS}>
+                          {p.foto_links
+                            ? <a href={Array.isArray(p.foto_links) ? p.foto_links[0] : p.foto_links} target="_blank" rel="noreferrer" style={{ textDecoration:'none' }}>📷</a>
+                            : p.foto ? '📷' : '—'}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+      )}
+    </div>
+  )
+}
+
+function CanceladosGeralTab({ dataInicio, dataFim, lojaFcId, lojasResumo = [] }) {
+  const [loja, setLoja]             = useState('')
+  const [cancelados, setCancelados] = useState(null)
+  const [loading, setLoading]       = useState(false)
+  const [erro, setErro]             = useState(null)
+  const [filtro, setFiltro]         = useState('todos')
+
+  useEffect(() => {
+    if (lojaFcId && lojasResumo.length > 0) {
+      const l = lojasResumo.find(x => x.id_fulfillment_center === lojaFcId)
+      if (l?.loja) setLoja(l.loja)
+    }
+  }, [lojaFcId, lojasResumo])
+
+  function buscar(lojaVal) {
+    if (!lojaVal) return
+    setLoading(true)
+    setErro(null)
+    setCancelados(null)
+    axios.get(`${API}/api/intraday/loja/${encodeURIComponent(lojaVal)}/cancelados`, {
+      params: { data_inicio: dataInicio, data_fim: dataFim },
+    })
+      .then(r => setCancelados(r.data.cancelados || []))
+      .catch(e => setErro(e.response?.data?.erro || e.message))
+      .finally(() => setLoading(false))
+  }
+
+  const lojasSel = lojasResumo.filter(l => FC_NOME[l.id_fulfillment_center])
+  const comPicking = (cancelados || []).filter(p => p.foi_picado)
+  const semPicking = (cancelados || []).filter(p => !p.foi_picado)
+  const lista = filtro === 'com_picking' ? comPicking : filtro === 'sem_picking' ? semPicking : (cancelados || [])
+
+  const thS = { padding:'6px 10px', fontSize:10, fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.05em', whiteSpace:'nowrap', textAlign:'left' }
+  const tdS = { padding:'7px 10px', fontSize:12, borderBottom:'1px solid var(--border-light)' }
+  const fmtH = h => { if (!h) return '—'; const v = (h && typeof h==='object' && h.value) ? h.value : h; return String(v).slice(0,5) }
+
+  return (
+    <div>
+      <div style={{ display:'flex', gap:10, marginBottom:16, flexWrap:'wrap', alignItems:'center' }}>
+        <select
+          value={loja}
+          onChange={e => { setLoja(e.target.value); buscar(e.target.value) }}
+          style={{ padding:'6px 12px', borderRadius:8, border:'1px solid var(--border)', fontSize:13, background:'var(--surface)', color:'var(--text)', minWidth:200 }}
+        >
+          <option value="">— Selecione uma loja —</option>
+          {lojasSel.map(l => (
+            <option key={l.loja} value={l.loja}>{FC_NOME[l.id_fulfillment_center] || l.loja}</option>
+          ))}
+        </select>
+        {loja && <button onClick={() => buscar(loja)} style={{ padding:'6px 14px', borderRadius:8, border:'1px solid var(--border)', background:'var(--surface)', color:'var(--text)', cursor:'pointer', fontSize:12 }}>↺ Atualizar</button>}
+
+        {cancelados && (
+          <div style={{ display:'flex', gap:6 }}>
+            {[
+              { id:'todos',        label:`Todos (${cancelados.length})` },
+              { id:'com_picking',  label:`Picking iniciado (${comPicking.length})` },
+              { id:'sem_picking',  label:`Sem picking (${semPicking.length})` },
+            ].map(opt => (
+              <button key={opt.id} onClick={() => setFiltro(opt.id)} style={{
+                padding:'4px 12px', borderRadius:16, border: filtro===opt.id ? 'none' : '1px solid var(--border)',
+                background: filtro===opt.id ? '#334155' : 'var(--surface)', color: filtro===opt.id ? '#fff' : 'var(--text-muted)',
+                fontWeight: filtro===opt.id ? 700 : 400, fontSize:11, cursor:'pointer',
+              }}>{opt.label}</button>
+            ))}
+            {comPicking.length > 0 && <span style={{ fontSize:11, color:'#d97706', alignSelf:'center' }}>⚠ {comPicking.length} cancelados após início do picking</span>}
+          </div>
+        )}
+      </div>
+
+      {!loja && <div style={{ textAlign:'center', padding:40, color:'var(--text-muted)' }}>Selecione uma loja para ver os cancelados.</div>}
+      {loading && <div className="loading-state"><div className="spinner" /><span>Carregando cancelados...</span></div>}
+      {erro && <div className="error-banner">⚠ {erro}</div>}
+
+      {cancelados && !loading && (
+        lista.length === 0
+          ? <div style={{ textAlign:'center', padding:40, color:'var(--text-muted)' }}>Nenhum pedido cancelado.</div>
+          : <div style={{ overflowX:'auto' }}>
+              <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
+                <thead>
+                  <tr style={{ borderBottom:'1px solid var(--border)', background:'var(--bg)' }}>
+                    {['Pedido','Picking feito?','Status Picking','Canal','Entrada','Início Pick.','Fim Pick.','Operador','Turno'].map(h => (
+                      <th key={h} style={thS}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {lista.map((p, i) => {
+                    const pkCfg = { 'EM_ANDAMENTO':{ c:'#1e40af', l:'Em andamento' }, 'FINALIZADO':{ c:'#065f46', l:'Finalizado' }, 'NAO_INICIADO':{ c:'#64748b', l:'Não iniciado' } }
+                    const pk = pkCfg[p.status_picking] || { c:'#64748b', l: p.status_picking || '—' }
+                    return (
+                      <tr key={p.cod_pedido||i} style={{ background: i%2===0 ? 'transparent' : '#fafbfc' }}>
+                        <td style={{ ...tdS, fontFamily:'monospace', fontSize:10, color:'var(--text-muted)' }}>{p.cod_pedido}</td>
+                        <td style={tdS}>
+                          <span style={{ background: p.foi_picado ? '#fef3c7' : '#d1fae5', color: p.foi_picado ? '#92400e' : '#065f46', borderRadius:4, padding:'2px 8px', fontSize:11, fontWeight:700 }}>
+                            {p.foi_picado ? '⚠ Sim' : '✓ Não'}
+                          </span>
+                        </td>
+                        <td style={{ ...tdS, fontWeight:600, color:pk.c, fontSize:11 }}>{pk.l}</td>
+                        <td style={{ ...tdS, fontSize:11 }}>{p.canal_label||'—'}</td>
+                        <td style={{ ...tdS, fontVariantNumeric:'tabular-nums' }}>{fmtH(p.entrada_pedido_sistema_hora)}</td>
+                        <td style={{ ...tdS, fontVariantNumeric:'tabular-nums' }}>{fmtH(p.inicio_picking_hora)}</td>
+                        <td style={{ ...tdS, fontVariantNumeric:'tabular-nums' }}>{fmtH(p.fim_picking_hora)}</td>
+                        <td style={{ ...tdS, fontSize:11 }}>{p.operador||'—'}</td>
+                        <td style={{ ...tdS, fontSize:11, color:'var(--text-muted)' }}>{p.turno||'—'}</td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
       )}
     </div>
   )

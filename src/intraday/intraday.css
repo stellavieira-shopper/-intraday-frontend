@@ -5,6 +5,7 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes live-pulse { 0%, 100% { box-shadow: 0 0 0 3px #bbf7d0; } 50% { box-shadow: 0 0 0 6px #bbf7d055; } }
 
 :root {
   --bg:           #f5f6fa;
