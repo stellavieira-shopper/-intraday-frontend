@@ -1571,19 +1571,25 @@ const { data: resp } = await axios.get(`${API}/api/intraday/gerencial`, { params
   const saudaveis = saudes.filter(s => s.variant === 'saudavel').length
 
   const totals = lojasFiltradas.reduce((acc, l) => {
-    acc.total      += Number(l.total_pedidos)       || 0
+    const np = Number(l.total_pedidos) || 0
+    acc.total      += np
     acc.comSla     += Number(l.pedidos_com_sla)     || 0
     acc.dentroSla  += Number(l.pedidos_dentro_sla)  || 0
     acc.foraSla    += Number(l.pedidos_fora_sla)    || 0
     acc.comRuptura += Number(l.pedidos_com_ruptura) || 0
     acc.finalizados+= Number(l.pedidos_finalizados) || 0
     acc.comFoto    += Number(l.pedidos_com_foto)    || 0
+    const iniciarVal = l.avg_tempo_iniciar_min_sla ?? l.avg_tempo_iniciar_min
+    if (iniciarVal != null) acc.sumIniciarPonderado += (Number(iniciarVal) || 0) * np
+    if (l.avg_cycle_min != null)         acc.sumCyclePonderado   += (Number(l.avg_cycle_min)         || 0) * np
     return acc
-  }, { total: 0, comSla: 0, dentroSla: 0, foraSla: 0, comRuptura: 0, finalizados: 0, comFoto: 0 })
+  }, { total: 0, comSla: 0, dentroSla: 0, foraSla: 0, comRuptura: 0, finalizados: 0, comFoto: 0, sumIniciarPonderado: 0, sumCyclePonderado: 0 })
 
-  const aggSlaPct     = totals.comSla     > 0 ? (totals.dentroSla / totals.comSla) * 100    : null
-  const aggRupturaPct = totals.total      > 0 ? (totals.comRuptura / totals.total) * 100    : null
-  const aggFotoPct    = totals.finalizados> 0 ? (totals.comFoto / totals.finalizados) * 100 : null
+  const aggSlaPct        = totals.comSla     > 0 ? (totals.dentroSla / totals.comSla) * 100    : null
+  const aggRupturaPct    = totals.total      > 0 ? (totals.comRuptura / totals.total) * 100    : null
+  const aggFotoPct       = totals.finalizados> 0 ? (totals.comFoto / totals.finalizados) * 100 : null
+  const aggAvgIniciarMin = totals.total > 0 ? Math.round((totals.sumIniciarPonderado / totals.total) * 10) / 10 : null
+  const aggAvgCycleMin   = totals.total > 0 ? Math.round((totals.sumCyclePonderado   / totals.total) * 10) / 10 : null
   const semFotoTotal  = totals.finalizados - totals.comFoto
 
   const errosPeriodo = erros.filter(e => {
@@ -1816,7 +1822,23 @@ const { data: resp } = await axios.get(`${API}/api/intraday/gerencial`, { params
                   <span className="perf-summary-item__num" style={{ color: aggErroPct <= 1 ? 'var(--green)' : aggErroPct <= 3 ? 'var(--yellow)' : 'var(--red)' }}>
                     {aggErroPct.toFixed(1)}%
                   </span>
-                  <span className="perf-summary-item__lbl">Pedidos c/ Erro</span>
+                  <span className="perf-summary-item__lbl">Taxa de Erros</span>
+                </div>
+              )}
+              {aggAvgIniciarMin !== null && (
+                <div className="perf-summary-item">
+                  <span className="perf-summary-item__num" style={{ color: aggAvgIniciarMin <= 5 ? 'var(--green)' : aggAvgIniciarMin <= 10 ? 'var(--yellow)' : 'var(--red)' }}>
+                    {aggAvgIniciarMin.toFixed(1)} min
+                  </span>
+                  <span className="perf-summary-item__lbl">T. Iniciar Médio</span>
+                </div>
+              )}
+              {aggAvgCycleMin !== null && (
+                <div className="perf-summary-item">
+                  <span className="perf-summary-item__num" style={{ color: aggAvgCycleMin <= 20 ? 'var(--green)' : aggAvgCycleMin <= 30 ? 'var(--yellow)' : 'var(--red)' }}>
+                    {aggAvgCycleMin.toFixed(1)} min
+                  </span>
+                  <span className="perf-summary-item__lbl">T. Ciclo Médio</span>
                 </div>
               )}
             </div>

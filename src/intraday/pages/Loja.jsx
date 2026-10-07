@@ -648,6 +648,24 @@ export default function Loja({ loja, dataInicio: dataInicioInit, dataFim: dataFi
                     value={String(totalPedidos)} sub="Todos os turnos"
                     dotClass="dot--gray" barPct={100} barClass="gray"
                   />
+                  {kpis.avg_tempo_iniciar_min != null && (
+                    <KpiLoja
+                      label="T. Iniciar Médio"
+                      value={kpis.avg_tempo_iniciar_min} sup=" min"
+                      sub="Criação → início picking"
+                      dotClass={kpis.avg_tempo_iniciar_min <= 5 ? 'dot--green' : kpis.avg_tempo_iniciar_min <= 10 ? 'dot--yellow' : 'dot--red'}
+                      barPct={null} barClass="gray"
+                    />
+                  )}
+                  {kpis.avg_cycle_min != null && (
+                    <KpiLoja
+                      label="T. Ciclo Médio"
+                      value={kpis.avg_cycle_min} sup=" min"
+                      sub="Início picking → fim packing"
+                      dotClass={kpis.avg_cycle_min <= 20 ? 'dot--green' : kpis.avg_cycle_min <= 30 ? 'dot--yellow' : 'dot--red'}
+                      barPct={null} barClass="gray"
+                    />
+                  )}
                 </div>
 
                 {dados.tipos && dados.tipos.length > 0 && (

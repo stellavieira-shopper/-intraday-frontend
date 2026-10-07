@@ -28,6 +28,7 @@ export default function PedidosRecentes({ pedidos }) {
             <th>Operador</th>
             <th>Turno</th>
             <th>SLA</th>
+            <th>T. Iniciar</th>
             <th>Ciclo</th>
             <th>Ruptura</th>
             <th>Foto</th>
@@ -39,6 +40,7 @@ export default function PedidosRecentes({ pedidos }) {
             const atrasado = p.status_sla === 'FORA_SLA'
             const semFoto  = p.foto !== 'Sim'
             const ciclo    = p.cycle_duration_minutes != null ? `${p.cycle_duration_minutes} min` : '—'
+            const iniciar  = p.tempo_para_iniciar_minutes != null ? `${p.tempo_para_iniciar_minutes} min` : '—'
             const ehTurbo  = p.eh_turbo === 'SIM'
             const ruptura  = p.teve_ruptura === 'SIM'
 
@@ -55,6 +57,7 @@ export default function PedidosRecentes({ pedidos }) {
                   {atrasado && <span className="badge badge--fora_sla">ATRASADO</span>}
                   {!noPrazo && !atrasado && <span style={{ color: 'var(--text-dim)' }}>—</span>}
                 </td>
+                <td className="td-num">{iniciar}</td>
                 <td className="td-num">{ciclo}</td>
                 <td style={{ color: ruptura ? 'var(--orange)' : 'var(--green)', fontWeight: 700 }}>
                   {ruptura ? 'Sim' : 'Não'}
